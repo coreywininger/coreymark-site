@@ -69,6 +69,10 @@ const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
       href="/rss.xml"
     />
 
+    <!-- Cloudflare Web Analytics -->
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "1e7a78fde1224830b8d35b4c788e7138"}'></script>
+    <!-- End Cloudflare Web Analytics -->
+
     <slot name="head" />
   </head>
   <body class="flex min-h-screen flex-col">
