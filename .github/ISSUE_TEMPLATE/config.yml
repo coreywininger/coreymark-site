@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Site is live and reachable
+    url: https://coreymark.com
+    about: Sanity-check that the site is actually serving before filing an outage. If it's not loading at all, file a P0 bug with browser network tab evidence.
