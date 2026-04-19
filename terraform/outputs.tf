@@ -18,3 +18,9 @@ output "api_key" {
   value       = azurerm_static_web_app.main.api_key
   sensitive   = true
 }
+
+output "apex_validation_token" {
+  description = "TXT value for the apex (@) record on coreymark.com. NOT asuid.<apex> — ASWA validates at the apex itself, unlike Azure App Service. Populated after the apex custom-domain resource is created. Retrieve with: terraform output -raw apex_validation_token"
+  value       = azurerm_static_web_app_custom_domain.apex.validation_token
+  sensitive   = true
+}

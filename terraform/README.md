@@ -87,10 +87,25 @@ Or via the GitHub UI: repo → Settings → Secrets and variables → Actions
 
 | Name                  | Description                                               |
 | --------------------- | --------------------------------------------------------- |
-| `resource_group_name` | Resource group name                                       |
-| `static_web_app_name` | ASWA resource name                                        |
-| `default_hostname`    | `<random>-<hash>.<region>.azurestaticapps.net` default URL |
-| `api_key`             | Deployment token (sensitive — use `-raw` to read)         |
+| `resource_group_name`    | Resource group name                                        |
+| `static_web_app_name`    | ASWA resource name                                         |
+| `default_hostname`       | `<random>-<hash>.<region>.azurestaticapps.net` default URL |
+| `api_key`                | Deployment token (sensitive — use `-raw` to read)          |
+| `apex_validation_token`  | TXT value for the apex `@` record on `coreymark.com` (sensitive — use `-raw`). NOT `asuid.<apex>` — ASWA validates at the apex itself. |
+
+## Manual portal steps (not in Terraform state)
+
+After both custom domains validate (`coreymark.com` + `www.coreymark.com`),
+set the apex as canonical so ASWA auto-301s `www` → apex:
+
+1. Azure Portal → `swa-coreymark-prod` → **Custom domains**
+2. Select `coreymark.com` → **Set as default domain**
+3. ASWA will auto-301 `www.coreymark.com` → `coreymark.com`
+
+The `azurerm_static_web_app_custom_domain` resource does not expose a
+`default` / `is_default` attribute, so this click lives outside IaC. If
+the ASWA is ever destroyed and recreated via Terraform, this setting is
+lost — re-do step 2.
 
 ## Linking the GitHub repo
 
