@@ -1,0 +1,87 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import NetworkMotif from '../components/NetworkMotif.astro';
+import PostCard from '../components/PostCard.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { publishedOnly, sortByPubDateDesc } from '../lib/content';
+
+const allPosts = await getCollection('blog', publishedOnly);
+const latestPosts = sortByPubDateDesc(allPosts).slice(0, 4);
+
+const allProjects = await getCollection('projects');
+const featuredProject =
+  allProjects.find((p) => p.data.featured) ?? allProjects[0];
+---
+
+<Base>
+  <section class="relative overflow-hidden border-b border-border-subtle">
+    <div class="pointer-events-none absolute inset-0">
+      <NetworkMotif
+        class="absolute -right-32 -top-10 w-[900px] text-accent-primary"
+        opacity={0.07}
+      />
+    </div>
+    <div class="relative mx-auto max-w-4xl px-4 py-24 sm:px-6 md:py-32">
+      <p class="mb-4 text-sm font-semibold uppercase tracking-wide text-accent-primary">
+        Corey Wininger
+      </p>
+      <h1 class="mb-6 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        Writing about IT operations, translating tech to the business,
+        AI for the people who actually run it, hybrid cloud economics —
+        and sometimes a weekend project.
+      </h1>
+      <p class="max-w-2xl text-lg text-text-secondary">
+        IT infrastructure leader. Twelve years running
+        operations and platforms for hybrid enterprise environments. Open
+        to Senior IT Manager, Director, and VP of IT roles.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a
+          href="/blog"
+          class="rounded-md bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-opacity hover:opacity-90"
+        >
+          Read the blog
+        </a>
+        <a
+          href="/about"
+          class="rounded-md border border-border-subtle px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:border-accent-primary hover:text-accent-primary"
+        >
+          About Corey
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+    <div class="mb-8 flex items-end justify-between">
+      <h2 class="text-2xl font-semibold tracking-tight">Latest posts</h2>
+      <a
+        href="/blog"
+        class="text-sm text-accent-primary hover:underline"
+      >
+        All posts →
+      </a>
+    </div>
+    <div class="grid gap-5 md:grid-cols-2">
+      {latestPosts.map((post) => <PostCard post={post} />)}
+    </div>
+  </section>
+
+  {featuredProject && (
+    <section class="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+      <div class="mb-8 flex items-end justify-between">
+        <h2 class="text-2xl font-semibold tracking-tight">Featured project</h2>
+        <a
+          href="/projects"
+          class="text-sm text-accent-primary hover:underline"
+        >
+          All projects →
+        </a>
+      </div>
+      <div class="grid gap-5 md:grid-cols-2">
+        <ProjectCard project={featuredProject} />
+      </div>
+    </section>
+  )}
+</Base>

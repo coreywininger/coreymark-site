@@ -1,0 +1,44 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Post from '../../layouts/Post.astro';
+import { PILLAR_META } from '../../content.config';
+import { publishedOnly, sortByPubDateDesc } from '../../lib/content';
+
+export const getStaticPaths = (async () => {
+  const posts = await getCollection('blog', publishedOnly);
+  const sorted = sortByPubDateDesc(posts);
+
+  return sorted.map((post, idx) => {
+    const prev = sorted[idx + 1] ?? null;
+    const next = sorted[idx - 1] ?? null;
+    return {
+      params: { slug: post.id },
+      props: {
+        post,
+        prev: prev ? { slug: prev.id, title: prev.data.title } : null,
+        next: next ? { slug: next.id, title: next.data.title } : null,
+      },
+    };
+  });
+}) satisfies GetStaticPaths;
+
+const { post, prev, next } = Astro.props;
+const { Content, headings } = await render(post);
+const pillarLabel = PILLAR_META[post.data.pillar].label;
+---
+
+<Post
+  title={post.data.title}
+  description={post.data.description}
+  pubDate={post.data.pubDate}
+  updatedDate={post.data.updatedDate}
+  pillar={pillarLabel}
+  tags={post.data.tags}
+  image={post.data.heroImage}
+  headings={headings}
+  prev={prev}
+  next={next}
+>
+  <Content />
+</Post>

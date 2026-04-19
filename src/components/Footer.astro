@@ -1,0 +1,50 @@
+---
+import { Rss } from '@lucide/astro';
+import NetworkMotif from './NetworkMotif.astro';
+import SocialIcon from './SocialIcons.astro';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="relative mt-24 border-t border-border-subtle bg-bg-primary">
+  <div class="pointer-events-none absolute inset-0 overflow-hidden">
+    <NetworkMotif
+      class="absolute -right-20 -top-16 w-[480px] text-accent-primary"
+      opacity={0.08}
+    />
+  </div>
+
+  <div class="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between">
+    <div class="text-sm text-text-tertiary">
+      © {year} Corey Wininger. All opinions are my own.
+    </div>
+
+    <div class="flex items-center gap-5">
+      <a
+        href="https://www.linkedin.com/in/coreywininger/"
+        rel="me noopener"
+        target="_blank"
+        class="text-text-secondary transition-colors hover:text-accent-primary"
+        aria-label="LinkedIn"
+      >
+        <SocialIcon name="linkedin" size={20} />
+      </a>
+      <a
+        href="https://github.com/coreywininger"
+        rel="me noopener"
+        target="_blank"
+        class="text-text-secondary transition-colors hover:text-accent-primary"
+        aria-label="GitHub"
+      >
+        <SocialIcon name="github" size={20} />
+      </a>
+      <a
+        href="/rss.xml"
+        class="text-text-secondary transition-colors hover:text-accent-primary"
+        aria-label="RSS feed"
+      >
+        <Rss size={20} strokeWidth={1.75} />
+      </a>
+    </div>
+  </div>
+</footer>

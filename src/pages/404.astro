@@ -1,0 +1,45 @@
+---
+import Base from '../layouts/Base.astro';
+import NetworkMotif from '../components/NetworkMotif.astro';
+---
+
+<Base
+  title="404"
+  description="Page not found."
+  noindex
+>
+  <section class="relative mx-auto max-w-3xl px-4 py-24 text-center sm:px-6 md:py-32">
+    <div class="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
+      <NetworkMotif
+        class="w-[720px] text-accent-primary"
+        opacity={0.18}
+      />
+    </div>
+
+    <p class="mb-3 font-mono text-sm uppercase tracking-widest text-accent-primary">
+      404
+    </p>
+    <h1 class="mb-6 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+      This page is a node with no edges.
+    </h1>
+    <p class="mx-auto mb-8 max-w-xl text-lg text-text-secondary">
+      Either the URL is wrong, or I've moved something without updating
+      the map. Either is on me.
+    </p>
+
+    <div class="flex flex-wrap justify-center gap-3">
+      <a
+        href="/"
+        class="rounded-md bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-opacity hover:opacity-90"
+      >
+        Back to home
+      </a>
+      <a
+        href="/blog"
+        class="rounded-md border border-border-subtle px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:border-accent-primary hover:text-accent-primary"
+      >
+        Read the blog
+      </a>
+    </div>
+  </section>
+</Base>

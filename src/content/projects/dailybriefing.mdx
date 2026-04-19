@@ -1,0 +1,70 @@
+---
+title: DailyBriefing
+summary: A serverless morning briefing — weather, calendar, email, and tasks — delivered as a dark-themed HTML email every weekday at 7am ET. Runs entirely on GitHub Actions.
+pubDate: 2026-04-16
+stack:
+  - Python
+  - GitHub Actions
+  - OpenWeatherMap API
+  - Google Calendar API
+  - Gmail API
+  - GitHub Gist API
+links:
+  repo: https://github.com/coreywininger/dailybriefing
+status: live
+featured: true
+---
+
+## What it is
+
+DailyBriefing is an automated morning briefing system that delivers a
+consolidated daily snapshot via a styled HTML email every weekday at
+7:00 AM Eastern. It runs entirely on GitHub Actions — no local machine
+dependency, no server to maintain.
+
+The briefing aggregates five data sources into a single email:
+
+- **Weather** — current conditions and forecast via OpenWeatherMap
+- **Personal calendar** — events from the primary Google account
+- **Family calendar** — events from a shared family calendar
+- **Task list** — active and waiting items from a GitHub Gist
+- **Email highlights** — unread actionable emails from the last 24 hours
+
+The email uses a dark-themed, card-based layout with color-coded
+sections, conditional weather alerts, and calendar badges distinguishing
+personal from family events.
+
+## Why
+
+This was a practical build: managing a job search, a consulting business
+launch, and family commitments was surfacing the same friction every
+morning — checking weather, calendar, email, and task lists across four
+apps before the coffee was done. Automatable.
+
+## Architecture
+
+```text
+GitHub Actions (cron: weekdays 7 AM ET)
+    │
+    └── daily_briefing.py
+            ├── OpenWeatherMap API   → weather
+            ├── Google Calendar API  → personal + family events
+            ├── GitHub Gist API      → TASKS.md content
+            ├── Gmail API (readonly) → unread email scan
+            └── Gmail API (send)     → HTML email to inbox
+```
+
+No databases. No servers. No containers. The entire system is a single
+Python script triggered by a cron job.
+
+## What I got out of it
+
+- A concrete pattern for zero-cost serverless automation using GitHub
+  Actions as the compute substrate
+- Hard-won practice with OAuth2 flows for long-running headless scripts
+  (token refresh, consent screens, GitHub Secrets discipline)
+- A template for pairing Cowork (for design) with Claude Code (for
+  integration) that I've reused on other projects
+
+*A technical writeup with the auth gotchas and a copy-pasteable playbook
+is on the blog backlog.*

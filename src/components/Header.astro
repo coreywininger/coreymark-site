@@ -1,0 +1,126 @@
+---
+import { Menu, X } from '@lucide/astro';
+
+const navItems = [
+  { href: '/',         label: 'Home' },
+  { href: '/blog',     label: 'Blog' },
+  { href: '/projects', label: 'Projects' },
+  { href: '/about',    label: 'About' },
+  { href: '/now',      label: 'Now' },
+  { href: '/contact',  label: 'Contact' },
+];
+
+const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isActive = (href: string) => {
+  if (href === '/') return pathname === '/';
+  return pathname === href || pathname.startsWith(`${href}/`);
+};
+---
+
+<header class="sticky top-0 z-40 border-b border-border-subtle bg-bg-primary/85 backdrop-blur-md">
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+    <a
+      href="/"
+      class="font-semibold tracking-tight text-text-primary hover:text-accent-primary transition-colors"
+    >
+      Corey Wininger
+    </a>
+
+    <nav aria-label="Primary" class="hidden md:block">
+      <ul class="flex items-center gap-6 text-sm">
+        {navItems.slice(1).map((item) => (
+          <li>
+            <a
+              href={item.href}
+              aria-current={isActive(item.href) ? 'page' : undefined}
+              class:list={[
+                'transition-colors',
+                isActive(item.href)
+                  ? 'text-accent-primary'
+                  : 'text-text-secondary hover:text-text-primary',
+              ]}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <button
+      type="button"
+      class="md:hidden text-text-secondary hover:text-text-primary transition-colors"
+      aria-label="Open menu"
+      aria-controls="mobile-menu"
+      aria-expanded="false"
+      data-menu-toggle
+    >
+      <Menu size={24} strokeWidth={1.75} />
+    </button>
+  </div>
+
+  <div
+    id="mobile-menu"
+    class="fixed inset-0 z-50 hidden flex-col bg-bg-primary md:hidden"
+    data-menu-panel
+  >
+    <div class="flex items-center justify-between border-b border-border-subtle px-4 py-4 sm:px-6">
+      <span class="font-semibold tracking-tight">Menu</span>
+      <button
+        type="button"
+        class="text-text-secondary hover:text-text-primary transition-colors"
+        aria-label="Close menu"
+        data-menu-close
+      >
+        <X size={24} strokeWidth={1.75} />
+      </button>
+    </div>
+    <nav aria-label="Mobile" class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col divide-y divide-border-subtle">
+        {navItems.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              aria-current={isActive(item.href) ? 'page' : undefined}
+              class:list={[
+                'block px-6 py-5 text-lg transition-colors',
+                isActive(item.href)
+                  ? 'text-accent-primary'
+                  : 'text-text-primary hover:bg-bg-subtle',
+              ]}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const toggles = document.querySelectorAll<HTMLButtonElement>('[data-menu-toggle]');
+  const closers = document.querySelectorAll<HTMLButtonElement>('[data-menu-close]');
+  const panel = document.querySelector<HTMLElement>('[data-menu-panel]');
+
+  const open = () => {
+    if (!panel) return;
+    panel.classList.remove('hidden');
+    panel.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    toggles.forEach((t) => t.setAttribute('aria-expanded', 'true'));
+  };
+  const close = () => {
+    if (!panel) return;
+    panel.classList.add('hidden');
+    panel.classList.remove('flex');
+    document.body.style.overflow = '';
+    toggles.forEach((t) => t.setAttribute('aria-expanded', 'false'));
+  };
+
+  toggles.forEach((t) => t.addEventListener('click', open));
+  closers.forEach((c) => c.addEventListener('click', close));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') close();
+  });
+</script>

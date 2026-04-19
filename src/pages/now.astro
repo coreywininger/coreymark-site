@@ -1,0 +1,40 @@
+---
+import { getEntry, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const entry = await getEntry('now', 'current');
+if (!entry) {
+  throw new Error('Now entry missing at src/content/now/current.mdx');
+}
+const { Content } = await render(entry);
+const { updatedDate } = entry.data;
+
+const dateStr = updatedDate.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<Base
+  title="Now"
+  description="What I'm focused on this month."
+>
+  <article class="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+    <header class="mb-10">
+      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-primary">
+        Now
+      </p>
+      <h1 class="mb-4 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        What I'm focused on right now.
+      </h1>
+      <p class="text-sm text-text-tertiary">
+        Updated <time datetime={updatedDate.toISOString()}>{dateStr}</time>
+      </p>
+    </header>
+
+    <div class="prose prose-invert">
+      <Content />
+    </div>
+  </article>
+</Base>

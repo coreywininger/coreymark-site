@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars and fill in if you want to pin values.
+# If omitted, the provider uses whatever `az login` has set active.
+
+# subscription_id = "00000000-0000-0000-0000-000000000000"
+# tenant_id       = "xguruhotmail.onmicrosoft.com"
+
+# location    = "centralus"
+# environment = "prod"
+# repo_url    = "https://github.com/coreywininger/coreymark-site"

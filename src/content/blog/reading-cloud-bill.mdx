@@ -1,0 +1,42 @@
+---
+title: "Reading a cloud bill like an IT leader, not an accountant"
+description: The categories that matter, the categories that don't, and the questions I ask before signing off on cloud spend.
+pubDate: 2026-04-10
+pillar: cloud
+tags: [cloud, finops, azure, aws]
+draft: true
+---
+
+> Placeholder. The framing is intentional; the numbers and examples are
+> placeholders until the full draft lands.
+
+## The core claim
+
+Cloud bills are not accounting documents — they're operational
+documents. Read as accounting, they're noise. Read as operations, they
+tell you what your team did this month, what it cost to do it, and what
+habits you're quietly subsidizing.
+
+## The four categories I actually look at
+
+```text
+1. Committed capacity — reserved instances, savings plans
+2. On-demand run-rate — what you're paying without commitments
+3. Egress + networking — the silent tax
+4. Idle + orphaned — the category that shouldn't exist
+```
+
+Most cloud cost tools show you twelve categories. Three of them matter
+every month. One (idle + orphaned) is where the real money is, and it's
+almost always a process problem — not a pricing problem.
+
+## The three questions
+
+Before I sign off on a month:
+
+- **What moved, and why?** A 10% jump in on-demand is a real question.
+- **What committed capacity are we underusing?** Reservations you bought
+  and aren't consuming.
+- **What's orphaned?** If it has no owner, it has no business running.
+
+*Worked examples and a downloadable checklist are coming in the full post.*

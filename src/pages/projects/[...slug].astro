@@ -1,0 +1,93 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+
+export const getStaticPaths = (async () => {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+}) satisfies GetStaticPaths;
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const { title, summary, stack, links, status, pubDate } = project.data;
+
+const statusLabel = { live: 'Live', wip: 'In progress', archived: 'Archived' }[
+  status
+];
+
+const dateStr = pubDate.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+});
+---
+
+<Base title={title} description={summary} ogType="article">
+  <article class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <header class="mb-10">
+      <div class="mb-3 flex flex-wrap items-center gap-2 text-xs">
+        <span class="font-semibold uppercase tracking-wide text-accent-primary">
+          {statusLabel}
+        </span>
+        <span class="text-text-tertiary">·</span>
+        <time class="text-text-tertiary" datetime={pubDate.toISOString()}>
+          {dateStr}
+        </time>
+      </div>
+      <h1 class="mb-4 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        {title}
+      </h1>
+      <p class="mb-6 text-lg text-text-secondary">{summary}</p>
+
+      {stack.length > 0 && (
+        <ul class="mb-6 flex flex-wrap gap-2 text-xs text-text-tertiary">
+          {stack.map((tech) => (
+            <li class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">
+              {tech}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {(links.live || links.repo || links.writeup) && (
+        <div class="flex flex-wrap gap-4 text-sm">
+          {links.live && (
+            <a
+              href={links.live}
+              target="_blank"
+              rel="noopener"
+              class="text-accent-primary hover:underline"
+            >
+              Live ↗
+            </a>
+          )}
+          {links.repo && (
+            <a
+              href={links.repo}
+              target="_blank"
+              rel="noopener"
+              class="text-accent-primary hover:underline"
+            >
+              Repository ↗
+            </a>
+          )}
+          {links.writeup && (
+            <a
+              href={links.writeup}
+              class="text-accent-primary hover:underline"
+            >
+              Writeup →
+            </a>
+          )}
+        </div>
+      )}
+    </header>
+
+    <div class="prose prose-invert">
+      <Content />
+    </div>
+  </article>
+</Base>

@@ -1,0 +1,51 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+
+const { project } = Astro.props;
+const { title, summary, stack, status } = project.data;
+
+const statusClass = {
+  live: 'text-success',
+  wip: 'text-accent-secondary',
+  archived: 'text-text-tertiary',
+}[status];
+
+const statusLabel = {
+  live: 'Live',
+  wip: 'In progress',
+  archived: 'Archived',
+}[status];
+---
+
+<article class="group relative flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-elevated p-6 transition-colors hover:border-accent-primary">
+  <div class="flex items-center gap-3 text-xs">
+    <span class={`font-semibold uppercase tracking-wide ${statusClass}`}>
+      {statusLabel}
+    </span>
+  </div>
+
+  <h3 class="text-xl font-semibold leading-tight tracking-tight">
+    <a
+      href={`/projects/${project.id}/`}
+      class="after:absolute after:inset-0 group-hover:text-accent-primary"
+    >
+      {title}
+    </a>
+  </h3>
+
+  <p class="text-text-secondary">{summary}</p>
+
+  {stack.length > 0 && (
+    <ul class="flex flex-wrap gap-2 pt-1 text-xs text-text-tertiary">
+      {stack.slice(0, 6).map((tech) => (
+        <li class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">
+          {tech}
+        </li>
+      ))}
+    </ul>
+  )}
+</article>
