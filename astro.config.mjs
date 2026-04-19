@@ -10,6 +10,13 @@ import react from '@astrojs/react';
 export default defineConfig({
   site: 'https://coreymark.com',
 
+  build: {
+    // Inline all stylesheets into the HTML. Total CSS is ~7.3KB — below any
+    // reasonable threshold where a separate request would be worthwhile, and
+    // the render-blocking <link> was costing ~590ms on desktop Lighthouse.
+    inlineStylesheets: 'always',
+  },
+
   vite: {
     plugins: [tailwindcss()],
   },
