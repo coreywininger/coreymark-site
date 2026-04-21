@@ -25,26 +25,30 @@ const yearsExperience = 12;
   })} />
   <article class="mx-auto max-w-3xl px-4 py-16 sm:px-6">
     <header class="mb-12">
-      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-primary">
-        About
-      </p>
-      <h1 class="mb-6 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        Hi, I'm Corey.
-      </h1>
-      <p class="text-lg text-text-secondary">
-        I'm an IT infrastructure leader with {yearsExperience}+ years of
-        progressive experience — advancing from Linux Administrator to
-        Solutions Architect to Systems Manager — across multi-site,
-        hybrid enterprise environments.
-      </p>
-      <Image
-        src={headshot}
-        alt="Corey Wininger"
-        width={240}
-        height={240}
-        loading="eager"
-        class="rounded-full border border-border-subtle mt-6 mb-8"
-      />
+      <div class="flex flex-col items-center md:flex-row md:items-center md:gap-10">
+        <Image
+          src={headshot}
+          alt="Corey Wininger"
+          width={240}
+          height={240}
+          loading="eager"
+          class="w-40 h-40 md:w-60 md:h-60 rounded-full border border-border-subtle mb-8 md:mb-0 md:order-last flex-shrink-0"
+        />
+        <div>
+          <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-primary">
+            About
+          </p>
+          <h1 class="mb-6 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+            Hi, I'm Corey.
+          </h1>
+          <p class="text-lg text-text-secondary">
+            I'm an IT infrastructure leader with {yearsExperience}+ years of
+            progressive experience — advancing from Linux Administrator to
+            Solutions Architect to Systems Manager — across multi-site,
+            hybrid enterprise environments.
+          </p>
+        </div>
+      </div>
     </header>
 
     <div class="prose prose-invert">
