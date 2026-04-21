@@ -1,0 +1,29 @@
+{
+  "name": "Corey Wininger",
+  "short_name": "Corey Wininger",
+  "description": "Corey Wininger — IT infrastructure leader. I write about running operations, putting AI to work in the enterprise, and keeping hybrid cloud honest.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12151C",
+  "theme_color": "#12151C",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
