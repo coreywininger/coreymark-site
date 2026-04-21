@@ -1,5 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
+import { Image } from 'astro:assets';
+import headshot from '../assets/headshot.jpg';
 
 const yearsExperience = 12;
 ---
@@ -8,6 +10,19 @@ const yearsExperience = 12;
   title="About"
   description="Corey Wininger — IT infrastructure leader with 12+ years running hybrid enterprise environments. Currently between roles and writing about what I've learned."
 >
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Corey Wininger",
+    "url": "https://coreymark.com",
+    "image": "https://coreymark.com/og-default.png",
+    "jobTitle": "IT Infrastructure Leader",
+    "description": "IT infrastructure leader writing about IT operations, AI for the enterprise, and hybrid cloud economics.",
+    "sameAs": [
+      "https://www.linkedin.com/in/coreywininger/",
+      "https://github.com/coreywininger"
+    ]
+  })} />
   <article class="mx-auto max-w-3xl px-4 py-16 sm:px-6">
     <header class="mb-12">
       <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-primary">
@@ -22,6 +37,14 @@ const yearsExperience = 12;
         Solutions Architect to Systems Manager — across multi-site,
         hybrid enterprise environments.
       </p>
+      <Image
+        src={headshot}
+        alt="Corey Wininger"
+        width={240}
+        height={240}
+        loading="eager"
+        class="rounded-full border border-border-subtle mt-6 mb-8"
+      />
     </header>
 
     <div class="prose prose-invert">

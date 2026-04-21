@@ -15,6 +15,14 @@ const featuredProject =
 ---
 
 <Base>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "url": "https://coreymark.com",
+    "name": "Corey Wininger",
+    "description": "Corey Wininger — IT infrastructure leader. Operations, AI, hybrid cloud.",
+    "author": { "@type": "Person", "name": "Corey Wininger", "url": "https://coreymark.com/about" }
+  })} />
   <section class="relative overflow-hidden border-b border-border-subtle">
     <div class="pointer-events-none absolute inset-0">
       <NetworkMotif
