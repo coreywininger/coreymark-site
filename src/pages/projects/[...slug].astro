@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
+import ProjectWriteups from '../../components/ProjectWriteups.astro';
 
 export const getStaticPaths = (async () => {
   const projects = await getCollection('projects');
@@ -52,7 +53,7 @@ const dateStr = pubDate.toLocaleDateString('en-US', {
         </ul>
       )}
 
-      {(links.live || links.repo || links.writeup) && (
+      {(links.live || links.repo) && (
         <div class="flex flex-wrap gap-4 text-sm">
           {links.live && (
             <a
@@ -74,14 +75,6 @@ const dateStr = pubDate.toLocaleDateString('en-US', {
               Repository ↗
             </a>
           )}
-          {links.writeup && (
-            <a
-              href={links.writeup}
-              class="text-accent-primary hover:underline"
-            >
-              Writeup →
-            </a>
-          )}
         </div>
       )}
     </header>
@@ -89,5 +82,10 @@ const dateStr = pubDate.toLocaleDateString('en-US', {
     <div class="prose prose-invert">
       <Content />
     </div>
+
+    <ProjectWriteups
+      projectSlug={project.id}
+      featuredWriteupUrl={links.writeup}
+    />
   </article>
 </Base>
