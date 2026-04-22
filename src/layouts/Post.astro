@@ -3,6 +3,9 @@ import type { MarkdownHeading } from 'astro';
 import Base from './Base.astro';
 import PostToc from '../components/PostToc.astro';
 import ReadingProgress from '../components/ReadingProgress.tsx';
+import AuthorFooter from '../components/AuthorFooter.astro';
+import BackToTop from '../components/BackToTop.astro';
+import CodeCopyEnhancer from '../components/CodeCopyEnhancer.astro';
 
 interface Props {
   title: string;
@@ -13,6 +16,7 @@ interface Props {
   tags?: string[];
   image?: string;
   headings: MarkdownHeading[];
+  minutes?: number;
   prev?: { slug: string; title: string } | null;
   next?: { slug: string; title: string } | null;
 }
@@ -26,6 +30,7 @@ const {
   tags,
   image,
   headings,
+  minutes,
   prev,
   next,
 } = Astro.props;
@@ -67,6 +72,12 @@ const formatDate = (d: Date) =>
         <p class="mb-5 text-lg text-text-secondary">{description}</p>
         <div class="flex flex-wrap items-center gap-x-2 text-sm text-text-tertiary">
           <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>
+          {minutes && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{minutes} min read</span>
+            </>
+          )}
           {updatedDate && (
             <>
               <span aria-hidden="true">·</span>
@@ -94,6 +105,8 @@ const formatDate = (d: Date) =>
       <div class="prose prose-invert">
         <slot />
       </div>
+
+      <AuthorFooter />
 
       {(prev || next) && (
         <nav
@@ -136,4 +149,7 @@ const formatDate = (d: Date) =>
       </div>
     </aside>
   </article>
+
+  <BackToTop />
+  <CodeCopyEnhancer />
 </Base>

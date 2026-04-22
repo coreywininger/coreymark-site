@@ -34,6 +34,21 @@ const projects = allProjects.sort(
     ) : (
       <div class="grid gap-5 md:grid-cols-2">
         {projects.map((project) => <ProjectCard project={project} />)}
+        <article
+          aria-label="More projects coming soon"
+          data-empty-state
+          class="flex flex-col gap-3 rounded-lg border border-dashed border-border-subtle bg-bg-elevated/60 p-6 opacity-70"
+        >
+          <span class="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
+            Coming soon
+          </span>
+          <h3 class="text-xl font-semibold leading-tight tracking-tight text-text-secondary">
+            More builds in progress
+          </h3>
+          <p class="text-text-secondary">
+            New projects land here as they ship. Check back soon.
+          </p>
+        </article>
       </div>
     )}
   </section>

@@ -1,0 +1,58 @@
+---
+// Client-side enhancer: injects a copy button into every <pre> in the
+// post body. No SSR output — the <script> below does the work at runtime.
+---
+
+<script>
+  const enhance = () => {
+    if (!navigator.clipboard?.writeText) return;
+
+    const article = document.querySelector<HTMLElement>('article .prose');
+    if (!article) return;
+
+    const blocks = article.querySelectorAll<HTMLPreElement>('pre');
+    blocks.forEach((pre) => {
+      if (pre.dataset.copyEnhanced) return;
+      pre.dataset.copyEnhanced = 'true';
+
+      const currentPosition = window.getComputedStyle(pre).position;
+      if (currentPosition === 'static') {
+        pre.style.position = 'relative';
+      }
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Copy code');
+      btn.dataset.codeCopy = 'true';
+      btn.className =
+        'absolute right-2 top-2 rounded border border-border-subtle bg-bg-subtle px-2 py-1 text-xs font-medium text-text-secondary opacity-60 transition hover:opacity-100 focus-visible:opacity-100';
+
+      const idleText = 'Copy';
+      const doneText = 'Copied!';
+      btn.textContent = idleText;
+
+      btn.addEventListener('click', async () => {
+        const code = pre.querySelector('code')?.innerText ?? pre.innerText;
+        try {
+          await navigator.clipboard.writeText(code);
+          btn.textContent = doneText;
+          btn.dataset.state = 'copied';
+          window.setTimeout(() => {
+            btn.textContent = idleText;
+            delete btn.dataset.state;
+          }, 2000);
+        } catch {
+          // clipboard blocked — silent no-op
+        }
+      });
+
+      pre.appendChild(btn);
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', enhance);
+  } else {
+    enhance();
+  }
+</script>

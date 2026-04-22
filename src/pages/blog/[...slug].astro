@@ -4,6 +4,7 @@ import type { GetStaticPaths } from 'astro';
 import Post from '../../layouts/Post.astro';
 import { PILLAR_META } from '../../content.config';
 import { publishedOnly, sortByPubDateDesc } from '../../lib/content';
+import { readingTime } from '../../lib/readingTime';
 
 export const getStaticPaths = (async () => {
   const posts = await getCollection('blog', publishedOnly);
@@ -26,6 +27,7 @@ export const getStaticPaths = (async () => {
 const { post, prev, next } = Astro.props;
 const { Content, headings } = await render(post);
 const pillarLabel = PILLAR_META[post.data.pillar].label;
+const minutes = readingTime(post.body ?? '');
 ---
 
 <Post
@@ -37,6 +39,7 @@ const pillarLabel = PILLAR_META[post.data.pillar].label;
   tags={post.data.tags}
   image={post.data.heroImage}
   headings={headings}
+  minutes={minutes}
   prev={prev}
   next={next}
 >

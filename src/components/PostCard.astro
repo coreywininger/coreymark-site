@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { PILLAR_META } from '../content.config';
+import { readingTime } from '../lib/readingTime';
 
 interface Props {
   post: CollectionEntry<'blog'>;
@@ -10,6 +11,7 @@ interface Props {
 const { post, headingLevel = 2 } = Astro.props;
 const { title, description, pubDate, pillar, draft } = post.data;
 const pillarLabel = PILLAR_META[pillar].label;
+const minutes = readingTime(post.body ?? '');
 
 const dateStr = pubDate.toLocaleDateString('en-US', {
   year: 'numeric',
@@ -32,6 +34,8 @@ const Heading = `h${headingLevel}` as const;
     <time class="text-text-tertiary" datetime={pubDate.toISOString()}>
       {dateStr}
     </time>
+    <span class="text-text-tertiary">·</span>
+    <span class="text-text-tertiary">{minutes} min read</span>
     {draft && (
       <>
         <span class="text-text-tertiary">·</span>
