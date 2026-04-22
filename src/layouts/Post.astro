@@ -13,6 +13,7 @@ interface Props {
   tags?: string[];
   image?: string;
   headings: MarkdownHeading[];
+  minutes?: number;
   prev?: { slug: string; title: string } | null;
   next?: { slug: string; title: string } | null;
 }
@@ -26,6 +27,7 @@ const {
   tags,
   image,
   headings,
+  minutes,
   prev,
   next,
 } = Astro.props;
@@ -67,6 +69,12 @@ const formatDate = (d: Date) =>
         <p class="mb-5 text-lg text-text-secondary">{description}</p>
         <div class="flex flex-wrap items-center gap-x-2 text-sm text-text-tertiary">
           <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>
+          {minutes && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{minutes} min read</span>
+            </>
+          )}
           {updatedDate && (
             <>
               <span aria-hidden="true">·</span>
