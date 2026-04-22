@@ -5,6 +5,7 @@ import PostToc from '../components/PostToc.astro';
 import ReadingProgress from '../components/ReadingProgress.tsx';
 import AuthorFooter from '../components/AuthorFooter.astro';
 import BackToTop from '../components/BackToTop.astro';
+import CodeCopyEnhancer from '../components/CodeCopyEnhancer.astro';
 
 interface Props {
   title: string;
@@ -150,4 +151,5 @@ const formatDate = (d: Date) =>
   </article>
 
   <BackToTop />
+  <CodeCopyEnhancer />
 </Base>
