@@ -1,0 +1,32 @@
+---
+import { getCollection } from 'astro:content';
+
+interface Props {
+  projectSlug: string;
+}
+
+const { projectSlug } = Astro.props;
+
+const projects = await getCollection('projects');
+const project = projects.find((entry) => entry.id === projectSlug);
+
+if (!project && import.meta.env.DEV) {
+  console.warn(
+    `[PartOfProject] No project entry found for slug "${projectSlug}". Breadcrumb will not render.`,
+  );
+}
+---
+
+{project && (
+  <div
+    data-part-of-project
+    class="mb-3 text-xs font-semibold uppercase tracking-wide"
+  >
+    <a
+      href={`/projects/${project.id}/`}
+      class="text-accent-primary hover:underline"
+    >
+      Part of the {project.data.title} project &rarr;
+    </a>
+  </div>
+)}

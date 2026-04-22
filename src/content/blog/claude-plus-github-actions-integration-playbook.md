@@ -6,6 +6,7 @@ pillar: ai
 tags: [ai, infrastructure, playbook]
 featured: false
 draft: false
+project: dailybriefing
 ---
 
 Most guides for "send yourself a daily email" stop at the part where everything works on a demo account with a hardcoded API key. The interesting part — the part that decides whether the system still runs six months from now on infrastructure you trust — starts right after that.
