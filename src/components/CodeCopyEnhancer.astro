@@ -3,6 +3,12 @@
 // post body. No SSR output — the <script> below does the work at runtime.
 ---
 
+<style is:global>
+  article .prose pre.has-copy-button {
+    padding-top: 2.75rem;
+  }
+</style>
+
 <script>
   const enhance = () => {
     if (!navigator.clipboard?.writeText) return;
@@ -14,6 +20,7 @@
     blocks.forEach((pre) => {
       if (pre.dataset.copyEnhanced) return;
       pre.dataset.copyEnhanced = 'true';
+      pre.classList.add('has-copy-button');
 
       const currentPosition = window.getComputedStyle(pre).position;
       if (currentPosition === 'static') {
