@@ -26,8 +26,36 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-html {
+[data-theme="light"] {
+  /* Surfaces — light theme (warm paper, not stark white) */
+  --color-bg-primary: #FAFAF7;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-subtle:  #F0EFEA;
+  --color-border-subtle: #D4D4D0;
+
+  /* Accents — darker variants so they hold contrast on light surfaces */
+  --color-accent-primary:   #0F766E; /* teal-700 */
+  --color-accent-secondary: #B45309; /* amber-700 */
+
+  /* Text */
+  --color-text-primary:   #1A1D24;
+  --color-text-secondary: #4B5563;
+  --color-text-tertiary:  #6B7280;
+
+  /* Semantic */
+  --color-success: #047857;
+  --color-error:   #B91C1C;
+}
+
+:root {
   color-scheme: dark;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+html {
   scroll-behavior: smooth;
 }
 
@@ -38,6 +66,11 @@ body {
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body { transition: none; }
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -109,4 +142,24 @@ code, kbd, pre, samp {
 .prose :where(code):not(pre code)::before,
 .prose :where(code):not(pre code)::after {
   content: "";
+}
+
+/* Shiki dual-theme: defaultColor:false emits per-theme CSS variables on the
+   <pre> and its <span>s. Pick the right pair based on [data-theme] on <html>.
+   .astro-code is the class Astro/Shiki adds to fenced code blocks. */
+[data-theme="dark"] .astro-code,
+[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+[data-theme="light"] .astro-code,
+[data-theme="light"] .astro-code span {
+  color: var(--shiki-light) !important;
+  background-color: var(--shiki-light-bg) !important;
+}
+
+/* Light-mode code blocks sit on white (#FFFFFF) over warm-paper (#FAFAF7) —
+   visually subtle. A 1px subtle border gives a clear surface boundary. */
+[data-theme="light"] pre.astro-code {
+  border: 1px solid var(--color-border-subtle);
 }

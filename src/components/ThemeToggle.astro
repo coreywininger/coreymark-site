@@ -1,0 +1,82 @@
+---
+import { Sun, Moon } from '@lucide/astro';
+---
+
+<button
+  type="button"
+  data-theme-toggle
+  aria-label="Switch theme"
+  aria-pressed="false"
+  class="text-text-secondary hover:text-text-primary transition-colors"
+>
+  <span data-theme-icon="dark">
+    <Moon size={22} strokeWidth={1.75} aria-hidden="true" />
+  </span>
+  <span data-theme-icon="light">
+    <Sun size={22} strokeWidth={1.75} aria-hidden="true" />
+  </span>
+</button>
+
+<style is:global>
+  [data-theme-toggle] [data-theme-icon] { display: none; }
+  [data-theme="light"] [data-theme-toggle] [data-theme-icon="dark"] { display: inline-flex; }
+  [data-theme="dark"]  [data-theme-toggle] [data-theme-icon="light"] { display: inline-flex; }
+  /* Fallback when no data-theme attribute is set yet (FOUC script always sets it, but be safe) */
+  :root:not([data-theme]) [data-theme-toggle] [data-theme-icon="light"] { display: inline-flex; }
+</style>
+
+<script>
+  const root = document.documentElement;
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]');
+
+  const DARK_BG = '#12151C';
+  const LIGHT_BG = '#FAFAF7';
+
+  const syncButtons = () => {
+    const current = root.getAttribute('data-theme') ?? 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    buttons.forEach((b) => {
+      b.setAttribute('aria-label', `Switch to ${next} mode`);
+      b.setAttribute('aria-pressed', current === 'light' ? 'true' : 'false');
+    });
+  };
+
+  const setMetaThemeColor = (theme: 'dark' | 'light') => {
+    document
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((m) => m.parentNode?.removeChild(m));
+    const m = document.createElement('meta');
+    m.setAttribute('name', 'theme-color');
+    m.setAttribute('content', theme === 'light' ? LIGHT_BG : DARK_BG);
+    document.head.appendChild(m);
+  };
+
+  const apply = (theme: 'dark' | 'light') => {
+    root.setAttribute('data-theme', theme);
+    try { localStorage.setItem('theme', theme); } catch {}
+    setMetaThemeColor(theme);
+    syncButtons();
+  };
+
+  buttons.forEach((b) =>
+    b.addEventListener('click', () => {
+      const current = root.getAttribute('data-theme') ?? 'dark';
+      apply(current === 'dark' ? 'light' : 'dark');
+    }),
+  );
+
+  syncButtons();
+
+  if (window.matchMedia) {
+    const mq = window.matchMedia('(prefers-color-scheme: light)');
+    const onChange = (e: MediaQueryListEvent) => {
+      let stored: string | null = null;
+      try { stored = localStorage.getItem('theme'); } catch {}
+      if (stored !== 'light' && stored !== 'dark') {
+        apply(e.matches ? 'light' : 'dark');
+      }
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else mq.addListener(onChange);
+  }
+</script>
