@@ -52,13 +52,20 @@ const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
           }
           document.documentElement.setAttribute('data-theme', theme);
 
+          // The paired <meta name="theme-color"> tags below this script
+          // aren't in the DOM yet — this script runs first and blocks the
+          // parser. Defer the collapse to DOMContentLoaded. The meta tags
+          // affect mobile browser chrome only (not body paint), so deferring
+          // doesn't cause a visible flash.
           if (explicit) {
-            var existing = document.querySelectorAll('meta[name="theme-color"]');
-            for (var i = 0; i < existing.length; i++) existing[i].parentNode.removeChild(existing[i]);
-            var m = document.createElement('meta');
-            m.setAttribute('name', 'theme-color');
-            m.setAttribute('content', theme === 'light' ? LIGHT_BG : DARK_BG);
-            document.head.appendChild(m);
+            document.addEventListener('DOMContentLoaded', function () {
+              var existing = document.querySelectorAll('meta[name="theme-color"]');
+              for (var i = 0; i < existing.length; i++) existing[i].parentNode.removeChild(existing[i]);
+              var m = document.createElement('meta');
+              m.setAttribute('name', 'theme-color');
+              m.setAttribute('content', theme === 'light' ? LIGHT_BG : DARK_BG);
+              document.head.appendChild(m);
+            });
           }
         } catch (e) {
           /* localStorage blocked / parse error — fall back to dark, no-op */
