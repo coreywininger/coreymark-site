@@ -35,6 +35,37 @@ const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
 <!doctype html>
 <html lang="en">
   <head>
+    <script is:inline>
+      (function () {
+        var DARK_BG  = '#12151C';
+        var LIGHT_BG = '#FAFAF7';
+        try {
+          var stored = localStorage.getItem('theme');
+          var explicit = stored === 'light' || stored === 'dark';
+          var theme;
+          if (explicit) {
+            theme = stored;
+          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            theme = 'light';
+          } else {
+            theme = 'dark';
+          }
+          document.documentElement.setAttribute('data-theme', theme);
+
+          if (explicit) {
+            var existing = document.querySelectorAll('meta[name="theme-color"]');
+            for (var i = 0; i < existing.length; i++) existing[i].parentNode.removeChild(existing[i]);
+            var m = document.createElement('meta');
+            m.setAttribute('name', 'theme-color');
+            m.setAttribute('content', theme === 'light' ? LIGHT_BG : DARK_BG);
+            document.head.appendChild(m);
+          }
+        } catch (e) {
+          /* localStorage blocked / parse error — fall back to dark, no-op */
+        }
+      })();
+    </script>
+
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
@@ -48,7 +79,8 @@ const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
     <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#12151C" />
+    <meta name="theme-color" content="#FAFAF7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#12151C" media="(prefers-color-scheme: dark)" />
 
     <Font cssVariable="--font-sans" preload />
     <Font cssVariable="--font-mono" />
