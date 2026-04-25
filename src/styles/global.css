@@ -26,8 +26,36 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-html {
+[data-theme="light"] {
+  /* Surfaces — light theme (warm paper, not stark white) */
+  --color-bg-primary: #FAFAF7;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-subtle:  #F0EFEA;
+  --color-border-subtle: #D4D4D0;
+
+  /* Accents — darker variants so they hold contrast on light surfaces */
+  --color-accent-primary:   #0F766E; /* teal-700 */
+  --color-accent-secondary: #B45309; /* amber-700 */
+
+  /* Text */
+  --color-text-primary:   #1A1D24;
+  --color-text-secondary: #4B5563;
+  --color-text-tertiary:  #6B7280;
+
+  /* Semantic */
+  --color-success: #047857;
+  --color-error:   #B91C1C;
+}
+
+:root {
   color-scheme: dark;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+html {
   scroll-behavior: smooth;
 }
 
@@ -38,6 +66,11 @@ body {
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body { transition: none; }
 }
 
 h1, h2, h3, h4, h5, h6 {
