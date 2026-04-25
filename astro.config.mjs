@@ -17,6 +17,20 @@ export default defineConfig({
     inlineStylesheets: 'always',
   },
 
+  markdown: {
+    shikiConfig: {
+      themes: {
+        light: 'github-light',
+        dark: 'github-dark',
+      },
+      // defaultColor: false emits per-theme CSS variables (--shiki-light,
+      // --shiki-dark, etc.) on <pre> and <span>, with no default applied.
+      // The selector pair in global.css picks the right one based on
+      // [data-theme] on <html>.
+      defaultColor: false,
+    },
+  },
+
   vite: {
     plugins: [tailwindcss()],
   },

@@ -143,3 +143,17 @@ code, kbd, pre, samp {
 .prose :where(code):not(pre code)::after {
   content: "";
 }
+
+/* Shiki dual-theme: defaultColor:false emits per-theme CSS variables on the
+   <pre> and its <span>s. Pick the right pair based on [data-theme] on <html>.
+   .astro-code is the class Astro/Shiki adds to fenced code blocks. */
+[data-theme="dark"] .astro-code,
+[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+[data-theme="light"] .astro-code,
+[data-theme="light"] .astro-code span {
+  color: var(--shiki-light) !important;
+  background-color: var(--shiki-light-bg) !important;
+}
