@@ -157,3 +157,9 @@ code, kbd, pre, samp {
   color: var(--shiki-light) !important;
   background-color: var(--shiki-light-bg) !important;
 }
+
+/* Light-mode code blocks sit on white (#FFFFFF) over warm-paper (#FAFAF7) —
+   visually subtle. A 1px subtle border gives a clear surface boundary. */
+[data-theme="light"] pre.astro-code {
+  border: 1px solid var(--color-border-subtle);
+}
