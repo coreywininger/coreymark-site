@@ -16,10 +16,11 @@ test.describe('lab index', () => {
     await expect(page).toHaveURL(/\/lab\/subnet\/?$/);
   });
 
-  test('only disciplines with tools render', async ({ page }) => {
+  test('only disciplines with tools render — empty disciplines stay hidden', async ({ page }) => {
     await page.goto('/lab/');
+    // Disciplines with at least one tool — render.
     await expect(page.locator('[data-lab-section="networking"]')).toHaveCount(1);
-    await expect(page.locator('[data-lab-section="systems"]')).toHaveCount(0);
+    // Empty disciplines — do not render.
     await expect(page.locator('[data-lab-section="security"]')).toHaveCount(0);
     await expect(page.locator('[data-lab-section="devops"]')).toHaveCount(0);
     await expect(page.locator('[data-lab-section="cloud"]')).toHaveCount(0);

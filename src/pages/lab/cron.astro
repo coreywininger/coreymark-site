@@ -1,0 +1,1090 @@
+---
+import Base from '../../layouts/Base.astro';
+import { Share2 } from '@lucide/astro';
+
+const title = 'Cron decoder';
+const description =
+  'Decode any cron expression. Plain English, field breakdown, past and next fires, translations to systemd, Kubernetes, GitHub Actions, and AWS EventBridge. All client-side, free.';
+---
+
+<Base title={title} description={description}>
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-text-primary">Home</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
+        <li aria-hidden="true">›</li>
+        <li class="text-text-secondary">Cron decoder</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8">
+      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        Cron decoder
+      </h1>
+      <p class="max-w-2xl text-lg text-text-secondary">
+        Paste a cron expression — get the plain-English meaning, the next and
+        last 5 fire times, and translations to systemd, Kubernetes, GitHub
+        Actions, and AWS EventBridge schedules.
+      </p>
+    </header>
+
+    <h2 class="sr-only">
+      Cron expression decoder with plain-English description, field breakdown,
+      next and past fires around a pivot date, UTC/local time zone toggle,
+      format translations to systemd OnCalendar, Kubernetes CronJob, GitHub
+      Actions, and AWS CloudWatch Events, frequency analysis, and pitfall
+      warnings.
+    </h2>
+
+    <div class="lab-tool cron-widget py-4">
+      <div class="mb-5 flex items-center gap-2">
+        <input
+          type="text"
+          id="cron-input"
+          value="*/15 9-17 * * 1-5"
+          spellcheck="false"
+          autocomplete="off"
+          aria-label="Cron expression"
+          class="flex-1 rounded-md border border-border-subtle bg-bg-elevated px-3 py-2 font-mono text-[15px] text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+        />
+        <button
+          id="parse-btn"
+          type="button"
+          class="rounded-md border border-border-subtle bg-bg-elevated px-3 py-2 text-sm text-text-primary transition-colors hover:border-accent-primary hover:text-accent-primary"
+        >
+          Parse
+        </button>
+        <button
+          id="share-btn"
+          type="button"
+          aria-label="Copy share link"
+          class="rounded-md border border-border-subtle bg-bg-elevated px-3 py-2 text-text-secondary transition-colors hover:border-accent-primary hover:text-accent-primary"
+        >
+          <Share2 size={16} strokeWidth={1.75} />
+        </button>
+      </div>
+
+      <div id="recent-row" class="mb-4 hidden flex-wrap items-center gap-1.5"></div>
+      <div id="preset-row" class="mb-6 flex flex-wrap items-center gap-1.5"></div>
+
+      <div
+        id="error-row"
+        role="alert"
+        class="mb-5 hidden rounded-md px-3 py-2.5 text-[13px]"
+        style="background: color-mix(in srgb, var(--color-error) 12%, transparent); color: var(--color-error);"
+      ></div>
+
+      <div
+        id="description-card"
+        class="mb-6 hidden rounded-lg bg-bg-subtle px-4 py-4"
+      >
+        <p class="m-0 mb-1.5 text-xs text-text-secondary">In plain English</p>
+        <p id="description-text" class="m-0 text-base font-medium leading-relaxed"></p>
+        <p id="frequency-text" class="m-0 mt-2 text-[13px] text-text-secondary"></p>
+      </div>
+
+      <div
+        id="warnings-row"
+        class="mb-5 hidden rounded-md bg-bg-subtle px-3 py-2.5 text-[13px]"
+        style="border-left: 3px solid var(--color-text-tertiary);"
+      ></div>
+
+      <div class="mb-7">
+        <p class="m-0 mb-2 text-[13px] text-text-secondary">Field breakdown</p>
+        <div
+          id="fields-table"
+          class="overflow-hidden rounded-md border border-border-subtle"
+        ></div>
+      </div>
+
+      <div class="mb-6 flex flex-wrap items-center gap-3 rounded-md bg-bg-subtle px-3.5 py-3">
+        <span class="text-[13px] text-text-secondary">Pivot:</span>
+        <input
+          type="datetime-local"
+          id="pivot-date"
+          aria-label="Pivot date for past and next fires"
+          class="rounded-md border border-border-subtle bg-bg-elevated px-2 py-1 font-mono text-[13px] text-text-primary"
+        />
+        <button
+          id="now-btn"
+          type="button"
+          class="rounded-md border border-border-subtle bg-bg-elevated px-2.5 py-1 text-xs text-text-secondary transition-colors hover:border-accent-primary hover:text-accent-primary"
+        >
+          Now
+        </button>
+        <span class="min-w-4 flex-1"></span>
+        <span class="text-[13px] text-text-secondary">Show as:</span>
+        <div
+          role="tablist"
+          class="inline-flex overflow-hidden rounded-md border border-border-subtle"
+        >
+          <button
+            id="tz-local-btn"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            class="px-2.5 py-1 text-xs"
+          >
+            Local
+          </button>
+          <button
+            id="tz-utc-btn"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            class="border-l border-border-subtle px-2.5 py-1 text-xs"
+          >
+            UTC
+          </button>
+        </div>
+        <span id="tz-label" class="font-mono text-[11px] text-text-tertiary"></span>
+      </div>
+
+      <div
+        class="mb-7 grid gap-5"
+        style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));"
+      >
+        <div>
+          <p class="m-0 mb-2 text-[13px] text-text-secondary">Last 5 fires (before pivot)</p>
+          <div
+            id="past-list"
+            class="overflow-hidden rounded-md border border-border-subtle"
+          ></div>
+        </div>
+        <div>
+          <p class="m-0 mb-2 text-[13px] text-text-secondary">Next 5 fires (after pivot)</p>
+          <div
+            id="next-list"
+            class="overflow-hidden rounded-md border border-border-subtle"
+          ></div>
+        </div>
+      </div>
+
+      <details
+        class="mb-7 overflow-hidden rounded-md border border-border-subtle"
+        id="translate-details"
+      >
+        <summary
+          class="flex cursor-pointer select-none items-center gap-2 px-3.5 py-2.5 text-[13px]"
+          style="list-style: none;"
+        >
+          <span id="translate-chevron" aria-hidden="true" style="transition: transform 0.15s; display: inline-flex;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </span>
+          <span>Translate to other schedulers</span>
+          <span class="text-xs text-text-tertiary">systemd · Kubernetes · GitHub Actions · AWS EventBridge</span>
+        </summary>
+        <div id="translate-body" class="border-t border-border-subtle"></div>
+      </details>
+
+      <div
+        id="cron-keys-hint"
+        class="mt-5 flex flex-wrap gap-4 border-t border-border-subtle pt-4 text-[11px] text-text-tertiary"
+      >
+        <span>Press <kbd class="rounded bg-bg-subtle px-1.5 py-0.5 font-mono text-[11px]">/</kbd> to focus</span>
+        <span>Press <kbd class="rounded bg-bg-subtle px-1.5 py-0.5 font-mono text-[11px]">Enter</kbd> to parse</span>
+        <span>Standard 5-field POSIX cron · @yearly @monthly @weekly @daily @hourly supported</span>
+      </div>
+    </div>
+
+    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
+      <summary class="cursor-pointer text-base font-semibold text-text-primary">
+        About this tool
+      </summary>
+      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+        <p><strong>What it does.</strong> Parses standard 5-field POSIX cron
+          expressions (minute · hour · day-of-month · month · day-of-week) plus
+          the common shortcuts: <code>@yearly</code>, <code>@annually</code>,
+          <code>@monthly</code>, <code>@weekly</code>, <code>@daily</code>,
+          <code>@midnight</code>, <code>@hourly</code>.
+          (<code>@reboot</code> is recognized but reported as having no
+          schedule, since it fires at system startup.) Generates a plain-English
+          description, a field breakdown, past and next 5 fires around any
+          pivot date, frequency estimates (per day / week / year), pitfall
+          warnings (DOM/DOW OR-not-AND, day-31 in short months, day-29 leap
+          year), and translations to four other scheduler dialects.</p>
+        <p><strong>Why the UTC toggle.</strong> Most CI/CD schedulers (GitHub
+          Actions, AWS EventBridge, Kubernetes CronJob) evaluate in UTC by
+          default — debugging "why didn't this run when I expected" usually
+          means switching mental gears between local and UTC. Toggle the
+          time-zone display to inspect fires in either frame.</p>
+        <p><strong>Deliberately not included (for now):</strong> Quartz-style
+          6-field cron with seconds; special characters <code>L</code> /
+          <code>W</code> / <code>#</code> (Quartz/AWS extensions);
+          calendar/heatmap of upcoming fires; ICS/iCal export; side-by-side
+          comparison of two expressions. Each could land separately.</p>
+        <p><strong>References:</strong> <code>man 5 crontab</code> (vixie-cron /
+          POSIX), <code>man 7 systemd.time</code> (OnCalendar dialect), AWS
+          Schedule Expressions documentation (EventBridge cron syntax).</p>
+        <p><strong>Privacy note:</strong> all parsing and computation runs in
+          your browser. Nothing is sent anywhere.</p>
+      </div>
+    </details>
+
+    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
+      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Systems</span>
+      <span>Added 2026-05-09</span>
+    </div>
+  </section>
+
+<style is:global>
+  .cron-widget .cron-chip {
+    font-size: 12px;
+    padding: 4px 10px;
+    font-family: var(--font-mono);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: border-color 150ms ease, color 150ms ease;
+  }
+  .cron-widget .cron-chip:hover {
+    border-color: var(--color-accent-primary);
+    color: var(--color-accent-primary);
+  }
+  .cron-widget .cron-chip--muted { opacity: 0.85; }
+  .cron-widget .cron-chip-label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-right: 4px;
+  }
+  .cron-widget .copy-btn {
+    padding: 2px 6px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    color: var(--color-text-tertiary);
+    border-radius: 0.375rem;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+  }
+  .cron-widget .copy-btn:hover { color: var(--color-accent-primary); }
+  .cron-widget .field-row {
+    display: grid;
+    grid-template-columns: 120px 90px 1fr auto;
+    align-items: center;
+    padding: 8px 14px;
+    font-size: 13px;
+    gap: 8px;
+  }
+  .cron-widget .field-row + .field-row {
+    border-top: 1px solid var(--color-border-subtle);
+  }
+  .cron-widget .field-name { color: var(--color-text-secondary); }
+  .cron-widget .field-raw {
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+  .cron-widget .field-meaning {
+    color: var(--color-text-secondary);
+    min-width: 0;
+    word-break: break-word;
+  }
+  .cron-widget .fire-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 8px;
+  }
+  .cron-widget .fire-row + .fire-row {
+    border-top: 1px solid var(--color-border-subtle);
+  }
+  .cron-widget .fire-idx {
+    color: var(--color-text-secondary);
+    min-width: 24px;
+    flex-shrink: 0;
+  }
+  .cron-widget .fire-time {
+    flex: 1;
+    font-family: var(--font-mono);
+  }
+  .cron-widget .fire-rel {
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+  }
+  .cron-widget .empty-row {
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+  }
+  .cron-widget .tz-tab[aria-selected="true"] {
+    background: var(--color-bg-elevated);
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+  .cron-widget .tz-tab[aria-selected="false"] {
+    background: transparent;
+    color: var(--color-text-secondary);
+  }
+  .cron-widget #translate-details[open] #translate-chevron {
+    transform: rotate(90deg);
+  }
+  .cron-widget .translate-row {
+    padding: 10px 14px;
+  }
+  .cron-widget .translate-row + .translate-row {
+    border-top: 1px solid var(--color-border-subtle);
+  }
+  .cron-widget .warning-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--color-text-secondary);
+  }
+  .cron-widget .warning-row + .warning-row { margin-top: 6px; }
+
+  @media print {
+    header[class*="sticky"],
+    footer,
+    #preset-row,
+    #recent-row,
+    #share-btn,
+    #parse-btn,
+    #cron-keys-hint,
+    #translate-details,
+    details[class*="rounded-lg"] {
+      display: none !important;
+    }
+    body { background: white !important; color: black !important; }
+    .cron-widget #description-card,
+    .cron-widget #fields-table,
+    .cron-widget #past-list,
+    .cron-widget #next-list,
+    .cron-widget #warnings-row {
+      background: #f5f5f5 !important;
+      border: 1px solid #ccc !important;
+      color: black !important;
+    }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  var ICONS = {
+    copy: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+    check: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+    alert: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top:1px;flex-shrink:0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    calendarOff: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top:1px;flex-shrink:0;"><path d="M4.18 4.18A2 2 0 0 0 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 1.82-1.18"/><path d="M21 15.5V6a2 2 0 0 0-2-2H9.5"/><path d="M16 2v4"/><path d="M3 10h7"/><path d="M21 10h-5.5"/><line x1="2" y1="2" x2="22" y2="22"/></svg>',
+  };
+
+  var input = document.getElementById('cron-input');
+  var parseBtn = document.getElementById('parse-btn');
+  var shareBtn = document.getElementById('share-btn');
+  var recentRow = document.getElementById('recent-row');
+  var presetRow = document.getElementById('preset-row');
+  var errorRow = document.getElementById('error-row');
+  var descCard = document.getElementById('description-card');
+  var descText = document.getElementById('description-text');
+  var freqText = document.getElementById('frequency-text');
+  var warningsRow = document.getElementById('warnings-row');
+  var fieldsTable = document.getElementById('fields-table');
+  var pivotDate = document.getElementById('pivot-date');
+  var nowBtn = document.getElementById('now-btn');
+  var tzLocalBtn = document.getElementById('tz-local-btn');
+  var tzUtcBtn = document.getElementById('tz-utc-btn');
+  var tzLabel = document.getElementById('tz-label');
+  var pastList = document.getElementById('past-list');
+  var nextList = document.getElementById('next-list');
+  var translateBody = document.getElementById('translate-body');
+
+  tzLocalBtn.classList.add('tz-tab');
+  tzUtcBtn.classList.add('tz-tab');
+
+  var HISTORY_KEY = 'coreymark.lab.cron.history';
+  var HISTORY_MAX = 5;
+  var DEFAULT_TITLE = 'Cron decoder · Corey Wininger';
+  var useUtc = false;
+
+  var presets = [
+    { v: '* * * * *',         title: 'Every minute' },
+    { v: '*/5 * * * *',       title: 'Every 5 minutes' },
+    { v: '0 * * * *',         title: 'Top of every hour' },
+    { v: '0 9 * * 1-5',       title: '9 AM weekdays' },
+    { v: '*/15 9-17 * * 1-5', title: 'Every 15 min during business hours, weekdays' },
+    { v: '0 0 * * *',         title: 'Midnight daily' },
+    { v: '0 0 * * 0',         title: 'Midnight Sunday' },
+    { v: '0 0 1 * *',         title: 'First of the month' },
+    { v: '@daily',            title: 'Once a day' },
+    { v: '@hourly',           title: 'Once an hour' }
+  ];
+
+  var FIELD_DEFS = [
+    { name: 'Minute',       min: 0, max: 59, names: null },
+    { name: 'Hour',         min: 0, max: 23, names: null },
+    { name: 'Day of month', min: 1, max: 31, names: null },
+    { name: 'Month',        min: 1, max: 12, names: ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'] },
+    { name: 'Day of week',  min: 0, max: 6,  names: ['SUN','MON','TUE','WED','THU','FRI','SAT'] }
+  ];
+
+  var DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var DOW_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  var SPECIALS = {
+    '@yearly':   '0 0 1 1 *',
+    '@annually': '0 0 1 1 *',
+    '@monthly':  '0 0 1 * *',
+    '@weekly':   '0 0 * * 0',
+    '@daily':    '0 0 * * *',
+    '@midnight': '0 0 * * *',
+    '@hourly':   '0 * * * *'
+  };
+
+  function chip(text, title, onClick, opts) {
+    opts = opts || {};
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = text;
+    if (title) b.title = title;
+    b.className = 'cron-chip' + (opts.muted ? ' cron-chip--muted' : '');
+    b.addEventListener('click', onClick);
+    return b;
+  }
+  function makeLabel(text) {
+    var s = document.createElement('span');
+    s.textContent = text;
+    s.className = 'cron-chip-label';
+    return s;
+  }
+
+  presetRow.appendChild(makeLabel('Try:'));
+  presets.forEach(function (p) {
+    presetRow.appendChild(chip(p.v, p.title, function () { input.value = p.v; render(); }));
+  });
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function pushHistory(expr) {
+    try {
+      var arr = loadHistory();
+      arr = [expr].concat(arr.filter(function (x) { return x !== expr; })).slice(0, HISTORY_MAX);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+    } catch (e) {}
+    renderHistory();
+  }
+  function renderHistory() {
+    var arr = loadHistory();
+    recentRow.innerHTML = '';
+    if (!arr.length) {
+      recentRow.classList.add('hidden');
+      recentRow.classList.remove('flex');
+      return;
+    }
+    recentRow.classList.remove('hidden');
+    recentRow.classList.add('flex');
+    recentRow.appendChild(makeLabel('Recent:'));
+    arr.forEach(function (v) {
+      recentRow.appendChild(chip(v, 'Load this expression', function () { input.value = v; render(); }, { muted: true }));
+    });
+  }
+
+  function rangeArr(a, b) { var r = []; for (var i = a; i <= b; i++) r.push(i); return r; }
+
+  function parseField(spec, def) {
+    var raw = spec;
+    if (spec === '*') return { all: true, values: rangeArr(def.min, def.max), raw: raw };
+    if (def.names) {
+      var rep = spec.toUpperCase();
+      def.names.forEach(function (nm, i) {
+        var idx = i + (def.name === 'Day of week' ? 0 : 1);
+        var rx = new RegExp('\\b' + nm + '\\b', 'g');
+        rep = rep.replace(rx, String(idx));
+      });
+      spec = rep;
+    }
+    if (def.name === 'Day of week') spec = spec.replace(/\b7\b/g, '0');
+    var values = [];
+    var parts = spec.split(',');
+    for (var pi = 0; pi < parts.length; pi++) {
+      var part = parts[pi];
+      var step = 1;
+      var stepMatch = part.match(/^(.+)\/(\d+)$/);
+      if (stepMatch) { part = stepMatch[1]; step = parseInt(stepMatch[2], 10); if (step < 1) return null; }
+      var lo, hi;
+      if (part === '*') { lo = def.min; hi = def.max; }
+      else if (part.indexOf('-') !== -1) { var rp = part.split('-'); lo = parseInt(rp[0], 10); hi = parseInt(rp[1], 10); }
+      else { lo = hi = parseInt(part, 10); }
+      if (isNaN(lo) || isNaN(hi)) return null;
+      if (lo < def.min || hi > def.max || lo > hi) return null;
+      for (var v = lo; v <= hi; v += step) values.push(v);
+    }
+    var unique = [], seen = {};
+    values.forEach(function (v) { if (!seen[v]) { seen[v] = true; unique.push(v); } });
+    unique.sort(function (a, b) { return a - b; });
+    return { all: unique.length === (def.max - def.min + 1), values: unique, raw: raw };
+  }
+
+  function parseCron(text) {
+    var t = text.trim();
+    if (!t) return { error: 'Enter a cron expression' };
+    if (t === '@reboot') return { error: '@reboot has no schedule — runs at system startup' };
+    if (SPECIALS[t.toLowerCase()]) {
+      var expanded = SPECIALS[t.toLowerCase()];
+      var parsed = parseCron(expanded);
+      if (parsed.error) return parsed;
+      parsed.special = t.toLowerCase(); parsed.expanded = expanded;
+      return parsed;
+    }
+    var parts = t.split(/\s+/);
+    if (parts.length !== 5) return { error: 'Expected 5 space-separated fields, got ' + parts.length };
+    var fields = [];
+    for (var i = 0; i < 5; i++) {
+      var f = parseField(parts[i], FIELD_DEFS[i]);
+      if (f === null) return { error: 'Invalid ' + FIELD_DEFS[i].name.toLowerCase() + ' field: "' + parts[i] + '"' };
+      fields.push(f);
+    }
+    return { fields: fields, raw: t };
+  }
+
+  function describeField(field, def) {
+    if (field.all) return 'every ' + def.name.toLowerCase().replace('day of ', '');
+    var v = field.values, raw = field.raw;
+    if (raw.match(/^\*\/\d+$/)) return 'every ' + raw.split('/')[1] + ' ' + def.name.toLowerCase().replace('day of ', '') + 's';
+    if (v.length === 1) {
+      if (def.names) return def.names[v[0] - (def.name === 'Day of week' ? 0 : 1)] + ' (' + v[0] + ')';
+      return v[0].toString();
+    }
+    if (v.length <= 4) {
+      if (def.names && def.name === 'Day of week') return v.map(function (x) { return DOW_NAMES[x]; }).join(', ');
+      return v.join(', ');
+    }
+    var lo = v[0], hi = v[v.length - 1];
+    var step = v.length > 1 ? v[1] - v[0] : 1;
+    var consistent = true;
+    for (var i = 1; i < v.length; i++) if (v[i] - v[i-1] !== step) { consistent = false; break; }
+    if (consistent && step > 1) return 'every ' + step + ' from ' + lo + ' to ' + hi;
+    if (consistent) {
+      if (def.name === 'Day of week') return DOW_NAMES[lo] + ' through ' + DOW_NAMES[hi];
+      return lo + ' through ' + hi;
+    }
+    return v.join(', ');
+  }
+
+  function describeCron(parsed) {
+    if (parsed.special) return 'Runs ' + parsed.special.replace('@','') + ' (' + parsed.expanded + ')';
+    var f = parsed.fields;
+    var minute = f[0], hour = f[1], dom = f[2], month = f[3], dow = f[4];
+    var timeStr;
+    if (minute.all && hour.all) timeStr = 'Every minute';
+    else if (minute.all && !hour.all) {
+      if (hour.values.length === 1) timeStr = 'Every minute, hour ' + hour.values[0];
+      else if (hour.raw.match(/^(\d+)-(\d+)$/)) timeStr = 'Every minute between ' + fmtHour(hour.values[0]) + ' and ' + fmtHour(hour.values[hour.values.length-1]);
+      else timeStr = 'Every minute during hours ' + hour.values.join(', ');
+    }
+    else if (minute.values.length === 1 && hour.all) {
+      var m = minute.values[0];
+      timeStr = m === 0 ? 'On the hour, every hour' : 'At :' + pad(m) + ' of every hour';
+    }
+    else if (minute.values.length === 1 && hour.values.length === 1) timeStr = 'At ' + fmtTime(hour.values[0], minute.values[0]);
+    else if (minute.raw.match(/^\*\/\d+$/) && !hour.all) {
+      var step = parseInt(minute.raw.split('/')[1], 10);
+      timeStr = 'Every ' + step + ' minutes';
+      if (hour.raw.match(/^(\d+)-(\d+)$/)) timeStr += ' between ' + fmtHour(hour.values[0]) + ' and ' + fmtHour(hour.values[hour.values.length-1]);
+      else timeStr += ' during hour' + (hour.values.length > 1 ? 's' : '') + ' ' + hour.values.join(', ');
+    }
+    else if (minute.raw.match(/^\*\/\d+$/) && hour.all) {
+      timeStr = 'Every ' + parseInt(minute.raw.split('/')[1], 10) + ' minutes';
+    }
+    else timeStr = 'At ' + describeField(minute, FIELD_DEFS[0]) + ' minute, ' + describeField(hour, FIELD_DEFS[1]) + ' hour';
+
+    var dayParts = [];
+    if (!dow.all) {
+      if (dow.values.length === 1) dayParts.push('on ' + DOW_NAMES[dow.values[0]]);
+      else if (dow.raw.match(/^(\d+)-(\d+)$/)) dayParts.push(DOW_NAMES[dow.values[0]] + ' through ' + DOW_NAMES[dow.values[dow.values.length-1]]);
+      else dayParts.push('on ' + dow.values.map(function (x) { return DOW_NAMES[x]; }).join(', '));
+    }
+    if (!dom.all) {
+      if (dom.values.length === 1) dayParts.push('on day ' + dom.values[0] + ' of the month');
+      else if (dom.raw.match(/^(\d+)-(\d+)$/)) dayParts.push('on days ' + dom.values[0] + '–' + dom.values[dom.values.length-1] + ' of the month');
+      else dayParts.push('on days ' + dom.values.join(', '));
+    }
+    if (!month.all) {
+      if (month.values.length === 1) dayParts.push('in ' + MONTH_NAMES[month.values[0]-1]);
+      else dayParts.push('in ' + month.values.map(function (x) { return MONTH_NAMES[x-1]; }).join(', '));
+    }
+    if (!dow.all && !dom.all) dayParts.unshift('(when day-of-month OR day-of-week matches)');
+    return timeStr + (dayParts.length ? ', ' + dayParts.join(', ') : '') + '.';
+  }
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function fmtHour(h) {
+    if (h === 0) return '12 AM';
+    if (h === 12) return '12 PM';
+    if (h < 12) return h + ' AM';
+    return (h - 12) + ' PM';
+  }
+  function fmtTime(h, m) { return fmtHour(h).replace(/ ([AP]M)/, ':' + pad(m) + ' $1'); }
+
+  function fmtDate(d) {
+    if (useUtc) {
+      return d.getUTCFullYear() + '-' + pad(d.getUTCMonth()+1) + '-' + pad(d.getUTCDate()) + ' ' +
+             pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ' UTC · ' + DOW_SHORT[d.getUTCDay()];
+    }
+    var opts = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+    return d.toLocaleString(undefined, opts);
+  }
+
+  function relativeFromPivot(d, pivot) {
+    var ms = d - pivot;
+    var future = ms >= 0;
+    var abs = Math.abs(ms);
+    var sec = Math.round(abs / 1000);
+    if (sec < 60) return future ? 'in ' + sec + 's' : sec + 's ago';
+    var min = Math.round(sec / 60);
+    if (min < 60) return future ? 'in ' + min + ' min' : min + ' min ago';
+    var hr = Math.round(min / 60);
+    if (hr < 24) return future ? 'in ' + hr + ' hr' : hr + ' hr ago';
+    var day = Math.round(hr / 24);
+    if (day < 30) return future ? 'in ' + day + ' day' + (day===1?'':'s') : day + ' day' + (day===1?'':'s') + ' ago';
+    var wk = Math.round(day / 7);
+    if (day < 60) return future ? 'in ~' + wk + ' wk' : '~' + wk + ' wk ago';
+    var mo = Math.round(day / 30);
+    return future ? 'in ~' + mo + ' mo' : '~' + mo + ' mo ago';
+  }
+
+  function getDateField(d, which) {
+    if (useUtc) {
+      switch (which) {
+        case 'minute': return d.getUTCMinutes();
+        case 'hour': return d.getUTCHours();
+        case 'date': return d.getUTCDate();
+        case 'month': return d.getUTCMonth() + 1;
+        case 'day': return d.getUTCDay();
+      }
+    } else {
+      switch (which) {
+        case 'minute': return d.getMinutes();
+        case 'hour': return d.getHours();
+        case 'date': return d.getDate();
+        case 'month': return d.getMonth() + 1;
+        case 'day': return d.getDay();
+      }
+    }
+  }
+  function setDateField(d, which, value) {
+    if (useUtc) {
+      switch (which) {
+        case 'minute': d.setUTCMinutes(value); break;
+        case 'hour': d.setUTCHours(value); break;
+        case 'date': d.setUTCDate(value); break;
+        case 'month': d.setUTCMonth(value); break;
+      }
+    } else {
+      switch (which) {
+        case 'minute': d.setMinutes(value); break;
+        case 'hour': d.setHours(value); break;
+        case 'date': d.setDate(value); break;
+        case 'month': d.setMonth(value); break;
+      }
+    }
+  }
+  function addToField(d, which, n) { setDateField(d, which, getDateField(d, which) + (which === 'month' ? n - 1 : n)); }
+
+  function findFires(parsed, pivot, count, direction) {
+    var fields = parsed.fields;
+    var minSet = {}, hrSet = {}, domSet = {}, monSet = {}, dowSet = {};
+    fields[0].values.forEach(function (v) { minSet[v] = true; });
+    fields[1].values.forEach(function (v) { hrSet[v] = true; });
+    fields[2].values.forEach(function (v) { domSet[v] = true; });
+    fields[3].values.forEach(function (v) { monSet[v] = true; });
+    fields[4].values.forEach(function (v) { dowSet[v] = true; });
+    var domRestricted = !fields[2].all;
+    var dowRestricted = !fields[4].all;
+
+    var d = new Date(pivot);
+    if (useUtc) { d.setUTCSeconds(0); d.setUTCMilliseconds(0); }
+    else { d.setSeconds(0); d.setMilliseconds(0); }
+    if (direction > 0) addToField(d, 'minute', 1);
+    else addToField(d, 'minute', -1);
+
+    var fires = [];
+    var safety = 0;
+    var maxIter = 366 * 24 * 60 * 5;
+    while (fires.length < count && safety < maxIter) {
+      safety++;
+      var mi = getDateField(d, 'minute');
+      var hr = getDateField(d, 'hour');
+      var dm = getDateField(d, 'date');
+      var mo = getDateField(d, 'month');
+      var dw = getDateField(d, 'day');
+      if (!monSet[mo]) {
+        if (direction > 0) {
+          addToField(d, 'month', 1);
+          setDateField(d, 'date', 1);
+          if (useUtc) { d.setUTCHours(0); d.setUTCMinutes(0); } else { d.setHours(0); d.setMinutes(0); }
+        } else {
+          addToField(d, 'month', -1);
+          setDateField(d, 'date', 28);
+          if (useUtc) { d.setUTCHours(23); d.setUTCMinutes(59); } else { d.setHours(23); d.setMinutes(59); }
+        }
+        continue;
+      }
+      var dayOk;
+      if (domRestricted && dowRestricted) dayOk = domSet[dm] || dowSet[dw];
+      else if (domRestricted) dayOk = domSet[dm];
+      else if (dowRestricted) dayOk = dowSet[dw];
+      else dayOk = true;
+      if (!dayOk) {
+        if (direction > 0) {
+          addToField(d, 'date', 1);
+          if (useUtc) { d.setUTCHours(0); d.setUTCMinutes(0); } else { d.setHours(0); d.setMinutes(0); }
+        } else {
+          addToField(d, 'date', -1);
+          if (useUtc) { d.setUTCHours(23); d.setUTCMinutes(59); } else { d.setHours(23); d.setMinutes(59); }
+        }
+        continue;
+      }
+      if (!hrSet[hr]) {
+        if (direction > 0) { addToField(d, 'hour', 1); if (useUtc) d.setUTCMinutes(0); else d.setMinutes(0); }
+        else { addToField(d, 'hour', -1); if (useUtc) d.setUTCMinutes(59); else d.setMinutes(59); }
+        continue;
+      }
+      if (!minSet[mi]) { addToField(d, 'minute', direction); continue; }
+      fires.push(new Date(d));
+      addToField(d, 'minute', direction);
+    }
+    return fires;
+  }
+
+  function frequencyText(parsed) {
+    var pivot = new Date();
+    var sample = findFires(parsed, pivot, 200, 1);
+    if (!sample.length) return 'Schedule does not fire within sampled range';
+    var spanMs = sample[sample.length - 1] - pivot;
+    if (spanMs <= 0) return '';
+    var perDay = sample.length / (spanMs / 86400000);
+    if (perDay >= 1) {
+      return '~' + Math.round(perDay) + '/day · ~' + Math.round(perDay * 7).toLocaleString() + '/week · ~' + Math.round(perDay * 365).toLocaleString() + '/year';
+    } else {
+      var daysPerFire = 1 / perDay;
+      if (daysPerFire >= 365) return '~once a year';
+      if (daysPerFire >= 30) return '~every ' + Math.round(daysPerFire / 30) + ' months';
+      if (daysPerFire >= 7) return '~every ' + Math.round(daysPerFire / 7) + ' weeks';
+      return '~every ' + Math.round(daysPerFire) + ' days';
+    }
+  }
+
+  function detectWarnings(parsed) {
+    var w = [];
+    if (parsed.special) return w;
+    var f = parsed.fields;
+    var dom = f[2], month = f[3], dow = f[4];
+    if (!dom.all && !dow.all) {
+      w.push({ icon: 'alert', text: 'Both day-of-month and day-of-week are restricted. POSIX cron treats this as OR (run if either matches), not AND. To require both, you would need a wrapper script.' });
+    }
+    if (dom.values.indexOf(31) !== -1 && !dom.all) {
+      var skipped = [];
+      [2,4,6,9,11].forEach(function (m) { if (month.values.indexOf(m) !== -1) skipped.push(MONTH_NAMES[m-1]); });
+      if (skipped.length) w.push({ icon: 'calendarOff', text: 'Day 31 will be skipped in months that do not have 31 days (' + skipped.join(', ') + ').' });
+    }
+    if (dom.values.indexOf(30) !== -1 && !dom.all && month.values.indexOf(2) !== -1) {
+      w.push({ icon: 'calendarOff', text: 'Day 30 does not exist in February — that month will be skipped.' });
+    }
+    if (dom.values.indexOf(29) !== -1 && !dom.all && month.values.indexOf(2) !== -1) {
+      w.push({ icon: 'calendarOff', text: 'Day 29 in February only fires on leap years.' });
+    }
+    return w;
+  }
+
+  function flashCopied(el) {
+    var origColor = el.style.color;
+    var origHTML = el.innerHTML;
+    el.innerHTML = ICONS.check;
+    el.style.color = 'var(--color-success)';
+    setTimeout(function () { el.innerHTML = origHTML; el.style.color = origColor; }, 1400);
+  }
+  function copyToClipboard(value, btn) {
+    if (!value) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(function () { if (btn) flashCopied(btn); }).catch(function () {});
+    }
+  }
+  function copyButton(value, ariaLabel) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', ariaLabel || ('Copy ' + value));
+    btn.className = 'copy-btn';
+    btn.innerHTML = ICONS.copy;
+    btn.addEventListener('click', function (e) { e.stopPropagation(); copyToClipboard(value, btn); });
+    return btn;
+  }
+
+  function renderFields(parsed) {
+    fieldsTable.innerHTML = '';
+    var rawParts = parsed.special ? parsed.expanded.split(/\s+/) : parsed.raw.split(/\s+/);
+    parsed.fields.forEach(function (f, i) {
+      var row = document.createElement('div');
+      row.className = 'field-row';
+      row.setAttribute('data-field', FIELD_DEFS[i].name);
+      var name = document.createElement('span');
+      name.className = 'field-name';
+      name.textContent = FIELD_DEFS[i].name;
+      var raw = document.createElement('span');
+      raw.className = 'field-raw';
+      raw.textContent = rawParts[i];
+      var meaning = document.createElement('span');
+      meaning.className = 'field-meaning';
+      meaning.textContent = describeField(f, FIELD_DEFS[i]);
+      row.appendChild(name);
+      row.appendChild(raw);
+      row.appendChild(meaning);
+      row.appendChild(copyButton(rawParts[i], 'Copy ' + FIELD_DEFS[i].name + ' field'));
+      fieldsTable.appendChild(row);
+    });
+  }
+
+  function renderFireList(target, fires, pivot, emptyText) {
+    target.innerHTML = '';
+    if (!fires.length) {
+      var empty = document.createElement('div');
+      empty.className = 'empty-row';
+      empty.textContent = emptyText;
+      target.appendChild(empty);
+      return;
+    }
+    fires.forEach(function (d, i) {
+      var row = document.createElement('div');
+      row.className = 'fire-row';
+      var idx = document.createElement('span');
+      idx.className = 'fire-idx';
+      idx.textContent = '#' + (i + 1);
+      var time = document.createElement('span');
+      time.className = 'fire-time';
+      time.textContent = fmtDate(d);
+      var rel = document.createElement('span');
+      rel.className = 'fire-rel';
+      rel.textContent = relativeFromPivot(d, pivot);
+      row.appendChild(idx); row.appendChild(time); row.appendChild(rel);
+      target.appendChild(row);
+    });
+  }
+
+  function renderWarnings(parsed) {
+    var ws = detectWarnings(parsed);
+    warningsRow.innerHTML = '';
+    if (!ws.length) {
+      warningsRow.classList.add('hidden');
+      warningsRow.classList.remove('block');
+      return;
+    }
+    warningsRow.classList.remove('hidden');
+    warningsRow.classList.add('block');
+    ws.forEach(function (w) {
+      var row = document.createElement('div');
+      row.className = 'warning-row';
+      row.setAttribute('data-warning', w.icon);
+      var iconWrap = document.createElement('span');
+      iconWrap.style.color = 'var(--color-text-secondary)';
+      iconWrap.innerHTML = w.icon === 'alert' ? ICONS.alert : ICONS.calendarOff;
+      var textSpan = document.createElement('span');
+      textSpan.textContent = w.text;
+      row.appendChild(iconWrap);
+      row.appendChild(textSpan);
+      warningsRow.appendChild(row);
+    });
+  }
+
+  function toSystemd(parsed) {
+    if (parsed.special) {
+      var map = {
+        '@yearly': 'yearly', '@annually': 'annually', '@monthly': 'monthly',
+        '@weekly': 'weekly', '@daily': 'daily', '@midnight': 'daily', '@hourly': 'hourly'
+      };
+      return map[parsed.special];
+    }
+    var f = parsed.fields;
+    var dow = f[4], month = f[3], dom = f[2], hour = f[1], minute = f[0];
+    var parts = [];
+    if (!dow.all) {
+      var dowAbbr = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      if (dow.raw.match(/^(\d+)-(\d+)$/)) parts.push(dowAbbr[dow.values[0]] + '..' + dowAbbr[dow.values[dow.values.length-1]]);
+      else parts.push(dow.values.map(function (x) { return dowAbbr[x]; }).join(','));
+    }
+    var dateStr = '*-';
+    dateStr += month.all ? '*' : (month.raw.match(/^(\d+)-(\d+)$/) ? pad(month.values[0]) + '..' + pad(month.values[month.values.length-1]) : month.values.map(pad).join(','));
+    dateStr += '-';
+    dateStr += dom.all ? '*' : (dom.raw.match(/^(\d+)-(\d+)$/) ? pad(dom.values[0]) + '..' + pad(dom.values[dom.values.length-1]) : dom.values.map(pad).join(','));
+    if (dateStr !== '*-*-*') parts.push(dateStr);
+    var timeStr = '';
+    if (hour.all) timeStr = '*';
+    else if (hour.raw.match(/^\*\/\d+$/)) timeStr = '*/' + hour.raw.split('/')[1];
+    else if (hour.raw.match(/^(\d+)-(\d+)$/)) timeStr = pad(hour.values[0]) + '..' + pad(hour.values[hour.values.length-1]);
+    else timeStr = hour.values.map(pad).join(',');
+    timeStr += ':';
+    if (minute.all) timeStr += '*';
+    else if (minute.raw.match(/^\*\/\d+$/)) timeStr += '*/' + minute.raw.split('/')[1];
+    else if (minute.raw.match(/^(\d+)-(\d+)$/)) timeStr += pad(minute.values[0]) + '..' + pad(minute.values[minute.values.length-1]);
+    else timeStr += minute.values.map(pad).join(',');
+    timeStr += ':00';
+    parts.push(timeStr);
+    return parts.join(' ');
+  }
+
+  function toAws(parsed) {
+    if (parsed.special) {
+      var map = {
+        '@yearly': 'cron(0 0 1 1 ? *)', '@annually': 'cron(0 0 1 1 ? *)',
+        '@monthly': 'cron(0 0 1 * ? *)', '@weekly': 'cron(0 0 ? * SUN *)',
+        '@daily': 'cron(0 0 * * ? *)', '@midnight': 'cron(0 0 * * ? *)',
+        '@hourly': 'cron(0 * * * ? *)'
+      };
+      return map[parsed.special];
+    }
+    var parts = parsed.raw.split(/\s+/);
+    var domR = parts[2] !== '*';
+    var dowR = parts[4] !== '*';
+    var aws2 = parts[2], aws4 = parts[4];
+    if (!domR && !dowR) aws4 = '?';
+    else if (domR && !dowR) aws4 = '?';
+    else if (!domR && dowR) aws2 = '?';
+    else aws4 = '?';
+    var dowConv = aws4 === '*' || aws4 === '?' ? aws4 : aws4.replace(/\b0\b/g, 'SUN').replace(/\b1\b/g, 'MON').replace(/\b2\b/g, 'TUE').replace(/\b3\b/g, 'WED').replace(/\b4\b/g, 'THU').replace(/\b5\b/g, 'FRI').replace(/\b6\b/g, 'SAT').replace(/\b7\b/g, 'SUN');
+    return 'cron(' + parts[0] + ' ' + parts[1] + ' ' + aws2 + ' ' + parts[3] + ' ' + dowConv + ' *)';
+  }
+
+  function renderTranslations(parsed) {
+    translateBody.innerHTML = '';
+    var raw = parsed.raw;
+    var rows = [
+      { label: 'systemd OnCalendar', value: toSystemd(parsed), note: 'Use in a .timer unit: OnCalendar=' },
+      { label: 'Kubernetes CronJob', value: raw, note: 'In your CronJob spec.schedule (uses UTC by default).' },
+      { label: 'GitHub Actions', value: raw, note: 'In workflow on.schedule[].cron (always evaluated in UTC).' },
+      { label: 'AWS EventBridge / CloudWatch', value: toAws(parsed), note: '6-field cron with ? placeholder; AWS evaluates in UTC.' }
+    ];
+    rows.forEach(function (r) {
+      var row = document.createElement('div');
+      row.className = 'translate-row';
+      row.setAttribute('data-translate', r.label);
+      var top = document.createElement('div');
+      top.style.display = 'flex';
+      top.style.justifyContent = 'space-between';
+      top.style.alignItems = 'center';
+      top.style.gap = '8px';
+      var label = document.createElement('span');
+      label.textContent = r.label;
+      label.style.fontSize = '12px';
+      label.style.color = 'var(--color-text-secondary)';
+      var valWrap = document.createElement('div');
+      valWrap.style.display = 'flex';
+      valWrap.style.alignItems = 'center';
+      valWrap.style.gap = '6px';
+      var val = document.createElement('span');
+      val.textContent = r.value;
+      val.style.fontFamily = 'var(--font-mono)';
+      val.style.fontSize = '13px';
+      val.style.fontWeight = '500';
+      val.setAttribute('data-translate-value', r.label);
+      valWrap.appendChild(val);
+      valWrap.appendChild(copyButton(r.value, 'Copy ' + r.label + ' value'));
+      top.appendChild(label);
+      top.appendChild(valWrap);
+      var note = document.createElement('div');
+      note.textContent = r.note;
+      note.style.fontSize = '11px';
+      note.style.color = 'var(--color-text-tertiary)';
+      note.style.marginTop = '2px';
+      row.appendChild(top);
+      row.appendChild(note);
+      translateBody.appendChild(row);
+    });
+  }
+
+  function getPivotDate() {
+    if (pivotDate.value) return new Date(pivotDate.value);
+    return new Date();
+  }
+  function setPivotToNow() {
+    var now = new Date();
+    var iso = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+    pivotDate.value = iso;
+  }
+
+  function setTzMode(utc) {
+    useUtc = utc;
+    tzLocalBtn.setAttribute('aria-selected', utc ? 'false' : 'true');
+    tzUtcBtn.setAttribute('aria-selected', utc ? 'true' : 'false');
+    try { tzLabel.textContent = utc ? 'UTC' : Intl.DateTimeFormat().resolvedOptions().timeZone; }
+    catch (e) { tzLabel.textContent = utc ? 'UTC' : 'Local'; }
+  }
+
+  function clearAll() {
+    descCard.classList.add('hidden');
+    descCard.classList.remove('block');
+    warningsRow.classList.add('hidden');
+    warningsRow.classList.remove('block');
+    fieldsTable.innerHTML = '';
+    pastList.innerHTML = '';
+    nextList.innerHTML = '';
+    translateBody.innerHTML = '';
+  }
+
+  function render() {
+    var parsed = parseCron(input.value);
+    if (parsed.error) {
+      errorRow.classList.remove('hidden');
+      errorRow.classList.add('block');
+      errorRow.textContent = parsed.error;
+      clearAll();
+      document.title = DEFAULT_TITLE;
+      return;
+    }
+    errorRow.classList.add('hidden');
+    errorRow.classList.remove('block');
+    descCard.classList.remove('hidden');
+    descCard.classList.add('block');
+    descText.textContent = describeCron(parsed);
+    freqText.textContent = frequencyText(parsed);
+    renderFields(parsed);
+    renderWarnings(parsed);
+    var pivot = getPivotDate();
+    renderFireList(nextList, findFires(parsed, pivot, 5, 1), pivot, 'No fires found.');
+    renderFireList(pastList, findFires(parsed, pivot, 5, -1), pivot, 'No prior fires found in sampled range.');
+    renderTranslations(parsed);
+    pushHistory(input.value.trim());
+    document.title = input.value.trim() + ' — Cron decoder · Corey Wininger';
+  }
+
+  function shareCurrent() {
+    try {
+      var url = new URL(window.location.href);
+      url.searchParams.set('expr', input.value.trim());
+      copyToClipboard(url.toString(), shareBtn);
+    } catch (e) {}
+  }
+
+  parseBtn.addEventListener('click', render);
+  shareBtn.addEventListener('click', shareCurrent);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') render(); });
+  pivotDate.addEventListener('change', render);
+  nowBtn.addEventListener('click', function () { setPivotToNow(); render(); });
+  tzLocalBtn.addEventListener('click', function () { setTzMode(false); render(); });
+  tzUtcBtn.addEventListener('click', function () { setTzMode(true); render(); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && document.activeElement !== input && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) {
+      e.preventDefault();
+      input.focus();
+      input.select();
+    }
+  });
+
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var initial = params.get('expr');
+    if (initial) input.value = initial;
+  } catch (e) {}
+
+  setTzMode(false);
+  setPivotToNow();
+  renderHistory();
+  render();
+})();
+</script>
+</Base>

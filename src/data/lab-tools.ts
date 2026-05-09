@@ -36,6 +36,16 @@ export const tools: LabTool[] = [
     isNew: true,
     icon: 'network',
   },
+  {
+    slug: 'cron',
+    title: 'Cron decoder',
+    description:
+      'Decode any cron expression. Plain English, field breakdown, past and next fires around any pivot date, with translations to systemd, Kubernetes, GitHub Actions, and AWS EventBridge.',
+    discipline: 'systems',
+    added: '2026-05-09',
+    isNew: true,
+    icon: 'clock',
+  },
 ];
 
 export function toolsByDiscipline(d: Discipline): LabTool[] {
