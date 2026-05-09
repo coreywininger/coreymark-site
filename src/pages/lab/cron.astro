@@ -79,6 +79,7 @@ const description =
       <div
         id="description-card"
         class="mb-6 hidden rounded-lg bg-bg-subtle px-4 py-4"
+        style="transition: opacity 0.15s ease;"
       >
         <p class="m-0 mb-1.5 text-xs text-text-secondary">In plain English</p>
         <p id="description-text" class="m-0 text-base font-medium leading-relaxed"></p>
@@ -245,6 +246,11 @@ const description =
     border-color: var(--color-accent-primary);
     color: var(--color-accent-primary);
   }
+  .cron-widget .cron-chip.chip-flash {
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    border-color: var(--color-text-primary);
+  }
   .cron-widget .cron-chip--muted { opacity: 0.85; }
   .cron-widget .cron-chip-label {
     font-size: 13px;
@@ -401,6 +407,11 @@ const description =
   var DEFAULT_TITLE = 'Cron decoder · Corey Wininger';
   var useUtc = false;
 
+  var rendering = false;
+  var pendingRender = false;
+  var spinnerTimeoutId = null;
+  var SPINNER_THRESHOLD_MS = 80;
+
   var presets = [
     { v: '* * * * *',         title: 'Every minute' },
     { v: '*/5 * * * *',       title: 'Every 5 minutes' },
@@ -436,6 +447,11 @@ const description =
     '@hourly':   '0 * * * *'
   };
 
+  function flashChip(b) {
+    b.classList.add('chip-flash');
+    setTimeout(function () { b.classList.remove('chip-flash'); }, 140);
+  }
+
   function chip(text, title, onClick, opts) {
     opts = opts || {};
     var b = document.createElement('button');
@@ -443,7 +459,7 @@ const description =
     b.textContent = text;
     if (title) b.title = title;
     b.className = 'cron-chip' + (opts.muted ? ' cron-chip--muted' : '');
-    b.addEventListener('click', onClick);
+    b.addEventListener('click', function () { flashChip(b); onClick(); });
     return b;
   }
   function makeLabel(text) {
@@ -755,7 +771,7 @@ const description =
 
   function frequencyText(parsed) {
     var pivot = new Date();
-    var sample = findFires(parsed, pivot, 200, 1);
+    var sample = findFires(parsed, pivot, 50, 1);
     if (!sample.length) return 'Schedule does not fire within sampled range';
     var spanMs = sample[sample.length - 1] - pivot;
     if (spanMs <= 0) return '';
@@ -1025,7 +1041,43 @@ const description =
     translateBody.innerHTML = '';
   }
 
+  function setBusyState(busy) {
+    parseBtn.disabled = busy;
+    parseBtn.style.opacity = busy ? '0.55' : '';
+    parseBtn.style.cursor = busy ? 'wait' : '';
+    descCard.style.opacity = busy ? '0.55' : '';
+    if (busy) {
+      spinnerTimeoutId = setTimeout(function () {
+        parseBtn.textContent = 'Parsing…';
+      }, SPINNER_THRESHOLD_MS);
+    } else {
+      if (spinnerTimeoutId) clearTimeout(spinnerTimeoutId);
+      spinnerTimeoutId = null;
+      parseBtn.textContent = 'Parse';
+    }
+  }
+
   function render() {
+    if (rendering) { pendingRender = true; return; }
+    rendering = true;
+    setBusyState(true);
+    requestAnimationFrame(function () {
+      setTimeout(function () {
+        try { renderImpl(); }
+        catch (e) { console.error('Lab tool render error:', e); }
+        finally {
+          setBusyState(false);
+          rendering = false;
+          if (pendingRender) {
+            pendingRender = false;
+            render();
+          }
+        }
+      }, 0);
+    });
+  }
+
+  function renderImpl() {
     var parsed = parseCron(input.value);
     if (parsed.error) {
       errorRow.classList.remove('hidden');
