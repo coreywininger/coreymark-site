@@ -187,6 +187,11 @@ const description =
     border-color: var(--color-accent-primary);
     color: var(--color-accent-primary);
   }
+  .subnet-widget .subnet-chip.chip-flash {
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    border-color: var(--color-text-primary);
+  }
   .subnet-widget .subnet-chip--muted {
     opacity: 0.85;
   }
@@ -340,6 +345,11 @@ const description =
   var HISTORY_MAX = 5;
   var DEFAULT_TITLE = 'Subnet calculator · Corey Wininger';
 
+  var rendering = false;
+  var pendingRender = false;
+  var spinnerTimeoutId = null;
+  var SPINNER_THRESHOLD_MS = 80;
+
   var presets = [
     { v: '10.0.0.0/8',     title: 'RFC 1918 private' },
     { v: '172.16.0.0/12',  title: 'RFC 1918 private' },
@@ -354,6 +364,11 @@ const description =
     { v: 'ff00::/8',       title: 'IPv6 multicast' }
   ];
 
+  function flashChip(b) {
+    b.classList.add('chip-flash');
+    setTimeout(function () { b.classList.remove('chip-flash'); }, 140);
+  }
+
   function chip(text, title, onClick, opts) {
     opts = opts || {};
     var b = document.createElement('button');
@@ -361,7 +376,7 @@ const description =
     b.textContent = text;
     if (title) b.title = title;
     b.className = 'subnet-chip' + (opts.muted ? ' subnet-chip--muted' : '');
-    b.addEventListener('click', onClick);
+    b.addEventListener('click', function () { flashChip(b); onClick(); });
     return b;
   }
 
@@ -759,7 +774,42 @@ const description =
     splitCount.textContent = '';
   }
 
+  function setBusyState(busy) {
+    parseBtn.disabled = busy;
+    parseBtn.style.opacity = busy ? '0.55' : '';
+    parseBtn.style.cursor = busy ? 'wait' : '';
+    if (busy) {
+      spinnerTimeoutId = setTimeout(function () {
+        parseBtn.textContent = 'Parsing…';
+      }, SPINNER_THRESHOLD_MS);
+    } else {
+      if (spinnerTimeoutId) clearTimeout(spinnerTimeoutId);
+      spinnerTimeoutId = null;
+      parseBtn.textContent = 'Parse';
+    }
+  }
+
   function render() {
+    if (rendering) { pendingRender = true; return; }
+    rendering = true;
+    setBusyState(true);
+    requestAnimationFrame(function () {
+      setTimeout(function () {
+        try { renderImpl(); }
+        catch (e) { console.error('Lab tool render error:', e); }
+        finally {
+          setBusyState(false);
+          rendering = false;
+          if (pendingRender) {
+            pendingRender = false;
+            render();
+          }
+        }
+      }, 0);
+    });
+  }
+
+  function renderImpl() {
     var result = parseCidr(input.value);
     if (result.error) {
       errorRow.classList.remove('hidden');
