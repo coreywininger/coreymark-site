@@ -1,0 +1,844 @@
+---
+import Base from '../../layouts/Base.astro';
+import { Share2 } from '@lucide/astro';
+
+const title = 'Subnet calculator';
+const description =
+  'IPv4 and IPv6 CIDR calculator with hosts-needed inverse, reverse DNS zones, Cisco ACL syntax, and subnet splitting. All client-side, free.';
+---
+
+<Base title={title} description={description}>
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-text-primary">Home</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
+        <li aria-hidden="true">›</li>
+        <li class="text-text-secondary">Subnet calculator</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8">
+      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        Subnet calculator
+      </h1>
+      <p class="max-w-2xl text-lg text-text-secondary">
+        IPv4 and IPv6 CIDR analysis. Paste a CIDR or pick a preset, see network
+        details, split into smaller subnets, or work backwards from a host count.
+      </p>
+    </header>
+
+    <h2 class="sr-only">
+      Professional IPv4 and IPv6 subnet calculator with hosts-needed inverse
+      calc, reverse DNS arpa zones, Cisco ACL syntax hints, copy-to-clipboard,
+      and share links.
+    </h2>
+
+    <div class="lab-tool subnet-widget py-4">
+      <div class="subnet-input-row mb-5 flex items-center gap-2">
+        <input
+          type="text"
+          id="cidr-input"
+          value="10.0.0.0/24"
+          spellcheck="false"
+          autocomplete="off"
+          aria-label="CIDR notation, IPv4 or IPv6"
+          class="flex-1 rounded-md border border-border-subtle bg-bg-elevated px-3 py-2 font-mono text-[15px] text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+        />
+        <button
+          id="parse-btn"
+          type="button"
+          class="rounded-md border border-border-subtle bg-bg-elevated px-3 py-2 text-sm text-text-primary transition-colors hover:border-accent-primary hover:text-accent-primary"
+        >
+          Parse
+        </button>
+        <button
+          id="share-btn"
+          type="button"
+          aria-label="Copy share link"
+          class="rounded-md border border-border-subtle bg-bg-elevated px-3 py-2 text-text-secondary transition-colors hover:border-accent-primary hover:text-accent-primary"
+        >
+          <Share2 size={16} strokeWidth={1.75} />
+        </button>
+      </div>
+
+      <div id="recent-row" class="mb-4 hidden flex-wrap items-center gap-1.5"></div>
+      <div id="preset-row" class="mb-6 flex flex-wrap items-center gap-1.5"></div>
+
+      <div
+        id="error-row"
+        role="alert"
+        class="mb-5 hidden rounded-md px-3 py-2.5 text-[13px]"
+        style="background: color-mix(in srgb, var(--color-error) 12%, transparent); color: var(--color-error);"
+      ></div>
+
+      <div
+        id="stats-grid"
+        class="mb-7 grid gap-3"
+        style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));"
+      ></div>
+
+      <div class="mb-6">
+        <div class="mb-2 flex items-baseline justify-between">
+          <p class="m-0 text-[13px] text-text-secondary">Address space</p>
+          <p id="gauge-summary" class="m-0 font-mono text-[13px] text-text-secondary"></p>
+        </div>
+        <div
+          id="gauge"
+          class="flex h-6 overflow-hidden rounded-md border border-border-subtle"
+          style="background: var(--color-bg-subtle);"
+        >
+          <div id="gauge-net" style="background: var(--color-accent-primary); transition: width 0.2s ease; min-width: 0;"></div>
+          <div id="gauge-host" style="background: var(--color-bg-subtle); transition: width 0.2s ease; min-width: 0; border-left: 1px solid var(--color-border-subtle);"></div>
+        </div>
+        <div class="mt-2 flex justify-between text-xs">
+          <span id="gauge-net-label" class="font-medium text-text-primary"></span>
+          <span id="gauge-host-label" class="text-text-secondary"></span>
+        </div>
+        <div class="mt-1 flex justify-between font-mono text-[11px] text-text-tertiary">
+          <span>0</span>
+          <span id="gauge-total"></span>
+        </div>
+      </div>
+
+      <div
+        id="hosts-needed-row"
+        class="mb-7 hidden flex-wrap items-center gap-3 rounded-md border border-border-subtle bg-bg-subtle px-3.5 py-3"
+      ></div>
+
+      <div class="border-t border-border-subtle pt-5">
+        <p class="mb-2.5 m-0 text-[13px] text-text-secondary">Split into smaller subnets</p>
+        <div class="mb-3 flex flex-wrap items-center gap-3">
+          <label for="split-prefix" class="text-sm">New prefix /</label>
+          <input
+            type="number"
+            id="split-prefix"
+            min="1"
+            max="128"
+            value="26"
+            class="w-20 rounded-md border border-border-subtle bg-bg-elevated px-2 py-1 font-mono text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+          />
+          <span id="split-count" class="text-[13px] text-text-secondary"></span>
+        </div>
+        <div
+          id="split-output"
+          class="max-h-60 overflow-y-auto rounded-md border border-border-subtle font-mono text-[13px]"
+          style="padding: 8px 0;"
+        ></div>
+      </div>
+
+      <div
+        id="subnet-keys-hint"
+        class="mt-5 flex flex-wrap gap-4 border-t border-border-subtle pt-4 text-[11px] text-text-tertiary"
+      >
+        <span>Press <kbd class="rounded bg-bg-subtle px-1.5 py-0.5 font-mono text-[11px]">/</kbd> to focus</span>
+        <span>Press <kbd class="rounded bg-bg-subtle px-1.5 py-0.5 font-mono text-[11px]">Enter</kbd> to parse</span>
+        <span>Click any value to copy</span>
+      </div>
+    </div>
+
+    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
+      <summary class="cursor-pointer text-base font-semibold text-text-primary">
+        About this tool
+      </summary>
+      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+        <p><strong>What it does.</strong> Parses IPv4 and IPv6 CIDR notation,
+          computes network/broadcast addresses, usable host ranges, subnet and
+          wildcard masks, IP class, reverse-DNS arpa zones, host-count inverse
+          (the "I need 60 hosts, what prefix?" question), and splits a parent
+          block into equal-size children. Everything runs in your browser —
+          nothing you type leaves the page.</p>
+        <p><strong>Deliberately not included (for now):</strong> VLSM design
+          (variable-length subnet planning across non-equal children),
+          supernet / route summarization, IP-range to CIDR conversion. Each
+          will land as its own tool.</p>
+        <p><strong>Standards referenced:</strong>
+          <a href="https://datatracker.ietf.org/doc/html/rfc1918" rel="noopener" target="_blank">RFC 1918</a> (IPv4 private addresses),
+          <a href="https://datatracker.ietf.org/doc/html/rfc6598" rel="noopener" target="_blank">RFC 6598</a> (CGNAT shared address space),
+          <a href="https://datatracker.ietf.org/doc/html/rfc4193" rel="noopener" target="_blank">RFC 4193</a> (IPv6 ULA),
+          <a href="https://datatracker.ietf.org/doc/html/rfc5737" rel="noopener" target="_blank">RFC 5737</a> (IPv4 documentation prefixes),
+          <a href="https://datatracker.ietf.org/doc/html/rfc2317" rel="noopener" target="_blank">RFC 2317</a>
+          (classless in-addr.arpa delegation).</p>
+        <p><strong>Privacy note:</strong> all computation is client-side. No IP
+          addresses or CIDR values you enter are sent to any server.</p>
+      </div>
+    </details>
+
+    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
+      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Networking</span>
+      <span>Added 2026-05-09</span>
+    </div>
+  </section>
+
+<style is:global>
+  .subnet-widget .subnet-chip {
+    font-size: 12px;
+    padding: 4px 10px;
+    font-family: var(--font-mono);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: border-color 150ms ease, color 150ms ease;
+  }
+  .subnet-widget .subnet-chip:hover {
+    border-color: var(--color-accent-primary);
+    color: var(--color-accent-primary);
+  }
+  .subnet-widget .subnet-chip--muted {
+    opacity: 0.85;
+  }
+  .subnet-widget .subnet-chip-label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-right: 4px;
+  }
+  .subnet-widget .stat-card {
+    background: var(--color-bg-subtle);
+    border-radius: 0.5rem;
+    padding: 12px 14px;
+  }
+  .subnet-widget .stat-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-bottom: 4px;
+  }
+  .subnet-widget .stat-value-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .subnet-widget .stat-value {
+    font-size: 14px;
+    font-weight: 500;
+    word-break: break-all;
+    flex: 1;
+  }
+  .subnet-widget .stat-value--mono {
+    font-family: var(--font-mono);
+  }
+  .subnet-widget .copy-btn {
+    padding: 2px 6px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    color: var(--color-text-tertiary);
+    border-radius: 0.375rem;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+  }
+  .subnet-widget .copy-btn:hover {
+    color: var(--color-accent-primary);
+  }
+  .subnet-widget .stat-hint-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--color-border-subtle);
+  }
+  .subnet-widget .stat-hint {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--color-text-tertiary);
+    flex: 1;
+    word-break: break-all;
+  }
+  .subnet-widget .stat-subnote {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 4px;
+  }
+  .subnet-widget .split-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 14px;
+    gap: 12px;
+  }
+  .subnet-widget .split-row + .split-row {
+    border-top: 1px solid var(--color-border-subtle);
+  }
+  .subnet-widget .split-index {
+    color: var(--color-text-secondary);
+    min-width: 40px;
+    flex-shrink: 0;
+  }
+  .subnet-widget .split-cidr {
+    flex: 1;
+    word-break: break-all;
+  }
+  .subnet-widget .split-hosts {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  @media print {
+    header[class*="sticky"],
+    footer,
+    #preset-row,
+    #recent-row,
+    #share-btn,
+    #parse-btn,
+    .subnet-widget > div:last-of-type:not(#hosts-needed-row),
+    #subnet-keys-hint,
+    details[class*="rounded-lg"] {
+      display: none !important;
+    }
+    body {
+      background: white !important;
+      color: black !important;
+    }
+    .subnet-widget .stat-card {
+      background: #f5f5f5 !important;
+      border: 1px solid #ccc !important;
+      color: black !important;
+    }
+    .subnet-widget #gauge {
+      background: #eee !important;
+    }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  var ICONS = {
+    copy: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+    check: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+    info: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:6px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    x: '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  };
+
+  var input = document.getElementById('cidr-input');
+  var parseBtn = document.getElementById('parse-btn');
+  var shareBtn = document.getElementById('share-btn');
+  var recentRow = document.getElementById('recent-row');
+  var presetRow = document.getElementById('preset-row');
+  var errorRow = document.getElementById('error-row');
+  var statsGrid = document.getElementById('stats-grid');
+  var gaugeNet = document.getElementById('gauge-net');
+  var gaugeHost = document.getElementById('gauge-host');
+  var gaugeNetLabel = document.getElementById('gauge-net-label');
+  var gaugeHostLabel = document.getElementById('gauge-host-label');
+  var gaugeSummary = document.getElementById('gauge-summary');
+  var gaugeTotal = document.getElementById('gauge-total');
+  var hostsNeededRow = document.getElementById('hosts-needed-row');
+  var hostsInput = null;
+  var hostsResult = null;
+  var splitPrefix = document.getElementById('split-prefix');
+  var splitCount = document.getElementById('split-count');
+  var splitOutput = document.getElementById('split-output');
+
+  var HISTORY_KEY = 'coreymark.lab.subnet.history';
+  var HISTORY_MAX = 5;
+  var DEFAULT_TITLE = 'Subnet calculator · Corey Wininger';
+
+  var presets = [
+    { v: '10.0.0.0/8',     title: 'RFC 1918 private' },
+    { v: '172.16.0.0/12',  title: 'RFC 1918 private' },
+    { v: '192.168.0.0/16', title: 'RFC 1918 private' },
+    { v: '100.64.0.0/10',  title: 'CGNAT — RFC 6598' },
+    { v: '169.254.0.0/16', title: 'APIPA / link-local' },
+    { v: '127.0.0.0/8',    title: 'IPv4 loopback' },
+    { v: '224.0.0.0/4',    title: 'IPv4 multicast' },
+    { v: '2001:db8::/32',  title: 'IPv6 documentation' },
+    { v: 'fe80::/10',      title: 'IPv6 link-local' },
+    { v: 'fc00::/7',       title: 'IPv6 ULA' },
+    { v: 'ff00::/8',       title: 'IPv6 multicast' }
+  ];
+
+  function chip(text, title, onClick, opts) {
+    opts = opts || {};
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = text;
+    if (title) b.title = title;
+    b.className = 'subnet-chip' + (opts.muted ? ' subnet-chip--muted' : '');
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  function makeLabel(text) {
+    var s = document.createElement('span');
+    s.textContent = text;
+    s.className = 'subnet-chip-label';
+    return s;
+  }
+
+  presetRow.appendChild(makeLabel('Try:'));
+  presets.forEach(function (p) {
+    presetRow.appendChild(chip(p.v, p.title, function () { input.value = p.v; render(); }));
+  });
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function saveHistory(arr) {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); } catch (e) {}
+  }
+  function pushHistory(cidr) {
+    var arr = loadHistory();
+    arr = [cidr].concat(arr.filter(function (x) { return x !== cidr; })).slice(0, HISTORY_MAX);
+    saveHistory(arr);
+    renderHistory();
+  }
+  function removeHistory(cidr) {
+    saveHistory(loadHistory().filter(function (x) { return x !== cidr; }));
+    renderHistory();
+  }
+  function renderHistory() {
+    var arr = loadHistory();
+    recentRow.innerHTML = '';
+    if (!arr.length) {
+      recentRow.classList.add('hidden');
+      recentRow.classList.remove('flex');
+      return;
+    }
+    recentRow.classList.remove('hidden');
+    recentRow.classList.add('flex');
+    recentRow.appendChild(makeLabel('Recent:'));
+    arr.forEach(function (v) {
+      var wrap = document.createElement('span');
+      wrap.style.display = 'inline-flex';
+      wrap.style.alignItems = 'center';
+      wrap.style.gap = '2px';
+      var c = chip(v, 'Load this CIDR', function () { input.value = v; render(); }, { muted: true });
+      var rm = document.createElement('button');
+      rm.type = 'button';
+      rm.setAttribute('aria-label', 'Remove ' + v + ' from history');
+      rm.className = 'copy-btn';
+      rm.style.padding = '2px';
+      rm.style.opacity = '0.55';
+      rm.innerHTML = ICONS.x;
+      rm.addEventListener('click', function (e) { e.stopPropagation(); removeHistory(v); });
+      wrap.appendChild(c);
+      wrap.appendChild(rm);
+      recentRow.appendChild(wrap);
+    });
+    var clearBtn = chip('Clear', 'Clear all recent', function () {
+      try { localStorage.removeItem(HISTORY_KEY); } catch (e) {}
+      renderHistory();
+    });
+    clearBtn.style.opacity = '0.6';
+    recentRow.appendChild(clearBtn);
+  }
+
+  function ipv4ToBig(ip) {
+    var parts = ip.split('.');
+    if (parts.length !== 4) return null;
+    var n = 0n;
+    for (var i = 0; i < 4; i++) {
+      var p = parseInt(parts[i], 10);
+      if (isNaN(p) || p < 0 || p > 255 || String(p) !== parts[i].replace(/^0+(?=\d)/, '')) return null;
+      n = (n << 8n) | BigInt(p);
+    }
+    return n;
+  }
+  function bigToIpv4(n) {
+    return [
+      Number((n >> 24n) & 0xffn),
+      Number((n >> 16n) & 0xffn),
+      Number((n >> 8n) & 0xffn),
+      Number(n & 0xffn)
+    ].join('.');
+  }
+  function ipv6ToBig(addr) {
+    if (!/^[0-9a-fA-F:]+$/.test(addr) || (addr.match(/::/g) || []).length > 1) return null;
+    var parts;
+    if (addr.indexOf('::') !== -1) {
+      var halves = addr.split('::');
+      var left = halves[0] === '' ? [] : halves[0].split(':');
+      var right = halves[1] === '' ? [] : halves[1].split(':');
+      var missing = 8 - left.length - right.length;
+      if (missing < 0) return null;
+      var middle = [];
+      for (var i = 0; i < missing; i++) middle.push('0');
+      parts = left.concat(middle).concat(right);
+    } else {
+      parts = addr.split(':');
+    }
+    if (parts.length !== 8) return null;
+    var n = 0n;
+    for (var j = 0; j < 8; j++) {
+      if (!/^[0-9a-fA-F]{1,4}$/.test(parts[j])) return null;
+      n = (n << 16n) | BigInt(parseInt(parts[j], 16));
+    }
+    return n;
+  }
+  function bigToIpv6(n) {
+    var groups = [];
+    for (var i = 7; i >= 0; i--) {
+      groups.push(((n >> BigInt(i * 16)) & 0xffffn).toString(16));
+    }
+    var bestStart = -1, bestLen = 0;
+    var curStart = -1, curLen = 0;
+    for (var k = 0; k < 8; k++) {
+      if (groups[k] === '0') {
+        if (curStart === -1) { curStart = k; curLen = 1; } else { curLen++; }
+        if (curLen > bestLen) { bestStart = curStart; bestLen = curLen; }
+      } else {
+        curStart = -1; curLen = 0;
+      }
+    }
+    if (bestLen >= 2) {
+      var before = groups.slice(0, bestStart).join(':');
+      var after = groups.slice(bestStart + bestLen).join(':');
+      return (before || '') + '::' + (after || '');
+    }
+    return groups.join(':');
+  }
+
+  function arpaV4(network, prefix) {
+    var n = network;
+    var octets = [
+      Number((n >> 24n) & 0xffn),
+      Number((n >> 16n) & 0xffn),
+      Number((n >> 8n) & 0xffn),
+      Number(n & 0xffn)
+    ];
+    var alignedOctets = Math.floor(prefix / 8);
+    if (alignedOctets === 0) return { zone: 'in-addr.arpa', exact: prefix === 0 };
+    var rev = octets.slice(0, alignedOctets).reverse();
+    return { zone: rev.join('.') + '.in-addr.arpa', exact: prefix % 8 === 0 };
+  }
+  function arpaV6(network, prefix) {
+    var nibbles = [];
+    for (var i = 31; i >= 0; i--) {
+      nibbles.push(((network >> BigInt(i * 4)) & 0xfn).toString(16));
+    }
+    var alignedNibbles = Math.floor(prefix / 4);
+    if (alignedNibbles === 0) return { zone: 'ip6.arpa', exact: prefix === 0 };
+    var rev = nibbles.slice(0, alignedNibbles).reverse();
+    return { zone: rev.join('.') + '.ip6.arpa', exact: prefix % 4 === 0 };
+  }
+
+  function parseCidr(text) {
+    var t = text.trim();
+    var slash = t.lastIndexOf('/');
+    if (slash === -1) return { error: 'Missing prefix (e.g. /24 or /64)' };
+    var addrPart = t.slice(0, slash);
+    var prefixPart = t.slice(slash + 1);
+    var prefix = parseInt(prefixPart, 10);
+    if (isNaN(prefix)) return { error: 'Prefix must be a number' };
+
+    var family, total, addr;
+    if (addrPart.indexOf(':') !== -1) {
+      family = 6; total = 128;
+      addr = ipv6ToBig(addrPart);
+      if (addr === null) return { error: 'Invalid IPv6 address' };
+    } else {
+      family = 4; total = 32;
+      addr = ipv4ToBig(addrPart);
+      if (addr === null) return { error: 'Invalid IPv4 address' };
+    }
+    if (prefix < 0 || prefix > total) return { error: 'Prefix must be 0–' + total + ' for IPv' + family };
+
+    var hostBits = total - prefix;
+    var allOnes = (1n << BigInt(total)) - 1n;
+    var mask = prefix === 0 ? 0n : ((allOnes >> BigInt(hostBits)) << BigInt(hostBits));
+    var network = addr & mask;
+    var lastAddr = network | ((1n << BigInt(hostBits)) - 1n);
+    var totalAddrs = 1n << BigInt(hostBits);
+
+    var result = {
+      family: family, total: total, prefix: prefix, hostBits: hostBits,
+      network: network, lastAddr: lastAddr, totalAddrs: totalAddrs, mask: mask
+    };
+
+    if (family === 4) {
+      result.wildcard = (~mask) & allOnes;
+      var firstOctet = Number((addr >> 24n) & 0xffn);
+      result.ipClass = firstOctet < 128 ? 'A' : firstOctet < 192 ? 'B' : firstOctet < 224 ? 'C' : firstOctet < 240 ? 'D' : 'E';
+      if (prefix === 32) { result.firstUsable = network; result.lastUsable = network; result.usableHosts = 1n; }
+      else if (prefix === 31) { result.firstUsable = network; result.lastUsable = lastAddr; result.usableHosts = 2n; }
+      else { result.firstUsable = network + 1n; result.lastUsable = lastAddr - 1n; result.usableHosts = totalAddrs - 2n; }
+      result.arpa = arpaV4(network, prefix);
+      result.canonical = bigToIpv4(network) + '/' + prefix;
+    } else {
+      result.usableHosts = totalAddrs;
+      result.firstUsable = network;
+      result.lastUsable = lastAddr;
+      result.arpa = arpaV6(network, prefix);
+      result.canonical = bigToIpv6(network) + '/' + prefix;
+    }
+    return result;
+  }
+
+  function fmtAddr(n, family) { return family === 6 ? bigToIpv6(n) : bigToIpv4(n); }
+
+  function fmtBigCount(n) {
+    if (n <= 1000000n) return n.toLocaleString();
+    var s = n.toString();
+    var exp = s.length - 1;
+    var mantissa = (Number(s.slice(0, 4)) / 1000).toFixed(2);
+    return mantissa + ' × 10^' + exp + ' (' + s.length + ' digits)';
+  }
+
+  function flashCopied(el) {
+    var origColor = el.style.color;
+    var origHTML = el.innerHTML;
+    el.innerHTML = ICONS.check;
+    el.style.color = 'var(--color-success)';
+    setTimeout(function () { el.innerHTML = origHTML; el.style.color = origColor; }, 1400);
+  }
+  function copyToClipboard(value, btn) {
+    if (!value) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(function () { if (btn) flashCopied(btn); }).catch(function () {});
+    }
+  }
+  function copyButton(value) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Copy ' + value);
+    btn.className = 'copy-btn';
+    btn.innerHTML = ICONS.copy;
+    btn.addEventListener('click', function (e) { e.stopPropagation(); copyToClipboard(value, btn); });
+    return btn;
+  }
+
+  function statCard(label, value, mono, opts) {
+    opts = opts || {};
+    var d = document.createElement('div');
+    d.className = 'stat-card';
+    d.setAttribute('data-stat', label);
+    var lab = document.createElement('div');
+    lab.className = 'stat-label';
+    lab.textContent = label;
+    var row = document.createElement('div');
+    row.className = 'stat-value-row';
+    var val = document.createElement('div');
+    val.className = 'stat-value' + (mono ? ' stat-value--mono' : '');
+    val.textContent = value;
+    row.appendChild(val);
+    if (opts.copy !== false) row.appendChild(copyButton(opts.copyValue || value));
+    d.appendChild(lab); d.appendChild(row);
+    if (opts.hint) {
+      var hintRow = document.createElement('div');
+      hintRow.className = 'stat-hint-row';
+      var hintText = document.createElement('div');
+      hintText.className = 'stat-hint';
+      hintText.textContent = opts.hint;
+      hintRow.appendChild(hintText);
+      hintRow.appendChild(copyButton(opts.hintCopy || opts.hint));
+      d.appendChild(hintRow);
+    }
+    if (opts.subnote) {
+      var note = document.createElement('div');
+      note.className = 'stat-subnote';
+      note.textContent = opts.subnote;
+      d.appendChild(note);
+    }
+    return d;
+  }
+
+  function renderGauge(parsed) {
+    var pct = (parsed.prefix / parsed.total) * 100;
+    var hostPct = 100 - pct;
+    gaugeNet.style.width = pct.toFixed(2) + '%';
+    gaugeHost.style.width = hostPct.toFixed(2) + '%';
+    gaugeNetLabel.textContent = 'Network · ' + parsed.prefix + ' bits';
+    gaugeHostLabel.textContent = 'Hosts · ' + parsed.hostBits + ' bits';
+    var addrCount = fmtBigCount(parsed.totalAddrs);
+    var usableCount = fmtBigCount(parsed.usableHosts);
+    var same = parsed.totalAddrs === parsed.usableHosts;
+    gaugeSummary.textContent = '/' + parsed.prefix + ' · ' + addrCount + (same ? '' : ' · ' + usableCount + ' usable');
+    gaugeTotal.textContent = parsed.total + ' bits';
+  }
+
+  function renderHostsNeeded() {
+    if (!hostsInput) return;
+    var n = parseInt(hostsInput.value, 10);
+    if (isNaN(n) || n < 1) { hostsResult.textContent = ''; return; }
+    var needed = n + 2;
+    var bits = Math.ceil(Math.log2(needed));
+    if (bits < 2) bits = 2;
+    if (bits > 32) { hostsResult.textContent = 'Exceeds IPv4 capacity'; return; }
+    var prefix = 32 - bits;
+    var addrs = Math.pow(2, bits);
+    var usable = prefix === 31 ? 2 : (prefix === 32 ? 1 : addrs - 2);
+    hostsResult.textContent = '/' + prefix + ' · ' + addrs.toLocaleString() + ' addresses · ' + usable.toLocaleString() + ' usable';
+  }
+
+  function rebuildHostsNeededRow(family) {
+    hostsNeededRow.classList.remove('hidden');
+    hostsNeededRow.classList.add('flex');
+    if (family === 6) {
+      hostsNeededRow.innerHTML = '<span style="font-size: 13px; color: var(--color-text-secondary);">' + ICONS.info + 'For IPv6, design convention is /64 per network regardless of host count (SLAAC).</span>';
+      hostsInput = null; hostsResult = null;
+      return;
+    }
+    hostsNeededRow.innerHTML = '';
+    var lbl1 = document.createElement('span');
+    lbl1.style.fontSize = '13px';
+    lbl1.style.color = 'var(--color-text-secondary)';
+    lbl1.textContent = 'Need';
+    var inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '1';
+    inp.value = hostsInput ? hostsInput.value : '60';
+    inp.style.width = '90px';
+    inp.style.fontFamily = 'var(--font-mono)';
+    inp.style.fontSize = '14px';
+    inp.style.padding = '4px 8px';
+    inp.style.border = '1px solid var(--color-border-subtle)';
+    inp.style.borderRadius = '0.375rem';
+    inp.style.background = 'var(--color-bg-elevated)';
+    inp.style.color = 'var(--color-text-primary)';
+    inp.setAttribute('aria-label', 'Number of hosts needed');
+    var lbl2 = document.createElement('span');
+    lbl2.style.fontSize = '13px';
+    lbl2.style.color = 'var(--color-text-secondary)';
+    lbl2.textContent = 'hosts →';
+    var res = document.createElement('span');
+    res.style.fontFamily = 'var(--font-mono)';
+    res.style.fontSize = '14px';
+    res.style.fontWeight = '500';
+    res.setAttribute('data-hosts-result', '');
+    hostsNeededRow.appendChild(lbl1);
+    hostsNeededRow.appendChild(inp);
+    hostsNeededRow.appendChild(lbl2);
+    hostsNeededRow.appendChild(res);
+    hostsInput = inp; hostsResult = res;
+    inp.addEventListener('input', renderHostsNeeded);
+  }
+
+  function renderSplit(parsed) {
+    var newPrefix = parseInt(splitPrefix.value, 10);
+    splitOutput.innerHTML = '';
+    if (isNaN(newPrefix) || newPrefix <= parsed.prefix || newPrefix > parsed.total) {
+      splitCount.textContent = newPrefix <= parsed.prefix
+        ? 'New prefix must be larger than /' + parsed.prefix
+        : 'Prefix must be ' + (parsed.prefix + 1) + '–' + parsed.total;
+      return;
+    }
+    var diff = newPrefix - parsed.prefix;
+    var totalCount = 1n << BigInt(diff);
+    var displayCount = totalCount > 256n ? 256 : Number(totalCount);
+    splitCount.textContent = totalCount > 256n
+      ? totalCount.toLocaleString() + ' subnets — showing first 256'
+      : displayCount + ' subnet' + (displayCount === 1 ? '' : 's');
+    var step = 1n << BigInt(parsed.total - newPrefix);
+    var hostsPer;
+    if (parsed.family === 4) {
+      hostsPer = newPrefix >= 31 ? (newPrefix === 32 ? 1n : 2n) : (step - 2n);
+    } else {
+      hostsPer = step;
+    }
+    var hostsLabel = fmtBigCount(hostsPer);
+    for (var i = 0; i < displayCount; i++) {
+      var net = parsed.network + (BigInt(i) * step);
+      var row = document.createElement('div');
+      row.className = 'split-row';
+      row.innerHTML =
+        '<span class="split-index">#' + (i + 1) + '</span>' +
+        '<span class="split-cidr">' + fmtAddr(net, parsed.family) + '/' + newPrefix + '</span>' +
+        '<span class="split-hosts">' + hostsLabel + ' hosts</span>';
+      splitOutput.appendChild(row);
+    }
+  }
+
+  function clearAll() {
+    statsGrid.innerHTML = '';
+    gaugeNet.style.width = '0%';
+    gaugeHost.style.width = '0%';
+    gaugeNetLabel.textContent = '';
+    gaugeHostLabel.textContent = '';
+    gaugeSummary.textContent = '';
+    gaugeTotal.textContent = '';
+    hostsNeededRow.classList.add('hidden');
+    hostsNeededRow.classList.remove('flex');
+    splitOutput.innerHTML = '';
+    splitCount.textContent = '';
+  }
+
+  function render() {
+    var result = parseCidr(input.value);
+    if (result.error) {
+      errorRow.classList.remove('hidden');
+      errorRow.classList.add('block');
+      errorRow.textContent = result.error;
+      clearAll();
+      document.title = DEFAULT_TITLE;
+      return;
+    }
+    errorRow.classList.add('hidden');
+    errorRow.classList.remove('block');
+    statsGrid.innerHTML = '';
+    var fam = result.family;
+    statsGrid.appendChild(statCard('Network address', fmtAddr(result.network, fam) + '/' + result.prefix, true));
+    if (fam === 4) {
+      statsGrid.appendChild(statCard('Broadcast', fmtAddr(result.lastAddr, fam), true));
+    } else {
+      statsGrid.appendChild(statCard('Last address', fmtAddr(result.lastAddr, fam), true));
+    }
+    statsGrid.appendChild(statCard('First usable', fmtAddr(result.firstUsable, fam), true));
+    statsGrid.appendChild(statCard('Last usable', fmtAddr(result.lastUsable, fam), true));
+    if (fam === 4) {
+      statsGrid.appendChild(statCard('Subnet mask', bigToIpv4(result.mask), true));
+      var wildcardVal = bigToIpv4(result.wildcard);
+      var aclHint = 'permit ip ' + bigToIpv4(result.network) + ' ' + wildcardVal + ' any';
+      statsGrid.appendChild(statCard('Wildcard mask', wildcardVal, true, { hint: aclHint, hintCopy: aclHint }));
+      statsGrid.appendChild(statCard('Class', 'Class ' + result.ipClass, false, { copy: false }));
+    }
+    var arpaLabel = 'Reverse DNS zone' + (result.arpa.exact ? '' : ' (parent)');
+    statsGrid.appendChild(statCard(arpaLabel, result.arpa.zone, true, {
+      subnote: result.arpa.exact ? null : 'Non-aligned prefix — see RFC 2317'
+    }));
+    statsGrid.appendChild(statCard('Usable hosts', fmtBigCount(result.usableHosts), false, { copy: false }));
+    statsGrid.appendChild(statCard('Total addresses', fmtBigCount(result.totalAddrs), false, { copy: false }));
+
+    renderGauge(result);
+    rebuildHostsNeededRow(fam);
+    if (fam === 4) renderHostsNeeded();
+    splitPrefix.max = result.total;
+    if (parseInt(splitPrefix.value, 10) <= result.prefix) {
+      splitPrefix.value = Math.min(result.prefix + (fam === 6 ? 16 : 2), result.total);
+    }
+    renderSplit(result);
+
+    pushHistory(result.canonical);
+    document.title = result.canonical + ' — Subnet calculator · Corey Wininger';
+  }
+
+  function shareCurrent() {
+    try {
+      var url = new URL(window.location.href);
+      url.searchParams.set('cidr', input.value.trim());
+      copyToClipboard(url.toString(), shareBtn);
+    } catch (e) {}
+  }
+
+  parseBtn.addEventListener('click', render);
+  shareBtn.addEventListener('click', shareCurrent);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') render(); });
+  splitPrefix.addEventListener('input', function () {
+    var result = parseCidr(input.value);
+    if (!result.error) renderSplit(result);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && document.activeElement !== input && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) {
+      e.preventDefault();
+      input.focus();
+      input.select();
+    }
+  });
+
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var initial = params.get('cidr');
+    if (initial) input.value = initial;
+  } catch (e) {}
+
+  renderHistory();
+  render();
+})();
+</script>
+</Base>
