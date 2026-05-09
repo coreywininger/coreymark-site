@@ -37,6 +37,9 @@ Thumbs.db
 # jetbrains setting folder
 .idea/
 
+# claude code preview / local agent config (per-repo launch.json lives in workspace)
+.claude/
+
 # vscode — personal editor settings stay personal; carve out exceptions
 # (e.g. !.vscode/extensions.json) if we want to share project settings
 .vscode/
