@@ -46,6 +46,16 @@ export const tools: LabTool[] = [
     isNew: true,
     icon: 'clock',
   },
+  {
+    slug: 'jwt',
+    title: 'JWT decoder',
+    description:
+      'Decode JSON Web Tokens. Header, payload, claims with friendly tooltips, expiration countdown, algorithm warnings, and in-browser HMAC signature verification.',
+    discipline: 'security',
+    added: '2026-05-10',
+    isNew: true,
+    icon: 'key-round',
+  },
 ];
 
 export function toolsByDiscipline(d: Discipline): LabTool[] {

@@ -1,5 +1,5 @@
 ---
-import { Network, Server, Shield, GitBranch, Cloud, Clock } from '@lucide/astro';
+import { Network, Server, Shield, GitBranch, Cloud, Clock, KeyRound } from '@lucide/astro';
 import type { LabTool } from '../data/lab-tools';
 import { disciplineLabel } from '../data/lab-tools';
 
@@ -16,6 +16,7 @@ const iconMap = {
   git: GitBranch,
   cloud: Cloud,
   clock: Clock,
+  'key-round': KeyRound,
 } as const;
 
 const Icon = iconMap[tool.icon as keyof typeof iconMap] ?? Network;
