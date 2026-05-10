@@ -1,0 +1,1095 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const title = 'JWT decoder';
+const description =
+  'Decode a JWT — see header, payload, claims with friendly tooltips, and signature. Verifies HS256/384/512 in the browser. 100% client-side, free.';
+---
+
+<Base title={title} description={description}>
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-text-primary">Home</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
+        <li aria-hidden="true">›</li>
+        <li class="text-text-secondary">JWT decoder</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8">
+      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        JWT decoder
+      </h1>
+      <p class="max-w-2xl text-lg text-text-secondary">
+        Paste a JSON Web Token — see exactly what's inside, what every claim
+        means, and whether it's valid right now. 100% client-side: nothing
+        you paste leaves your browser.
+      </p>
+    </header>
+
+    <h2 class="sr-only">
+      JWT decoder with header, payload, signature panes; claims explained
+      with friendly tooltips; expiration countdown; algorithm posture
+      warnings; in-browser HMAC signature verification for HS256/HS384/HS512;
+      sample tokens including Microsoft Entra, Auth0, Okta, AWS Cognito,
+      expired, not-yet-valid, and alg:none variants.
+    </h2>
+
+    <div class="lab-tool jwt-widget py-4">
+
+      <details class="primer">
+        <summary>What is a JWT? (30-second crash course)</summary>
+        <div class="body">
+          <p>A <strong>JSON Web Token</strong> is three base64url-encoded JSON blobs glued together with dots:</p>
+          <div class="ascii"><span class="h">eyJhbGciOiJIUzI1NiIs...</span><span class="dot">.</span><span class="p">eyJzdWIiOiIxMjM0NTY3ODkw...</span><span class="dot">.</span><span class="s">SflKxwRJSMeKKF2QT4fwpM...</span>
+   <span class="h">▲ header</span>            <span class="p">▲ payload (claims)</span>          <span class="s">▲ signature</span></div>
+          <p><strong>Header</strong> says which signing algorithm was used (e.g. <code>HS256</code>, <code>RS256</code>). <strong>Payload</strong> is the actual data — "claims" like who issued it (<code>iss</code>), who it's for (<code>aud</code>), when it expires (<code>exp</code>). <strong>Signature</strong> is what makes it tamper-proof: change one character in the header or payload and the signature no longer verifies.</p>
+          <p>The first two parts are <em>not encrypted</em> — just encoded. Anyone holding the token can read it. The signature is what proves the token wasn't forged or modified <em>after</em> issuance.</p>
+          <p>Try a sample below to see it in action.</p>
+        </div>
+      </details>
+
+      <p class="chips-label">Try a sample</p>
+      <div class="chips" id="samples">
+        <button class="chip" data-sample="hs256">HS256 (verifiable)</button>
+        <button class="chip" data-sample="entra">Entra ID style</button>
+        <button class="chip" data-sample="auth0">Auth0 style</button>
+        <button class="chip" data-sample="okta">Okta style</button>
+        <button class="chip" data-sample="cognito">AWS Cognito style</button>
+        <button class="chip" data-sample="expired">Expired token</button>
+        <button class="chip" data-sample="nbf">Not yet valid</button>
+        <button class="chip" data-sample="alg-none">alg: none (insecure)</button>
+      </div>
+
+      <textarea id="jwt-input" spellcheck="false" placeholder="Paste a JWT here (header.payload.signature)"></textarea>
+      <div class="colored-token" id="colored" aria-hidden="true">&nbsp;</div>
+      <div class="actions">
+        <button class="btn" id="decode-btn">Decode</button>
+        <button class="btn secondary" id="clear-btn">Clear</button>
+      </div>
+
+      <div id="status" class="status" hidden>
+        <span class="dot-led"></span>
+        <span class="msg">Ready</span>
+        <span class="countdown" hidden></span>
+      </div>
+
+      <div class="panes" id="panes" hidden>
+        <div class="pane">
+          <div class="pane-head">
+            <span class="swatch h"></span> Header
+            <span id="alg-badge" class="alg-badge" hidden></span>
+            <button class="copy" data-copy="header">Copy</button>
+          </div>
+          <div class="pane-body" id="header-body"></div>
+        </div>
+        <div class="pane">
+          <div class="pane-head">
+            <span class="swatch p"></span> Payload
+            <button class="copy" data-copy="payload">Copy</button>
+          </div>
+          <div class="pane-body" id="payload-body"></div>
+        </div>
+        <div class="pane full">
+          <div class="pane-head">
+            <span class="swatch s"></span> Signature
+            <button class="copy" data-copy="signature">Copy</button>
+          </div>
+          <div class="pane-body" id="signature-body"></div>
+        </div>
+        <div class="pane full">
+          <div class="pane-head">Claims explained</div>
+          <table class="claims">
+            <thead>
+              <tr><th>Claim</th><th>Meaning</th><th>Value</th></tr>
+            </thead>
+            <tbody id="claims-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="verify" id="verify-block" hidden>
+        <h3>Verify signature</h3>
+        <p class="hint" id="verify-hint">Paste the shared secret used to sign this token. Verification works for <code>HS256/384/512</code> only — asymmetric algorithms (RS*, ES*, PS*) need the issuer's public key, which can't be done casually here.</p>
+        <div class="row">
+          <input id="secret-input" type="text" autocomplete="off" placeholder="e.g. your-256-bit-secret" />
+          <button class="btn" id="verify-btn">Verify</button>
+        </div>
+        <div class="result muted" id="verify-result">Awaiting secret…</div>
+      </div>
+
+    </div>
+
+    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
+      <summary class="cursor-pointer text-base font-semibold text-text-primary">
+        About this tool
+      </summary>
+      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+        <p><strong>What it does.</strong> Decodes any JWT (JSON Web Token)
+          into its three parts: header, payload, signature. Pretty-prints
+          header and payload as JSON with syntax highlighting. Renders a
+          "Claims explained" table with friendly labels and hover-tooltip
+          descriptions for the most common claims: standard RFC 7519 claims
+          (<code>iss</code>, <code>sub</code>, <code>aud</code>,
+          <code>exp</code>, <code>nbf</code>, <code>iat</code>,
+          <code>jti</code>), OIDC claims (<code>name</code>,
+          <code>email</code>, <code>preferred_username</code>,
+          <code>auth_time</code>, <code>scope</code>, <code>nonce</code>),
+          Microsoft Entra-specific claims (<code>oid</code>,
+          <code>tid</code>, <code>appid</code>, <code>azp</code>,
+          <code>appidacr</code>, <code>acr</code>, <code>amr</code>,
+          <code>scp</code>, <code>roles</code>, <code>upn</code>,
+          <code>unique_name</code>, <code>ipaddr</code>, <code>ver</code>),
+          Okta (<code>cid</code>, <code>uid</code>), and AWS Cognito
+          (<code>client_id</code>, <code>token_use</code>,
+          <code>username</code>, <code>cognito:groups</code>,
+          <code>event_id</code>, <code>origin_jti</code>).</p>
+        <p><strong>Status, countdown, posture.</strong> Surfaces a status
+          banner with the token's current validity (decoded / expired /
+          not-yet-valid / malformed), a live countdown for the
+          <code>exp</code> claim, and an algorithm posture badge:
+          <code>none</code> (red — never accept), <code>HS*</code>
+          (symmetric — secret-based), <code>RS*</code>/<code>ES*</code>/<code>PS*</code>/<code>Ed*</code>
+          (asymmetric — uses issuer's public key).</p>
+        <p><strong>HMAC verify in the browser.</strong> For <code>HS256</code>,
+          <code>HS384</code>, and <code>HS512</code> tokens, verifies the
+          signature locally via the <code>SubtleCrypto</code> WebCrypto API.
+          Asymmetric tokens (<code>RS*</code>, <code>ES*</code>) cannot be
+          verified here — that requires fetching the issuer's JWKS, which
+          is out of scope. Color-codes the input (header red / payload
+          purple / signature cyan) matching the standard JWT visual
+          convention.</p>
+        <p><strong>Deliberately not included.</strong> No history of
+          previously decoded tokens, no <code>?token=</code> URL state, no
+          <code>document.title</code> reflection of token content. JWTs
+          frequently contain sensitive identifiers; persisting them anywhere
+          is a footgun. No JWKS fetch / RS*/ES* signature verification —
+          fetching arbitrary URLs from a static site is a CORS and
+          abuse-vector mess. No JWT <em>encoding</em> (mint your own token)
+          — paste-and-decode is the 95% use case; encoding has different
+          threat model and would need careful UX. No claim editing /
+          re-signing — same reasoning. No JWE (encrypted JWTs) — much rarer
+          in practice; could be a separate v2 feature if demand surfaces.</p>
+        <p><strong>References.</strong> RFC 7519 (JSON Web Token), RFC 7515
+          (JSON Web Signature), RFC 7518 (JSON Web Algorithms), Microsoft
+          identity platform access token claims reference, OpenID Connect
+          Core 1.0 ID token claims.</p>
+        <p><strong>Privacy note:</strong> all parsing, decoding, and
+          signature verification happen entirely in your browser. The token,
+          the secret you paste to verify, and any decoded content never
+          leave the page.</p>
+      </div>
+    </details>
+
+    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
+      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Security</span>
+      <span>Added 2026-05-10</span>
+    </div>
+  </section>
+
+<style is:global>
+  /* JWT decoder widget — scoped under .jwt-widget so styles don't leak.
+     Token aliases let the prototype's CSS body work unchanged. */
+  .jwt-widget {
+    --jwt-color-text-danger: var(--color-error);
+    --jwt-color-text-success: var(--color-success);
+    --jwt-color-text-warn: var(--color-accent-secondary);
+    --jwt-color-text-muted: var(--color-text-tertiary);
+    --jwt-color-bg-secondary: var(--color-bg-elevated);
+    --jwt-color-bg-tertiary: var(--color-bg-subtle);
+    --jwt-color-bg-danger: color-mix(in srgb, var(--color-error) 12%, transparent);
+    --jwt-color-border: var(--color-border-subtle);
+    --jwt-color-accent: var(--color-accent-primary);
+    --jwt-color-accent-2: var(--color-accent-secondary);
+    --jwt-header: #fb015b;
+    --jwt-payload: #d63aff;
+    --jwt-signature: #00b9f1;
+    --jwt-radius: 10px;
+    --jwt-mono: var(--font-mono);
+  }
+  /* Force [hidden] to win over .panes/.status display rules.
+     Author-stylesheet display:grid/flex outranks UA [hidden]{display:none}. */
+  .jwt-widget [hidden] { display: none !important; }
+  .jwt-widget *, .jwt-widget *::before, .jwt-widget *::after { box-sizing: border-box; }
+
+  /* primer */
+  .jwt-widget details.primer {
+    border: 1px solid var(--jwt-color-border);
+    border-radius: var(--jwt-radius);
+    background: var(--jwt-color-bg-secondary);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .jwt-widget details.primer > summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .jwt-widget details.primer > summary::-webkit-details-marker { display: none; }
+  .jwt-widget details.primer > summary::before {
+    content: "▸";
+    font-size: 12px;
+    color: var(--jwt-color-accent);
+    transition: transform 0.15s;
+  }
+  .jwt-widget details.primer[open] > summary::before { transform: rotate(90deg); }
+  .jwt-widget details.primer .body {
+    padding: 4px 18px 18px;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+  }
+  .jwt-widget details.primer .body p { margin: 10px 0; }
+  .jwt-widget details.primer .body code {
+    background: var(--jwt-color-bg-tertiary);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: var(--color-text-primary);
+  }
+  .jwt-widget .ascii {
+    font-family: var(--jwt-mono);
+    font-size: 12.5px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--jwt-color-border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 10px 0 4px;
+    color: var(--color-text-primary);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .jwt-widget .ascii .h { color: var(--jwt-header); }
+  .jwt-widget .ascii .p { color: var(--jwt-payload); }
+  .jwt-widget .ascii .s { color: var(--jwt-signature); }
+
+  /* sample chips */
+  .jwt-widget .chips-label {
+    font-size: 12px;
+    color: var(--jwt-color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 6px;
+  }
+  .jwt-widget .chips {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 16px;
+  }
+  .jwt-widget .chip {
+    background: var(--jwt-color-bg-secondary);
+    border: 1px solid var(--jwt-color-border);
+    color: var(--color-text-primary);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s;
+  }
+  .jwt-widget .chip:hover { border-color: var(--jwt-color-accent); color: var(--jwt-color-accent); }
+  .jwt-widget .chip.flash {
+    background: var(--jwt-color-accent);
+    color: var(--color-bg-primary);
+    border-color: var(--jwt-color-accent);
+  }
+
+  /* input */
+  .jwt-widget textarea#jwt-input {
+    width: 100%;
+    min-height: 110px;
+    background: var(--jwt-color-bg-secondary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--jwt-color-border);
+    border-radius: var(--jwt-radius);
+    padding: 12px 14px;
+    font: 13px/1.5 var(--jwt-mono);
+    resize: vertical;
+    word-break: break-all;
+  }
+  .jwt-widget textarea#jwt-input:focus {
+    outline: 2px solid var(--jwt-color-accent);
+    outline-offset: -1px;
+  }
+
+  .jwt-widget .colored-token {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: var(--jwt-color-bg-secondary);
+    border: 1px dashed var(--jwt-color-border);
+    border-radius: var(--jwt-radius);
+    font: 13px/1.5 var(--jwt-mono);
+    word-break: break-all;
+    min-height: 38px;
+    color: var(--jwt-color-text-muted);
+  }
+  .jwt-widget .colored-token .h { color: var(--jwt-header); }
+  .jwt-widget .colored-token .p { color: var(--jwt-payload); }
+  .jwt-widget .colored-token .s { color: var(--jwt-signature); }
+  .jwt-widget .colored-token .dot { color: var(--jwt-color-text-muted); }
+
+  .jwt-widget .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .jwt-widget .btn {
+    background: var(--jwt-color-accent);
+    color: var(--color-bg-primary);
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .jwt-widget .btn.secondary {
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--jwt-color-border);
+  }
+  .jwt-widget .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* status banner */
+  .jwt-widget .status {
+    margin: 18px 0 12px;
+    padding: 10px 14px;
+    border-radius: var(--jwt-radius);
+    font-size: 14px;
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid var(--jwt-color-border);
+    background: var(--jwt-color-bg-secondary);
+  }
+  .jwt-widget .status .dot-led {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--jwt-color-text-muted);
+    flex-shrink: 0;
+  }
+  .jwt-widget .status.ok    .dot-led { background: var(--jwt-color-text-success); box-shadow: 0 0 6px var(--jwt-color-text-success); }
+  .jwt-widget .status.warn  .dot-led { background: var(--jwt-color-text-warn); box-shadow: 0 0 6px var(--jwt-color-text-warn); }
+  .jwt-widget .status.err   .dot-led { background: var(--jwt-color-text-danger); box-shadow: 0 0 6px var(--jwt-color-text-danger); }
+  .jwt-widget .status.ok    { border-color: var(--jwt-color-text-success); }
+  .jwt-widget .status.warn  { border-color: var(--jwt-color-text-warn); }
+  .jwt-widget .status.err   { border-color: var(--jwt-color-text-danger); background: var(--jwt-color-bg-danger); }
+  .jwt-widget .status .countdown {
+    margin-left: auto;
+    font-family: var(--jwt-mono);
+    font-size: 12.5px;
+    color: var(--color-text-secondary);
+  }
+
+  /* decoded panes */
+  .jwt-widget .panes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .jwt-widget .pane {
+    border: 1px solid var(--jwt-color-border);
+    border-radius: var(--jwt-radius);
+    background: var(--jwt-color-bg-secondary);
+    overflow: hidden;
+  }
+  .jwt-widget .pane.full { grid-column: 1 / -1; }
+  .jwt-widget .pane-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--jwt-color-border);
+    background: var(--jwt-color-bg-tertiary);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .jwt-widget .pane-head .swatch {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .jwt-widget .pane-head .swatch.h { background: var(--jwt-header); }
+  .jwt-widget .pane-head .swatch.p { background: var(--jwt-payload); }
+  .jwt-widget .pane-head .swatch.s { background: var(--jwt-signature); }
+  .jwt-widget .pane-head .copy {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--jwt-color-border);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: 11.5px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .jwt-widget .pane-head .copy:hover { border-color: var(--jwt-color-accent); color: var(--jwt-color-accent); }
+  .jwt-widget .pane-body {
+    padding: 12px 14px;
+    font: 12.5px/1.55 var(--jwt-mono);
+    color: var(--color-text-primary);
+    overflow-x: auto;
+    white-space: pre;
+    min-height: 60px;
+  }
+  .jwt-widget .pane-body .key   { color: var(--jwt-color-text-warn); }
+  .jwt-widget .pane-body .str   { color: var(--jwt-color-text-success); }
+  .jwt-widget .pane-body .num   { color: var(--jwt-color-accent); }
+  .jwt-widget .pane-body .bool  { color: var(--jwt-color-accent-2); }
+  .jwt-widget .pane-body .null  { color: var(--jwt-color-text-muted); }
+  .jwt-widget .pane-body .err   { color: var(--jwt-color-text-danger); white-space: pre-wrap; }
+
+  .jwt-widget .alg-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 11px;
+    border: 1px solid var(--jwt-color-border);
+    color: var(--color-text-secondary);
+  }
+  .jwt-widget .alg-badge.danger  { color: var(--jwt-color-text-danger); border-color: var(--jwt-color-text-danger); }
+  .jwt-widget .alg-badge.sym     { color: var(--jwt-color-accent); border-color: var(--jwt-color-accent); }
+  .jwt-widget .alg-badge.asym    { color: var(--jwt-color-text-success); border-color: var(--jwt-color-text-success); }
+
+  /* claims table */
+  .jwt-widget table.claims {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .jwt-widget table.claims th, .jwt-widget table.claims td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--jwt-color-border);
+    vertical-align: top;
+  }
+  .jwt-widget table.claims th {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    background: var(--jwt-color-bg-tertiary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .jwt-widget table.claims td.k {
+    font-family: var(--jwt-mono);
+    width: 14ch;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+  }
+  .jwt-widget table.claims td.k abbr {
+    border-bottom: 1px dotted var(--jwt-color-text-muted);
+    cursor: help;
+    text-decoration: none;
+  }
+  .jwt-widget table.claims td.label {
+    color: var(--color-text-secondary);
+    width: 22ch;
+  }
+  .jwt-widget table.claims td.v {
+    font-family: var(--jwt-mono);
+    color: var(--color-text-primary);
+    word-break: break-all;
+  }
+  .jwt-widget table.claims td.v .meta {
+    display: block;
+    font-family: var(--font-sans, inherit);
+    font-size: 12px;
+    color: var(--jwt-color-text-muted);
+    margin-top: 2px;
+  }
+  .jwt-widget table.claims td.v .meta.warn { color: var(--jwt-color-text-warn); }
+  .jwt-widget table.claims td.v .meta.err  { color: var(--jwt-color-text-danger); }
+  .jwt-widget table.claims td.v .meta.ok   { color: var(--jwt-color-text-success); }
+
+  /* verify */
+  .jwt-widget .verify {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border: 1px solid var(--jwt-color-border);
+    border-radius: var(--jwt-radius);
+    background: var(--jwt-color-bg-secondary);
+  }
+  .jwt-widget .verify h3 { margin: 0 0 4px; font-size: 14px; }
+  .jwt-widget .verify .hint {
+    color: var(--jwt-color-text-muted);
+    font-size: 12.5px;
+    margin: 0 0 10px;
+  }
+  .jwt-widget .verify .hint code {
+    background: var(--jwt-color-bg-tertiary);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--color-text-primary);
+  }
+  .jwt-widget .verify .row {
+    display: flex; gap: 8px; align-items: stretch;
+  }
+  .jwt-widget .verify input {
+    flex: 1;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--jwt-color-border);
+    color: var(--color-text-primary);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: var(--jwt-mono);
+    font-size: 13px;
+  }
+  .jwt-widget .verify input:focus {
+    outline: 2px solid var(--jwt-color-accent);
+    outline-offset: -1px;
+  }
+  .jwt-widget .verify .result {
+    margin-top: 10px;
+    font-size: 13.5px;
+    font-family: var(--jwt-mono);
+    min-height: 18px;
+  }
+  .jwt-widget .verify .result.ok    { color: var(--jwt-color-text-success); }
+  .jwt-widget .verify .result.err   { color: var(--jwt-color-text-danger); }
+  .jwt-widget .verify .result.warn  { color: var(--jwt-color-text-warn); }
+  .jwt-widget .verify .result.muted { color: var(--jwt-color-text-muted); }
+
+  @media (max-width: 720px) {
+    .jwt-widget .panes { grid-template-columns: 1fr; }
+    .jwt-widget .pane-body { overflow-x: auto; }
+    .jwt-widget table.claims { display: block; overflow-x: auto; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  /* ---------- UX baseline pattern (per PR #33) ---------- */
+  var rendering = false;
+  var pendingRender = false;
+  var busyTimer = null;
+  function scheduleRender() {
+    if (rendering) { pendingRender = true; return; }
+    rendering = true;
+    setBusyState(true);
+    requestAnimationFrame(function () {
+      setTimeout(function () {
+        try { renderImpl(); }
+        finally {
+          setBusyState(false);
+          rendering = false;
+          if (pendingRender) { pendingRender = false; scheduleRender(); }
+        }
+      }, 0);
+    });
+  }
+  function setBusyState(busy) {
+    var btn = document.getElementById('decode-btn');
+    if (busy) {
+      btn.disabled = true;
+      busyTimer = setTimeout(function () { btn.textContent = 'Decoding…'; }, 80);
+    } else {
+      clearTimeout(busyTimer);
+      btn.disabled = false;
+      btn.textContent = 'Decode';
+    }
+  }
+  function flashChip(el) {
+    el.classList.add('flash');
+    setTimeout(function () { el.classList.remove('flash'); }, 140);
+  }
+
+  /* ---------- base64url + decode ---------- */
+  function b64urlToBytes(b64url) {
+    var pad = '='.repeat((4 - b64url.length % 4) % 4);
+    var b64 = (b64url + pad).replace(/-/g, '+').replace(/_/g, '/');
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+  function b64urlToString(b64url) {
+    return new TextDecoder().decode(b64urlToBytes(b64url));
+  }
+  function tryParse(b64url) {
+    try { return { ok: true, value: JSON.parse(b64urlToString(b64url)) }; }
+    catch (e) { return { ok: false, error: e.message }; }
+  }
+
+  /* ---------- pretty JSON syntax-highlight ---------- */
+  function highlightJSON(obj) {
+    var json = JSON.stringify(obj, null, 2);
+    return json
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="key">$1</span>$2')
+      .replace(/: ("(?:[^"\\]|\\.)*")/g, ': <span class="str">$1</span>')
+      .replace(/: (-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g, ': <span class="num">$1</span>')
+      .replace(/: (true|false)/g, ': <span class="bool">$1</span>')
+      .replace(/: (null)/g, ': <span class="null">$1</span>');
+  }
+
+  /* ---------- claim dictionary ---------- */
+  var CLAIMS = {
+    iss: { label: 'Issuer',         desc: 'Who issued this token (URL or string identifier).' },
+    sub: { label: 'Subject',        desc: 'Who/what the token is about — usually the user or service principal.' },
+    aud: { label: 'Audience',       desc: 'Who the token is intended for. Receivers must reject tokens not addressed to them.' },
+    exp: { label: 'Expiration',     desc: 'Unix timestamp after which the token must be rejected.' },
+    nbf: { label: 'Not before',     desc: 'Unix timestamp before which the token must be rejected.' },
+    iat: { label: 'Issued at',      desc: 'Unix timestamp when the token was issued.' },
+    jti: { label: 'JWT ID',         desc: 'Unique identifier for this token (used for replay protection / revocation).' },
+    name:               { label: 'Display name',     desc: 'Human-readable name of the subject.' },
+    given_name:         { label: 'Given name',       desc: 'First name.' },
+    family_name:        { label: 'Family name',      desc: 'Last name.' },
+    email:              { label: 'Email',            desc: 'Email address of the subject.' },
+    email_verified:     { label: 'Email verified',   desc: 'Whether the email has been verified by the issuer.' },
+    preferred_username: { label: 'Preferred username', desc: 'The handle the user prefers (often UPN or email).' },
+    nonce:              { label: 'Nonce',            desc: 'Replay-protection value supplied by the client at auth time.' },
+    oid:        { label: 'Object ID',          desc: 'Immutable identifier for the user/principal in Entra (stable across renames).' },
+    tid:        { label: 'Tenant ID',          desc: 'GUID of the Entra tenant that issued the token.' },
+    appid:      { label: 'Application ID',     desc: 'Client ID of the application the token was issued to (v1.0 token).' },
+    azp:        { label: 'Authorized party',   desc: 'Client ID of the application (v2.0 token equivalent of appid).' },
+    appidacr:   { label: 'App auth class',     desc: 'How the client authenticated: 0=public, 1=client secret, 2=cert.' },
+    acr:        { label: 'Auth class ref',     desc: 'Strength of authentication. "1" = at least one factor.' },
+    amr:        { label: 'Auth methods',       desc: 'Methods used (e.g. ["pwd"], ["mfa"]).' },
+    scp:        { label: 'Scopes',             desc: 'Delegated permissions granted to the app. Space-separated.' },
+    roles:      { label: 'Roles',              desc: 'App roles (application permissions) assigned to the principal.' },
+    upn:        { label: 'User principal name', desc: 'UPN of the user, typically email-shaped.' },
+    unique_name:{ label: 'Unique name',        desc: 'v1.0 token equivalent of preferred_username/upn.' },
+    ipaddr:     { label: 'IP address',         desc: 'IPv4/IPv6 address the auth happened from.' },
+    ver:        { label: 'Token version',      desc: '1.0 (legacy v1) or 2.0 (Microsoft identity platform v2).' },
+    cid:               { label: 'Client ID',          desc: 'Okta: the OAuth client (application) the token was issued to.' },
+    uid:               { label: 'User ID',            desc: 'Okta: stable internal user identifier (00uXXXX...).' },
+    client_id:         { label: 'Client ID',          desc: 'Cognito/OIDC: app client ID the token was issued to.' },
+    token_use:         { label: 'Token use',          desc: 'Cognito: "access" (call APIs) or "id" (identity claims).' },
+    username:          { label: 'Username',           desc: 'Cognito: the user pool username.' },
+    'cognito:groups':  { label: 'Cognito groups',     desc: 'Cognito: groups the user belongs to in the user pool.' },
+    'cognito:username':{ label: 'Cognito username',   desc: 'Cognito: stable username from the user pool.' },
+    event_id:          { label: 'Event ID',           desc: 'Cognito: identifier of the auth event that produced this token.' },
+    origin_jti:        { label: 'Origin JTI',         desc: 'Cognito: original token ID before refresh — useful for revocation tracking.' },
+    auth_time:         { label: 'Authenticated at',   desc: 'Unix timestamp when the user actually authenticated (vs. when this token was issued).' },
+    scope:             { label: 'Scope',              desc: 'OAuth scopes granted. Some IdPs use "scp" (array), others "scope" (space-separated string).' },
+    alg:        { label: 'Algorithm',          desc: 'Signing algorithm used.' },
+    typ:        { label: 'Type',               desc: 'Token type — typically "JWT".' },
+    kid:        { label: 'Key ID',             desc: "Identifier of the key used to sign — looked up against the issuer's JWKS." }
+  };
+
+  function algMeta(alg) {
+    if (!alg) return { kind: 'unknown', label: 'unknown', cls: '' };
+    var a = String(alg).toUpperCase();
+    if (a === 'NONE') return { kind: 'none', label: 'none — DANGER, never accept', cls: 'danger' };
+    if (a.indexOf('HS') === 0) return { kind: 'sym',  label: a + ' (symmetric — secret-based)', cls: 'sym' };
+    if (a.indexOf('RS') === 0) return { kind: 'asym', label: a + ' (RSA — asymmetric)',         cls: 'asym' };
+    if (a.indexOf('PS') === 0) return { kind: 'asym', label: a + ' (RSA-PSS — asymmetric)',     cls: 'asym' };
+    if (a.indexOf('ES') === 0) return { kind: 'asym', label: a + ' (ECDSA — asymmetric)',       cls: 'asym' };
+    if (a.indexOf('ED') === 0) return { kind: 'asym', label: a + ' (EdDSA — asymmetric)',       cls: 'asym' };
+    return { kind: 'unknown', label: a, cls: '' };
+  }
+
+  function fmtUnix(ts) {
+    if (typeof ts !== 'number') return null;
+    var d = new Date(ts * 1000);
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      timeZoneName: 'short'
+    });
+  }
+  function relTime(ts) {
+    if (typeof ts !== 'number') return null;
+    var diffSec = ts - Math.floor(Date.now() / 1000);
+    var abs = Math.abs(diffSec);
+    var past = diffSec < 0;
+    var v, u;
+    if (abs < 60)        { v = abs;                   u = 'second'; }
+    else if (abs < 3600) { v = Math.round(abs/60);    u = 'minute'; }
+    else if (abs < 86400){ v = Math.round(abs/3600);  u = 'hour'; }
+    else                 { v = Math.round(abs/86400); u = 'day'; }
+    return past ? v + ' ' + u + (v===1?'':'s') + ' ago' : 'in ' + v + ' ' + u + (v===1?'':'s');
+  }
+
+  var inputEl   = document.getElementById('jwt-input');
+  var coloredEl = document.getElementById('colored');
+  function refreshColored() {
+    var v = inputEl.value.trim();
+    if (!v) { coloredEl.innerHTML = '&nbsp;'; return; }
+    var parts = v.split('.');
+    var html = parts.map(function (p, i) {
+      var cls = ['h','p','s'][i] || 's';
+      return '<span class="' + cls + '">' + escapeHtml(p) + '</span>';
+    }).join('<span class="dot">.</span>');
+    coloredEl.innerHTML = html;
+  }
+  function escapeHtml(s) {
+    return s.replace(/[&<>]/g, function (c) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c];
+    });
+  }
+
+  var statusEl = document.getElementById('status');
+  var panesEl  = document.getElementById('panes');
+  var verifyEl = document.getElementById('verify-block');
+  var countdownTimer = null;
+  var lastDecoded = null;
+
+  function setStatus(kind, msg) {
+    statusEl.hidden = false;
+    statusEl.className = 'status ' + kind;
+    statusEl.querySelector('.msg').textContent = msg;
+    statusEl.querySelector('.countdown').hidden = true;
+  }
+  function setCountdown(text) {
+    var el = statusEl.querySelector('.countdown');
+    el.hidden = false;
+    el.textContent = text;
+  }
+
+  function renderImpl() {
+    refreshColored();
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+    var raw = inputEl.value.trim();
+    if (!raw) {
+      statusEl.hidden = true;
+      panesEl.hidden = true;
+      verifyEl.hidden = true;
+      return;
+    }
+    var parts = raw.split('.');
+    if (parts.length !== 3) {
+      setStatus('err', 'Malformed: expected 3 dot-separated parts, got ' + parts.length + '.');
+      panesEl.hidden = true;
+      verifyEl.hidden = true;
+      return;
+    }
+    var headerB64 = parts[0], payloadB64 = parts[1], signatureB64 = parts[2];
+    var headerR  = tryParse(headerB64);
+    var payloadR = tryParse(payloadB64);
+
+    var headerBody = document.getElementById('header-body');
+    if (headerR.ok) {
+      headerBody.innerHTML = highlightJSON(headerR.value);
+    } else {
+      headerBody.innerHTML = '<span class="err">Header parse error: ' + escapeHtml(headerR.error) + '</span>';
+    }
+    var payloadBody = document.getElementById('payload-body');
+    if (payloadR.ok) {
+      payloadBody.innerHTML = highlightJSON(payloadR.value);
+    } else {
+      payloadBody.innerHTML = '<span class="err">Payload parse error: ' + escapeHtml(payloadR.error) + '</span>';
+    }
+    document.getElementById('signature-body').textContent =
+      signatureB64 ? signatureB64 : '(no signature — alg: none)';
+
+    var algBadge = document.getElementById('alg-badge');
+    var alg = headerR.ok ? headerR.value.alg : null;
+    var meta = algMeta(alg);
+    algBadge.hidden = !alg;
+    algBadge.textContent = meta.label;
+    algBadge.className = 'alg-badge ' + meta.cls;
+
+    var now = Math.floor(Date.now() / 1000);
+    var banner = { kind: 'ok', msg: 'Token decoded.' };
+    var warnings = [];
+    if (!headerR.ok || !payloadR.ok) {
+      banner = { kind: 'err', msg: 'Token has parse errors — see panes below.' };
+    } else {
+      var p = payloadR.value;
+      if (meta.kind === 'none') warnings.push('alg: none — token is unsigned and trivially forgeable.');
+      if (typeof p.exp === 'number' && p.exp < now) {
+        banner = { kind: 'err', msg: 'Token expired ' + relTime(p.exp) + '.' };
+      } else if (typeof p.nbf === 'number' && p.nbf > now) {
+        banner = { kind: 'warn', msg: 'Token not yet valid (becomes valid ' + relTime(p.nbf) + ').' };
+      } else if (warnings.length) {
+        banner = { kind: 'warn', msg: warnings.join(' ') };
+      }
+    }
+    setStatus(banner.kind, banner.msg);
+
+    if (payloadR.ok && typeof payloadR.value.exp === 'number') {
+      var tick = function () {
+        var sec = payloadR.value.exp - Math.floor(Date.now() / 1000);
+        if (sec >= 0) setCountdown('expires ' + relTime(payloadR.value.exp));
+        else          setCountdown('expired ' + relTime(payloadR.value.exp));
+      };
+      tick();
+      countdownTimer = setInterval(tick, 1000);
+    }
+
+    renderClaims(payloadR.ok ? payloadR.value : null);
+
+    verifyEl.hidden = false;
+    var hint = document.getElementById('verify-hint');
+    var result = document.getElementById('verify-result');
+    if (meta.kind === 'sym') {
+      hint.innerHTML = 'Paste the shared secret used to sign this token. This <code>' + escapeHtml(alg) + '</code> token uses HMAC, so we can verify it right here in the browser.';
+      result.className = 'result muted';
+      result.textContent = 'Awaiting secret…';
+      document.getElementById('verify-btn').disabled = false;
+    } else if (meta.kind === 'asym') {
+      hint.innerHTML = 'This token uses <code>' + escapeHtml(alg) + "</code> (asymmetric). Verification requires the issuer's public key (typically fetched from their JWKS endpoint), which is out of scope for this tool.";
+      result.className = 'result muted';
+      result.textContent = '(Asymmetric — cannot verify here.)';
+      document.getElementById('verify-btn').disabled = true;
+    } else if (meta.kind === 'none') {
+      hint.innerHTML = 'This token has <code>alg: none</code>. There is no signature to verify — anyone can mint a valid one.';
+      result.className = 'result err';
+      result.textContent = 'No signature.';
+      document.getElementById('verify-btn').disabled = true;
+    } else {
+      hint.innerHTML = 'Unknown algorithm — verification not supported.';
+      result.className = 'result muted';
+      result.textContent = '';
+      document.getElementById('verify-btn').disabled = true;
+    }
+
+    panesEl.hidden = false;
+    lastDecoded = {
+      headerB64: headerB64, payloadB64: payloadB64, signatureB64: signatureB64,
+      header: headerR.value, payload: payloadR.value
+    };
+  }
+
+  function renderClaims(payload) {
+    var tbody = document.getElementById('claims-body');
+    tbody.innerHTML = '';
+    if (!payload || typeof payload !== 'object') return;
+
+    var order = ['iss','sub','aud','exp','nbf','iat','jti','auth_time',
+                 'name','preferred_username','email','email_verified','nonce','scope',
+                 'oid','tid','appid','azp','appidacr','acr','amr','scp','roles','upn','unique_name','ipaddr','ver',
+                 'cid','uid',
+                 'client_id','token_use','username','cognito:groups','cognito:username','event_id','origin_jti'];
+    var seen = {};
+    var rows = [];
+    order.forEach(function (k) { if (k in payload) { rows.push(k); seen[k] = true; } });
+    Object.keys(payload).forEach(function (k) { if (!seen[k]) rows.push(k); });
+
+    rows.forEach(function (k) {
+      var tr = document.createElement('tr');
+      tr.setAttribute('data-claim', k);
+      var def = CLAIMS[k];
+      var v = payload[k];
+      var klabel = def
+        ? '<abbr title="' + escapeHtml(def.desc) + '">' + escapeHtml(k) + '</abbr>'
+        : escapeHtml(k);
+      var labelHtml = def
+        ? escapeHtml(def.label)
+        : '<em style="color:var(--jwt-color-text-muted)">custom claim</em>';
+      tr.innerHTML = '<td class="k">' + klabel + '</td>' +
+                     '<td class="label">' + labelHtml + '</td>' +
+                     '<td class="v">' + formatValue(k, v) + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  function formatValue(key, v) {
+    if (v === null) return '<span class="null">null</span>';
+    if (['exp','nbf','iat','auth_time'].indexOf(key) !== -1 && typeof v === 'number') {
+      var now = Math.floor(Date.now() / 1000);
+      var cls = '';
+      if (key === 'exp') cls = v < now ? 'err' : 'ok';
+      if (key === 'nbf') cls = v > now ? 'warn' : 'ok';
+      return v + '<span class="meta ' + cls + '">' + escapeHtml(fmtUnix(v)) + ' · ' + escapeHtml(relTime(v)) + '</span>';
+    }
+    if (Array.isArray(v)) return escapeHtml(JSON.stringify(v));
+    if (typeof v === 'object') return escapeHtml(JSON.stringify(v));
+    return escapeHtml(String(v));
+  }
+
+  /* ---------- HS256/384/512 verify via SubtleCrypto ---------- */
+  async function verifyHmac(headerB64, payloadB64, signatureB64, secret, alg) {
+    var map = { HS256: 'SHA-256', HS384: 'SHA-384', HS512: 'SHA-512' };
+    var hash = map[alg];
+    if (!hash) throw new Error('unsupported alg');
+    var enc = new TextEncoder();
+    var key = await crypto.subtle.importKey(
+      'raw', enc.encode(secret), { name: 'HMAC', hash: hash }, false, ['sign']
+    );
+    var sigBytes = await crypto.subtle.sign('HMAC', key, enc.encode(headerB64 + '.' + payloadB64));
+    var expected = bytesToB64Url(new Uint8Array(sigBytes));
+    return expected === signatureB64;
+  }
+  function bytesToB64Url(bytes) {
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  /* ---------- samples ---------- */
+  function nowSec() { return Math.floor(Date.now() / 1000); }
+  function strToB64Url(s) {
+    return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function mintToken(header, payload, dropSig) {
+    var h = strToB64Url(JSON.stringify(header));
+    var p = strToB64Url(JSON.stringify(payload));
+    var s = dropSig ? '' : 'fakeSignatureForDemoOnly_' + Math.random().toString(36).slice(2, 10);
+    return h + '.' + p + '.' + s;
+  }
+
+  var SAMPLES = {
+    'hs256':
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
+      'eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.' +
+      'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+
+    'entra': mintToken(
+      { typ: 'JWT', alg: 'RS256', kid: 'nOo3ZDrODXEK1jKWhXslHR_KXEg' },
+      {
+        aud: '00000003-0000-0000-c000-000000000000',
+        iss: 'https://sts.windows.net/99999999-aaaa-bbbb-cccc-dddddddddddd/',
+        iat: nowSec(),
+        nbf: nowSec(),
+        exp: nowSec() + 3600,
+        acr: '1',
+        amr: ['pwd'],
+        appid: '14d82eec-204b-4c2f-b7e8-296a70dab67e',
+        appidacr: '0',
+        ipaddr: '203.0.113.7',
+        name: 'Corey Wininger',
+        oid: '11111111-2222-3333-4444-555555555555',
+        scp: 'User.Read profile openid email',
+        sub: 'AAAAAA-bbbbbbb-CCCCCC',
+        tid: '99999999-aaaa-bbbb-cccc-dddddddddddd',
+        unique_name: 'corey@stratumitservices.com',
+        upn: 'corey@stratumitservices.com',
+        ver: '1.0'
+      }
+    ),
+
+    'auth0': mintToken(
+      { typ: 'JWT', alg: 'RS256', kid: 'auth0-key-2026' },
+      {
+        iss: 'https://example.auth0.com/',
+        sub: 'auth0|6450c9b9d23b7c0012a4b8e1',
+        aud: ['https://api.example.com', 'https://example.auth0.com/userinfo'],
+        iat: nowSec(),
+        exp: nowSec() + 86400,
+        azp: 'kJ9aL3mN8pQ2rS4tU6vW',
+        scope: 'openid profile email read:projects write:projects'
+      }
+    ),
+
+    'okta': mintToken(
+      { typ: 'JWT', alg: 'RS256', kid: 'kF9aL3mN8pQ2rS4tU6vWxYz' },
+      {
+        ver: 1,
+        jti: 'AT.7gK2pL9mNqR4sT6vWxYzA1bC3dE5fG7h',
+        iss: 'https://stratum.okta.com/oauth2/default',
+        aud: 'api://default',
+        iat: nowSec(),
+        exp: nowSec() + 3600,
+        cid: '0oa8x2k4lmNqR4sT6vWx',
+        uid: '00u8x2k4lmNqR4sT6vWx',
+        scp: ['openid', 'profile', 'email'],
+        auth_time: nowSec() - 120,
+        sub: 'corey@stratumitservices.com'
+      }
+    ),
+
+    'cognito': mintToken(
+      { typ: 'JWT', alg: 'RS256', kid: 'aBcDeFgHi1234567890=' },
+      {
+        sub: '11111111-2222-3333-4444-555555555555',
+        iss: 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_aBcDeFgHi',
+        version: 2,
+        client_id: '1example2example3example4exampl',
+        origin_jti: 'a3b1c5d7-e9f1-4203-8a4c-6e8f0a2b4c6d',
+        event_id: 'b4c2d6e8-f0a2-4314-9b5d-7f9a1b3d5e7f',
+        token_use: 'access',
+        scope: 'openid profile email',
+        auth_time: nowSec() - 60,
+        exp: nowSec() + 3600,
+        iat: nowSec(),
+        jti: 'c5d3e7f9-a1b3-4425-ac6e-8f0a2b4d6e8f',
+        username: 'corey',
+        'cognito:groups': ['admins', 'developers']
+      }
+    ),
+
+    'expired': mintToken(
+      { typ: 'JWT', alg: 'HS256' },
+      {
+        sub: 'user-42',
+        name: 'Stale Token',
+        iat: 1735689600,
+        exp: 1735693200
+      }
+    ),
+
+    'nbf': mintToken(
+      { typ: 'JWT', alg: 'HS256' },
+      {
+        sub: 'user-99',
+        name: 'Future Token',
+        iat: nowSec(),
+        nbf: nowSec() + 7200,
+        exp: nowSec() + 86400
+      }
+    ),
+
+    'alg-none': mintToken(
+      { alg: 'none', typ: 'JWT' },
+      { sub: 'user-evil', name: 'Forged', iat: nowSec(), exp: nowSec() + 3600 },
+      true
+    )
+  };
+
+  /* ---------- wiring ---------- */
+  inputEl.addEventListener('input', scheduleRender);
+  document.getElementById('decode-btn').addEventListener('click', scheduleRender);
+  document.getElementById('clear-btn').addEventListener('click', function () {
+    inputEl.value = '';
+    scheduleRender();
+  });
+
+  document.getElementById('samples').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip');
+    if (!b) return;
+    flashChip(b);
+    var key = b.dataset.sample;
+    if (SAMPLES[key]) {
+      inputEl.value = SAMPLES[key];
+      scheduleRender();
+    }
+  });
+
+  document.querySelectorAll('.jwt-widget .copy').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      if (!lastDecoded) return;
+      var which = btn.dataset.copy;
+      var text =
+        which === 'header'    ? JSON.stringify(lastDecoded.header, null, 2) :
+        which === 'payload'   ? JSON.stringify(lastDecoded.payload, null, 2) :
+        which === 'signature' ? lastDecoded.signatureB64 : '';
+      try {
+        await navigator.clipboard.writeText(text);
+        var orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = orig; }, 900);
+      } catch (e) {}
+    });
+  });
+
+  document.getElementById('verify-btn').addEventListener('click', async function () {
+    var result = document.getElementById('verify-result');
+    if (!lastDecoded) return;
+    var alg = lastDecoded.header && lastDecoded.header.alg;
+    var secret = document.getElementById('secret-input').value;
+    if (!secret) {
+      result.className = 'result warn';
+      result.textContent = 'Enter a secret first.';
+      return;
+    }
+    result.className = 'result muted';
+    result.textContent = 'Verifying…';
+    try {
+      var ok = await verifyHmac(
+        lastDecoded.headerB64, lastDecoded.payloadB64, lastDecoded.signatureB64, secret,
+        String(alg).toUpperCase()
+      );
+      if (ok) { result.className = 'result ok';  result.textContent = '✓ Signature valid — token was signed with this secret.'; }
+      else    { result.className = 'result err'; result.textContent = '✗ Signature does not match — wrong secret, or token was tampered with.'; }
+    } catch (e) {
+      result.className = 'result err';
+      result.textContent = 'Verify error: ' + e.message;
+    }
+  });
+
+  /* boot */
+  refreshColored();
+})();
+</script>
+</Base>
