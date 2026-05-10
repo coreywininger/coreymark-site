@@ -1,0 +1,4 @@
+Contact: mailto:corey.wininger@gmail.com
+Expires: 2027-05-10T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://coreymark.com/.well-known/security.txt
