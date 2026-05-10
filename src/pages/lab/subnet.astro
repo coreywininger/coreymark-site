@@ -63,7 +63,7 @@ const description =
         </button>
       </div>
 
-      <div id="recent-row" class="mb-4 hidden flex-wrap items-center gap-1.5"></div>
+      <div id="recent-row" class="mb-4 flex flex-wrap items-center gap-1.5"></div>
       <div id="preset-row" class="mb-6 flex flex-wrap items-center gap-1.5"></div>
 
       <div
@@ -194,6 +194,21 @@ const description =
   }
   .subnet-widget .subnet-chip--muted {
     opacity: 0.85;
+  }
+  /* Reserve populated heights so JS-hydrated chip rows don't shove content
+     and produce CLS. Mobile 375px wraps 12 preset chips into ~6 rows; desktop
+     into ~2 rows. Recent-row reservation only when shown (still ships
+     `hidden` until history loads — no first-visit empty space). */
+  .subnet-widget #preset-row {
+    min-height: 176px;
+  }
+  .subnet-widget #recent-row {
+    min-height: 32px;
+  }
+  @media (min-width: 720px) {
+    .subnet-widget #preset-row {
+      min-height: 64px;
+    }
   }
   .subnet-widget .subnet-chip-label {
     font-size: 13px;
@@ -411,13 +426,9 @@ const description =
   function renderHistory() {
     var arr = loadHistory();
     recentRow.innerHTML = '';
-    if (!arr.length) {
-      recentRow.classList.add('hidden');
-      recentRow.classList.remove('flex');
-      return;
-    }
-    recentRow.classList.remove('hidden');
-    recentRow.classList.add('flex');
+    // Row always stays in layout (CSS reserves min-height) so populating
+    // chips here doesn't shove content. Empty state = visible 32px slot.
+    if (!arr.length) return;
     recentRow.appendChild(makeLabel('Recent:'));
     arr.forEach(function (v) {
       var wrap = document.createElement('span');
@@ -429,8 +440,9 @@ const description =
       rm.type = 'button';
       rm.setAttribute('aria-label', 'Remove ' + v + ' from history');
       rm.className = 'copy-btn';
-      rm.style.padding = '2px';
-      rm.style.opacity = '0.55';
+      rm.style.padding = '5px';
+      rm.style.minWidth = '24px';
+      rm.style.minHeight = '24px';
       rm.innerHTML = ICONS.x;
       rm.addEventListener('click', function (e) { e.stopPropagation(); removeHistory(v); });
       wrap.appendChild(c);
@@ -441,7 +453,6 @@ const description =
       try { localStorage.removeItem(HISTORY_KEY); } catch (e) {}
       renderHistory();
     });
-    clearBtn.style.opacity = '0.6';
     recentRow.appendChild(clearBtn);
   }
 
