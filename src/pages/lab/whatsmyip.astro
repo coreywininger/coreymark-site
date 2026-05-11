@@ -84,45 +84,51 @@ const description =
         </dl>
       </section>
 
-      <h2 class="section-heading">Designed for terminals</h2>
+      <div class="section-heading-row">
+        <h2 class="section-heading">Designed for terminals</h2>
+        <div role="tablist" class="tool-toggle">
+          <button id="tool-curl-btn" type="button" role="tab" aria-selected="true" class="tool-tab">curl</button>
+          <button id="tool-wget-btn" type="button" role="tab" aria-selected="false" class="tool-tab">wget</button>
+        </div>
+      </div>
       <p class="section-sub">Plain text by default for curl/wget; JSON if you ask; HTML for browsers.</p>
 
       <div class="curl-block" data-testid="curl-examples">
-        <div class="curl-row">
-          <code><span class="prompt">$ </span>curl ip.coreymark.com</code>
-          <button class="copy" data-copy="curl ip.coreymark.com" type="button">Copy</button>
+        <div class="curl-row" data-curl="curl https://ip.coreymark.com" data-wget="wget -qO- https://ip.coreymark.com">
+          <code><span class="prompt">$ </span><span class="cmd">curl https://ip.coreymark.com</span></code>
+          <button class="copy" data-copy="curl https://ip.coreymark.com" type="button">Copy</button>
         </div>
-        <div class="curl-row">
-          <code><span class="prompt">$ </span>curl ip.coreymark.com/ip</code>
-          <button class="copy" data-copy="curl ip.coreymark.com/ip" type="button">Copy</button>
+        <div class="curl-row" data-curl="curl https://ip.coreymark.com/ip" data-wget="wget -qO- https://ip.coreymark.com/ip">
+          <code><span class="prompt">$ </span><span class="cmd">curl https://ip.coreymark.com/ip</span></code>
+          <button class="copy" data-copy="curl https://ip.coreymark.com/ip" type="button">Copy</button>
         </div>
-        <div class="curl-row">
-          <code><span class="prompt">$ </span>curl ip.coreymark.com/ip/decimal</code>
-          <button class="copy" data-copy="curl ip.coreymark.com/ip/decimal" type="button">Copy</button>
+        <div class="curl-row" data-curl="curl https://ip.coreymark.com/ip/decimal" data-wget="wget -qO- https://ip.coreymark.com/ip/decimal">
+          <code><span class="prompt">$ </span><span class="cmd">curl https://ip.coreymark.com/ip/decimal</span></code>
+          <button class="copy" data-copy="curl https://ip.coreymark.com/ip/decimal" type="button">Copy</button>
         </div>
-        <div class="curl-row">
-          <code><span class="prompt">$ </span>curl ip.coreymark.com/json</code>
-          <button class="copy" data-copy="curl ip.coreymark.com/json" type="button">Copy</button>
+        <div class="curl-row" data-curl="curl https://ip.coreymark.com/json" data-wget="wget -qO- https://ip.coreymark.com/json">
+          <code><span class="prompt">$ </span><span class="cmd">curl https://ip.coreymark.com/json</span></code>
+          <button class="copy" data-copy="curl https://ip.coreymark.com/json" type="button">Copy</button>
         </div>
-        <div class="curl-row">
-          <code><span class="prompt">$ </span>curl ip.coreymark.com/country</code>
-          <button class="copy" data-copy="curl ip.coreymark.com/country" type="button">Copy</button>
+        <div class="curl-row" data-curl="curl https://ip.coreymark.com/country" data-wget="wget -qO- https://ip.coreymark.com/country">
+          <code><span class="prompt">$ </span><span class="cmd">curl https://ip.coreymark.com/country</span></code>
+          <button class="copy" data-copy="curl https://ip.coreymark.com/country" type="button">Copy</button>
         </div>
-        <div class="curl-row">
-          <code><span class="prompt">$ </span>curl ip.coreymark.com/country-iso</code>
-          <button class="copy" data-copy="curl ip.coreymark.com/country-iso" type="button">Copy</button>
+        <div class="curl-row" data-curl="curl https://ip.coreymark.com/country-iso" data-wget="wget -qO- https://ip.coreymark.com/country-iso">
+          <code><span class="prompt">$ </span><span class="cmd">curl https://ip.coreymark.com/country-iso</span></code>
+          <button class="copy" data-copy="curl https://ip.coreymark.com/country-iso" type="button">Copy</button>
         </div>
-        <div class="curl-row">
-          <code><span class="prompt">$ </span>curl ip.coreymark.com/eu</code>
-          <button class="copy" data-copy="curl ip.coreymark.com/eu" type="button">Copy</button>
+        <div class="curl-row" data-curl="curl https://ip.coreymark.com/eu" data-wget="wget -qO- https://ip.coreymark.com/eu">
+          <code><span class="prompt">$ </span><span class="cmd">curl https://ip.coreymark.com/eu</span></code>
+          <button class="copy" data-copy="curl https://ip.coreymark.com/eu" type="button">Copy</button>
         </div>
-        <div class="curl-row">
-          <code><span class="prompt">$ </span>curl ip.coreymark.com/asn</code>
-          <button class="copy" data-copy="curl ip.coreymark.com/asn" type="button">Copy</button>
+        <div class="curl-row" data-curl="curl https://ip.coreymark.com/asn" data-wget="wget -qO- https://ip.coreymark.com/asn">
+          <code><span class="prompt">$ </span><span class="cmd">curl https://ip.coreymark.com/asn</span></code>
+          <button class="copy" data-copy="curl https://ip.coreymark.com/asn" type="button">Copy</button>
         </div>
-        <div class="curl-row">
-          <code><span class="prompt">$ </span>curl ip.coreymark.com/headers</code>
-          <button class="copy" data-copy="curl ip.coreymark.com/headers" type="button">Copy</button>
+        <div class="curl-row" data-curl="curl https://ip.coreymark.com/headers" data-wget="wget -qO- https://ip.coreymark.com/headers">
+          <code><span class="prompt">$ </span><span class="cmd">curl https://ip.coreymark.com/headers</span></code>
+          <button class="copy" data-copy="curl https://ip.coreymark.com/headers" type="button">Copy</button>
         </div>
       </div>
 
@@ -315,10 +321,39 @@ const description =
   .whatsmyip-widget dl.snapshot-grid dd a:hover { text-decoration: underline; }
 
   /* curl examples */
+  .whatsmyip-widget .section-heading-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 10px;
+  }
   .whatsmyip-widget .section-heading {
     font-size: 16px; font-weight: 600;
-    margin: 28px 0 10px;
+    margin: 0;
     color: var(--color-text-primary);
+  }
+  .whatsmyip-widget .tool-toggle {
+    display: inline-flex;
+    overflow: hidden;
+    border-radius: 6px;
+    border: 1px solid var(--wmi-color-border);
+  }
+  .whatsmyip-widget .tool-tab {
+    background: transparent;
+    border: none;
+    padding: 3px 10px;
+    font: 12px var(--font-sans, inherit);
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    transition: background 0.1s, color 0.1s;
+  }
+  .whatsmyip-widget .tool-tab + .tool-tab {
+    border-left: 1px solid var(--wmi-color-border);
+  }
+  .whatsmyip-widget .tool-tab[aria-selected="true"] {
+    background: var(--wmi-color-bg-tertiary);
+    color: var(--color-text-primary);
+    font-weight: 600;
   }
   .whatsmyip-widget .section-sub {
     color: var(--color-text-secondary);
@@ -475,6 +510,23 @@ const description =
   }
 
   load();
+
+  // curl/wget toggle
+  var curlBtn = document.getElementById('tool-curl-btn');
+  var wgetBtn = document.getElementById('tool-wget-btn');
+
+  function setTool(tool) {
+    document.querySelectorAll('.whatsmyip-widget .curl-row').forEach(function (row) {
+      var cmd = row.dataset[tool];
+      row.querySelector('.cmd').textContent = cmd;
+      row.querySelector('.copy').setAttribute('data-copy', cmd);
+    });
+    curlBtn.setAttribute('aria-selected', tool === 'curl' ? 'true' : 'false');
+    wgetBtn.setAttribute('aria-selected', tool === 'wget' ? 'true' : 'false');
+  }
+
+  curlBtn.addEventListener('click', function () { setTool('curl'); });
+  wgetBtn.addEventListener('click', function () { setTool('wget'); });
 
   // Copy buttons
   document.querySelectorAll('.whatsmyip-widget button.copy').forEach(function (btn) {
