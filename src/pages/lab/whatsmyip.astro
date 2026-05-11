@@ -1,0 +1,507 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const title = "What's my IP?";
+const description =
+  "Reflects back what the edge knows about your HTTP request — IP, geo, ASN, User-Agent. Powered by a tiny Cloudflare Worker at ip.coreymark.com. Designed for curl. 100% open source.";
+---
+
+<Base title={title} description={description}>
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-text-primary">Home</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
+        <li aria-hidden="true">›</li>
+        <li class="text-text-secondary">What's my IP?</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8">
+      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        What's my IP?
+      </h1>
+      <p class="max-w-2xl text-lg text-text-secondary">
+        A small Cloudflare Worker that reflects back what the edge knows
+        about your HTTP request.
+      </p>
+    </header>
+
+    <h2 class="sr-only">
+      What's my IP — live snapshot of client IP (v4 and v6) with decimal
+      representation, geolocation (country, region, city, postal, coordinates,
+      timezone), EU member-state lookup, ASN and ASN organization, Cloudflare
+      colocation, and raw User-Agent. Designed for terminals, also serves
+      JSON for scripts. Powered by ip.coreymark.com, no server-side logging.
+    </h2>
+
+    <div class="lab-tool whatsmyip-widget py-4">
+
+      <details class="primer">
+        <summary>What this is</summary>
+        <div class="body">
+          <p>
+            Every HTTP request your browser (or your shell, or your script) sends
+            carries a surprising amount of information about you and your connection.
+            <code>ip.coreymark.com</code> is a tiny Cloudflare Worker that takes that
+            information and hands it right back to you — no proxy, no third-party
+            lookup, no logging.
+          </p>
+          <p>
+            Useful for: verifying a VPN actually changed your egress, debugging
+            CGNAT or corporate proxy weirdness, wiring "what's my current public IP"
+            into shell scripts, or confirming what apps see when they geo-target you.
+          </p>
+          <p>
+            Built on Cloudflare Workers, deployed at the edge, free to run, source on GitHub.
+          </p>
+        </div>
+      </details>
+
+      <section class="snapshot" data-testid="ip-snapshot">
+        <span class="badge loading" id="source-badge">Loading…</span>
+        <p class="snapshot-label">Your IP</p>
+        <p class="ip-display placeholder" id="ip-display" data-testid="ip-display">—</p>
+        <p class="fail-message" id="fail-message" hidden>
+          Couldn't reach <code>ip.coreymark.com</code>. Check your connection or try again in a moment.
+        </p>
+        <dl class="snapshot-grid" id="snapshot-grid">
+          <dt>IP (decimal)</dt><dd id="f-ip-decimal" class="wrap">—</dd>
+          <dt>Country</dt><dd id="f-country">—</dd>
+          <dt>Country (ISO)</dt><dd id="f-country-iso">—</dd>
+          <dt>In EU?</dt><dd id="f-eu">—</dd>
+          <dt>Region</dt><dd id="f-region">—</dd>
+          <dt>Region code</dt><dd id="f-region-code">—</dd>
+          <dt id="dt-metro">Metro code</dt><dd id="f-metro">—</dd>
+          <dt>City</dt><dd id="f-city">—</dd>
+          <dt>Postal</dt><dd id="f-postal">—</dd>
+          <dt>Coordinates</dt><dd id="f-coords">—</dd>
+          <dt>Timezone</dt><dd id="f-tz">—</dd>
+          <dt>ASN</dt><dd id="f-asn">—</dd>
+          <dt>CF colo</dt><dd id="f-colo">—</dd>
+          <dt>User-Agent</dt><dd id="f-ua" class="wrap">—</dd>
+        </dl>
+      </section>
+
+      <h2 class="section-heading">Designed for terminals</h2>
+      <p class="section-sub">Plain text by default for curl/wget; JSON if you ask; HTML for browsers.</p>
+
+      <div class="curl-block" data-testid="curl-examples">
+        <div class="curl-row">
+          <code><span class="prompt">$ </span>curl ip.coreymark.com</code>
+          <button class="copy" data-copy="curl ip.coreymark.com" type="button">Copy</button>
+        </div>
+        <div class="curl-row">
+          <code><span class="prompt">$ </span>curl ip.coreymark.com/ip</code>
+          <button class="copy" data-copy="curl ip.coreymark.com/ip" type="button">Copy</button>
+        </div>
+        <div class="curl-row">
+          <code><span class="prompt">$ </span>curl ip.coreymark.com/ip/decimal</code>
+          <button class="copy" data-copy="curl ip.coreymark.com/ip/decimal" type="button">Copy</button>
+        </div>
+        <div class="curl-row">
+          <code><span class="prompt">$ </span>curl ip.coreymark.com/json</code>
+          <button class="copy" data-copy="curl ip.coreymark.com/json" type="button">Copy</button>
+        </div>
+        <div class="curl-row">
+          <code><span class="prompt">$ </span>curl ip.coreymark.com/country</code>
+          <button class="copy" data-copy="curl ip.coreymark.com/country" type="button">Copy</button>
+        </div>
+        <div class="curl-row">
+          <code><span class="prompt">$ </span>curl ip.coreymark.com/country-iso</code>
+          <button class="copy" data-copy="curl ip.coreymark.com/country-iso" type="button">Copy</button>
+        </div>
+        <div class="curl-row">
+          <code><span class="prompt">$ </span>curl ip.coreymark.com/eu</code>
+          <button class="copy" data-copy="curl ip.coreymark.com/eu" type="button">Copy</button>
+        </div>
+        <div class="curl-row">
+          <code><span class="prompt">$ </span>curl ip.coreymark.com/asn</code>
+          <button class="copy" data-copy="curl ip.coreymark.com/asn" type="button">Copy</button>
+        </div>
+        <div class="curl-row">
+          <code><span class="prompt">$ </span>curl ip.coreymark.com/headers</code>
+          <button class="copy" data-copy="curl ip.coreymark.com/headers" type="button">Copy</button>
+        </div>
+      </div>
+
+    </div>
+
+    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
+      <summary class="cursor-pointer text-base font-semibold text-text-primary">
+        About this tool
+      </summary>
+      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+        <p><strong>What it does.</strong> Shows what the server saw when your
+          browser (or shell, or script) made the request to this page — the
+          client IP via Cloudflare's <code>CF-Connecting-IP</code> header, geo
+          fields from Cloudflare's edge IP database (country, region, city,
+          postal, coordinates, timezone, metro code for US traffic), the
+          autonomous-system number for the IP, the Cloudflare colocation that
+          terminated the request, and the raw <code>User-Agent</code> you sent.
+          The "In EU?" row is a local lookup against a static list of the 27
+          EU member states.</p>
+        <p><strong>Designed for terminals.</strong> The page is just a
+          convenient wrapper. The endpoints behind it
+          (<code>ip.coreymark.com/ip</code>, <code>/json</code>,
+          <code>/country</code>, etc.) speak plain text by default — curl/wget/httpie
+          get text, browsers get HTML, scripts with <code>Accept: application/json</code>
+          get JSON. <code>Cache-Control: no-store</code> on every response so a
+          cached snapshot of someone else's IP can't be served back.</p>
+        <p><strong>Privacy.</strong> No request data is logged or persisted
+          server-side. The Worker makes <em>zero</em> outbound calls — the entire
+          response is derived from the request itself plus pure computation.
+          Cloudflare aggregates zone-level metrics (request counts, geo, status
+          codes) for operational visibility only. Per-IP rate limit at the
+          Cloudflare edge bounds abuse.</p>
+        <p><strong>Deliberately not rendered.</strong> No embedded map.
+          ifconfig.co embeds a tile-based map at the geo'd coordinates; this
+          page doesn't, because auto-loading a tile from a third-party map
+          provider would leak the visitor's approximate location to that
+          provider on every page view — exactly the privacy story this tool
+          would otherwise have. The coordinates plus an OpenStreetMap link
+          are the privacy-preserving substitute. Also no parsed User-Agent
+          fields (browser/OS/device) — the raw UA is enough for the use cases
+          this tool is for.</p>
+        <p><strong>Source.</strong> Worker:
+          <a href="https://github.com/coreywininger/coreymark-ip-worker" target="_blank" rel="noopener">coreywininger/coreymark-ip-worker</a>.
+          This page:
+          <a href="https://github.com/coreywininger/coreymark-site" target="_blank" rel="noopener">coreywininger/coreymark-site</a>.</p>
+      </div>
+    </details>
+
+    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
+      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Networking</span>
+      <span>Added 2026-05-11</span>
+    </div>
+  </section>
+
+<style is:global>
+  /* What's my IP widget — scoped under .whatsmyip-widget so styles don't leak.
+     Token aliases let the prototype's CSS body work unchanged. */
+  .whatsmyip-widget {
+    --wmi-color-text-muted: var(--color-text-tertiary);
+    --wmi-color-text-success: var(--color-success);
+    --wmi-color-text-warn: var(--color-accent-secondary);
+    --wmi-color-text-danger: var(--color-error);
+    --wmi-color-bg-secondary: var(--color-bg-elevated);
+    --wmi-color-bg-tertiary: var(--color-bg-subtle);
+    --wmi-color-border: var(--color-border-subtle);
+    --wmi-color-accent: var(--color-accent-primary);
+    --wmi-radius: 10px;
+    --wmi-mono: var(--font-mono);
+  }
+  .whatsmyip-widget [hidden] { display: none !important; }
+  .whatsmyip-widget *, .whatsmyip-widget *::before, .whatsmyip-widget *::after { box-sizing: border-box; }
+
+  /* primer (same shape as JWT decoder) */
+  .whatsmyip-widget details.primer {
+    border: 1px solid var(--wmi-color-border);
+    border-radius: var(--wmi-radius);
+    background: var(--wmi-color-bg-secondary);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .whatsmyip-widget details.primer > summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .whatsmyip-widget details.primer > summary::-webkit-details-marker { display: none; }
+  .whatsmyip-widget details.primer > summary::before {
+    content: "▸";
+    font-size: 12px;
+    color: var(--wmi-color-accent);
+    transition: transform 0.15s;
+  }
+  .whatsmyip-widget details.primer[open] > summary::before { transform: rotate(90deg); }
+  .whatsmyip-widget details.primer .body {
+    padding: 4px 18px 18px;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+  }
+  .whatsmyip-widget details.primer .body p { margin: 10px 0; }
+  .whatsmyip-widget details.primer .body code {
+    background: var(--wmi-color-bg-tertiary);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: var(--color-text-primary);
+  }
+
+  /* snapshot card */
+  .whatsmyip-widget .snapshot {
+    background: var(--wmi-color-bg-secondary);
+    border: 1px solid var(--wmi-color-border);
+    border-radius: var(--wmi-radius);
+    padding: 24px 26px 22px;
+    margin-bottom: 22px;
+    position: relative;
+  }
+  .whatsmyip-widget .badge {
+    position: absolute; top: 14px; right: 14px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 8px; border-radius: 999px;
+    background: var(--wmi-color-bg-tertiary);
+    color: var(--wmi-color-text-muted);
+    border: 1px solid var(--wmi-color-border);
+  }
+  .whatsmyip-widget .badge.loading { color: var(--wmi-color-text-muted); }
+  .whatsmyip-widget .badge.live { color: var(--wmi-color-text-success); border-color: var(--wmi-color-text-success); }
+  .whatsmyip-widget .badge.fail { color: var(--wmi-color-text-danger); border-color: var(--wmi-color-text-danger); }
+
+  .whatsmyip-widget .snapshot-label {
+    font-size: 12px;
+    color: var(--wmi-color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 6px;
+  }
+  .whatsmyip-widget .ip-display {
+    font: 600 38px/1.05 var(--wmi-mono);
+    margin: 0 0 18px;
+    word-break: break-all;
+    color: var(--color-text-primary);
+  }
+  .whatsmyip-widget .ip-display.placeholder { color: var(--wmi-color-text-muted); }
+  .whatsmyip-widget .fail-message {
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--wmi-color-text-danger) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--wmi-color-text-danger) 30%, transparent);
+    color: var(--color-text-primary);
+    font-size: 13.5px;
+  }
+  .whatsmyip-widget .fail-message code {
+    font-family: var(--wmi-mono);
+    font-size: 12.5px;
+    background: var(--wmi-color-bg-tertiary);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  .whatsmyip-widget dl.snapshot-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 7px 22px;
+    margin: 0;
+    font-size: 13.5px;
+  }
+  .whatsmyip-widget dl.snapshot-grid dt {
+    color: var(--wmi-color-text-muted);
+    font-weight: 500;
+  }
+  .whatsmyip-widget dl.snapshot-grid dd {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-family: var(--wmi-mono);
+    font-size: 13px;
+    word-break: break-word;
+  }
+  .whatsmyip-widget dl.snapshot-grid dd.wrap { word-break: break-all; }
+  .whatsmyip-widget dl.snapshot-grid dd a {
+    color: var(--wmi-color-accent);
+    text-decoration: none;
+    font-family: inherit;
+  }
+  .whatsmyip-widget dl.snapshot-grid dd a:hover { text-decoration: underline; }
+
+  /* curl examples */
+  .whatsmyip-widget .section-heading {
+    font-size: 16px; font-weight: 600;
+    margin: 28px 0 10px;
+    color: var(--color-text-primary);
+  }
+  .whatsmyip-widget .section-sub {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    margin: 0 0 14px;
+  }
+  .whatsmyip-widget .curl-block {
+    background: var(--wmi-color-bg-secondary);
+    border: 1px solid var(--wmi-color-border);
+    border-radius: var(--wmi-radius);
+    overflow: hidden;
+  }
+  .whatsmyip-widget .curl-row {
+    display: flex; align-items: stretch;
+    border-bottom: 1px solid var(--wmi-color-border);
+  }
+  .whatsmyip-widget .curl-row:last-child { border-bottom: none; }
+  .whatsmyip-widget .curl-row code {
+    flex: 1;
+    font: 13px/1.5 var(--wmi-mono);
+    padding: 10px 14px;
+    color: var(--color-text-primary);
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .whatsmyip-widget .curl-row code .prompt {
+    color: var(--wmi-color-text-muted);
+    user-select: none;
+  }
+  .whatsmyip-widget .curl-row button.copy {
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--wmi-color-border);
+    color: var(--color-text-secondary);
+    padding: 0 14px;
+    font: 12px var(--font-sans, inherit);
+    cursor: pointer;
+    min-width: 64px;
+  }
+  .whatsmyip-widget .curl-row button.copy:hover {
+    color: var(--wmi-color-accent);
+    background: var(--wmi-color-bg-tertiary);
+  }
+  .whatsmyip-widget .curl-row button.copy.flash { color: var(--wmi-color-text-success); }
+
+  /* responsive */
+  @media (max-width: 560px) {
+    .whatsmyip-widget .ip-display { font-size: 28px; }
+    .whatsmyip-widget dl.snapshot-grid {
+      grid-template-columns: 1fr;
+      gap: 2px 0;
+    }
+    .whatsmyip-widget dl.snapshot-grid dt { margin-top: 8px; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  var badge = document.getElementById('source-badge');
+  var ipDisplay = document.getElementById('ip-display');
+  var failMessage = document.getElementById('fail-message');
+
+  function setText(id, value) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = (value === undefined || value === null || value === '') ? '—' : String(value);
+  }
+
+  function setBadge(state) {
+    badge.classList.remove('loading', 'live', 'fail');
+    if (state === 'live') { badge.classList.add('live'); badge.textContent = 'Live'; }
+    else if (state === 'fail') { badge.classList.add('fail'); badge.textContent = 'API unreachable'; }
+    else { badge.classList.add('loading'); badge.textContent = 'Loading…'; }
+  }
+
+  function suppressRow(dtId, ddId) {
+    var dt = document.getElementById(dtId);
+    var dd = document.getElementById(ddId);
+    if (dt) dt.hidden = true;
+    if (dd) dd.hidden = true;
+  }
+
+  function render(data) {
+    ipDisplay.textContent = data.ip || '—';
+    ipDisplay.classList.toggle('placeholder', !data.ip);
+
+    setText('f-ip-decimal', data.ip_decimal);
+    // Country: render country_name, fall back to ISO code if name is empty.
+    setText('f-country', data.country_name || data.country);
+    setText('f-country-iso', data.country);
+    setText('f-eu', typeof data.is_eu === 'boolean' ? String(data.is_eu) : undefined);
+    setText('f-region', data.region);
+    setText('f-region-code', data.region_code);
+
+    // Metro code: suppress the row entirely if null (non-US traffic).
+    if (data.metro_code == null) {
+      suppressRow('dt-metro', 'f-metro');
+    } else {
+      setText('f-metro', data.metro_code);
+    }
+
+    setText('f-city', data.city);
+    setText('f-postal', data.postal);
+    setText('f-tz', data.time_zone);
+    setText('f-colo', data.colo);
+    setText('f-ua', data.user_agent);
+
+    // ASN + ASN org on a single row.
+    var asnText = data.asn || '—';
+    if (data.asn_org) asnText += ' · ' + data.asn_org;
+    setText('f-asn', asnText);
+
+    // Coordinates with OSM link, or em-dash when missing.
+    var coordsEl = document.getElementById('f-coords');
+    var lat = data.latitude;
+    var lon = data.longitude;
+    if (lat != null && lon != null) {
+      var latS = Number(lat).toFixed(4);
+      var lonS = Number(lon).toFixed(4);
+      var link = 'https://www.openstreetmap.org/?mlat=' + latS + '&mlon=' + lonS + '#map=11/' + latS + '/' + lonS;
+      coordsEl.innerHTML = ''; // clear
+      coordsEl.appendChild(document.createTextNode(latS + ', ' + lonS + ' · '));
+      var a = document.createElement('a');
+      a.href = link;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = 'View on OpenStreetMap';
+      coordsEl.appendChild(a);
+    } else {
+      coordsEl.textContent = '—';
+    }
+  }
+
+  function renderFailure() {
+    setBadge('fail');
+    failMessage.hidden = false;
+    // Hide the snapshot grid in the failure state — partial data would be misleading.
+    var grid = document.getElementById('snapshot-grid');
+    if (grid) grid.hidden = true;
+  }
+
+  async function load() {
+    try {
+      var res = await fetch('https://ip.coreymark.com/json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      render(data);
+      setBadge('live');
+    } catch (err) {
+      renderFailure();
+      // eslint-disable-next-line no-console
+      console.warn('ip.coreymark.com fetch failed:', err);
+    }
+  }
+
+  load();
+
+  // Copy buttons
+  document.querySelectorAll('.whatsmyip-widget button.copy').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      var text = btn.getAttribute('data-copy') || '';
+      try {
+        await navigator.clipboard.writeText(text);
+        var orig = btn.textContent;
+        btn.classList.add('flash');
+        btn.textContent = 'Copied';
+        setTimeout(function () {
+          btn.classList.remove('flash');
+          btn.textContent = orig;
+        }, 1100);
+      } catch (e) {
+        // clipboard unavailable — fall back to selecting the code element next to the button
+        var range = document.createRange();
+        if (btn.previousElementSibling) {
+          range.selectNodeContents(btn.previousElementSibling);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      }
+    });
+  });
+})();
+</script>
+
+</Base>

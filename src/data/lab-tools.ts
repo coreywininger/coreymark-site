@@ -56,6 +56,16 @@ export const tools: LabTool[] = [
     isNew: true,
     icon: 'key-round',
   },
+  {
+    slug: 'whatsmyip',
+    title: "What's my IP?",
+    description:
+      "What the edge sees about your request — IP (v4/v6), decimal form, country + EU lookup, region, city, coordinates, ASN, Cloudflare colo, User-Agent. Powered by a tiny Worker at ip.coreymark.com.",
+    discipline: 'networking',
+    added: '2026-05-11',
+    isNew: true,
+    icon: 'network',
+  },
 ];
 
 export function toolsByDiscipline(d: Discipline): LabTool[] {
