@@ -66,6 +66,16 @@ export const tools: LabTool[] = [
     isNew: true,
     icon: 'network',
   },
+  {
+    slug: 'base64',
+    title: 'Base64 encoder / decoder',
+    description:
+      'Encode or decode Base64 instantly — text, files, and data URIs. Standard and URL-safe variants, UTF-8 / emoji support, MIME detection from magic bytes, and line-wrap options. Nothing leaves your browser.',
+    discipline: 'devops',
+    added: '2026-05-12',
+    isNew: true,
+    icon: 'lock',
+  },
 ];
 
 export function toolsByDiscipline(d: Discipline): LabTool[] {
