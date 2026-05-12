@@ -1,0 +1,1197 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const title = 'Regex tester';
+const description =
+  'Test regular expressions live — match highlighting, capture groups, global/case/multiline flags, replace mode, backtracking warnings, presets, and history. 100% client-side.';
+---
+
+<Base title={title} description={description}>
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-text-primary">Home</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
+        <li aria-hidden="true">›</li>
+        <li class="text-text-secondary">Regex tester</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8">
+      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        Regex tester
+      </h1>
+      <p class="max-w-2xl text-lg text-text-secondary">
+        Live pattern matching, capture group highlighting, and replace preview —
+        works offline, nothing leaves your browser.
+      </p>
+    </header>
+
+    <h2 class="sr-only">
+      Regex tester with live match highlighting, capture groups, global/case-insensitive/multiline/dotAll/unicode
+      flags, replace mode with backreference preview, backtracking timeout warnings, ten built-in pattern presets,
+      and per-browser pattern history.
+    </h2>
+
+    <div class="lab-tool regex-widget" data-testid="regex-widget">
+
+      <!-- Presets -->
+      <div class="chips-section card">
+        <div class="section-label">Presets</div>
+        <div class="chips-row" id="presetRow" role="group" aria-label="Pattern presets"></div>
+      </div>
+
+      <!-- History -->
+      <div class="chips-section card" style="margin-top:-6px">
+        <div class="section-label">Recent</div>
+        <div class="chips-row" id="historyRow" aria-live="polite" role="group" aria-label="Pattern history"></div>
+      </div>
+
+      <!-- Main tool card -->
+      <div class="card">
+
+        <!-- Mode toggle -->
+        <div class="mode-row" role="group" aria-label="Mode">
+          <button class="mode-btn active" id="modeTest" aria-pressed="true">Test</button>
+          <button class="mode-btn"        id="modeReplace" aria-pressed="false">Replace</button>
+        </div>
+
+        <!-- Pattern input -->
+        <div class="section-label">Pattern</div>
+        <div class="pattern-row" id="patternRow">
+          <span class="pattern-delimiter" aria-hidden="true">/</span>
+          <input
+            type="text"
+            id="patternInput"
+            spellcheck="false"
+            autocorrect="off"
+            autocapitalize="off"
+            autocomplete="off"
+            placeholder="[a-z]+"
+            aria-label="Regular expression pattern"
+          />
+          <span class="pattern-delimiter right" aria-hidden="true">/</span>
+          <div class="pattern-flags-inline">
+            <span class="flag-inline-display" id="activeFlagsDisplay" title="Active flags" aria-label="Active flags"></span>
+          </div>
+          <div class="pattern-actions">
+            <button class="icon-btn" id="copyPatternBtn" title="Copy pattern" aria-label="Copy pattern">⎘</button>
+          </div>
+        </div>
+        <div class="pattern-error" id="patternError" role="alert" aria-live="assertive"></div>
+
+        <!-- Flags strip -->
+        <div class="flags-row" role="group" aria-label="Regex flags">
+          <span class="flags-label">Flags</span>
+          <button class="flag-chip active" data-flag="g" data-tip="global — find all matches" tabindex="0">g</button>
+          <button class="flag-chip"        data-flag="i" data-tip="case insensitive" tabindex="0">i</button>
+          <button class="flag-chip"        data-flag="m" data-tip="multiline (^ and $ match line boundaries)" tabindex="0">m</button>
+          <button class="flag-chip"        data-flag="s" data-tip="dotAll — dot matches newlines" tabindex="0">s</button>
+          <button class="flag-chip"        data-flag="u" data-tip="unicode — enables \p&#123;&#125; escapes" tabindex="0">u</button>
+        </div>
+
+        <!-- Test string -->
+        <div class="section-label" style="margin-top:18px; display:flex; align-items:baseline; justify-content:space-between;">
+          <span>Test String</span>
+          <span id="testStrStats" style="font-size:12px; color:var(--color-text-muted); font-weight:400; letter-spacing:normal; text-transform:none;"></span>
+        </div>
+        <textarea
+          id="testInput"
+          spellcheck="false"
+          autocorrect="off"
+          autocomplete="off"
+          placeholder="Paste or type a string to test against..."
+          aria-label="Test string"
+        ></textarea>
+
+        <!-- Replace mode input (hidden by default) -->
+        <div id="replaceSection" data-testid="replace-section" hidden>
+          <div class="replace-row">
+            <span class="replace-prefix">Replace</span>
+            <input
+              type="text"
+              id="replaceInput"
+              spellcheck="false"
+              autocorrect="off"
+              autocomplete="off"
+              placeholder="Replacement — $1 $2 $& for backreferences"
+              aria-label="Replacement string"
+            />
+          </div>
+        </div>
+
+        <!-- Highlight mirror -->
+        <div class="mirror-wrap">
+          <div class="mirror-header">
+            <span>Match Highlights</span>
+            <div class="mirror-header-right">
+              <span id="matchCount" class="no-matches" data-testid="match-count">—</span>
+              <button class="icon-btn copy-matches-btn" id="copyMatchesBtn" title="Copy matches as JSON" aria-label="Copy matches as JSON">⎘ matches</button>
+            </div>
+          </div>
+          <div id="highlightMirror" aria-live="polite" aria-label="Highlighted matches"></div>
+        </div>
+
+        <!-- Match detail collapsible -->
+        <div class="match-detail" id="matchDetailWrap" hidden>
+          <details class="match-detail-inner" id="matchDetailEl">
+            <summary id="matchDetailSummary">0 matches found</summary>
+            <div class="match-detail-body" id="matchDetailBody"></div>
+          </details>
+        </div>
+
+        <!-- Replace output (hidden in Test mode) -->
+        <div id="replaceOutputSection" hidden>
+          <div class="replace-output">
+            <div class="replace-output-header">
+              <span>Result</span>
+              <button class="icon-btn" id="copyResultBtn" title="Copy result" aria-label="Copy result">⎘ copy</button>
+            </div>
+            <div id="replaceOutput" data-testid="replace-output" aria-live="polite"></div>
+          </div>
+        </div>
+
+      </div><!-- /.card -->
+
+      <!-- Pitfall panel -->
+      <details class="pitfall-panel">
+        <summary>⚠ Common regex gotchas</summary>
+        <div class="pitfall-body">
+          <div class="pitfall-item">
+            <h3>Catastrophic backtracking</h3>
+            <p>Nested quantifiers like <code>(a+)+</code> can cause exponential backtracking — the engine may hang for seconds or minutes on moderately long strings. Test with short strings first; if your pattern requires nesting, consider atomic groups or possessive quantifiers (not supported in JS).</p>
+          </div>
+          <div class="pitfall-item">
+            <h3>Greedy vs. lazy quantifiers</h3>
+            <p><code>.+</code> is greedy — it matches as much text as possible, then backtracks. <code>.+?</code> is lazy — it matches as little as possible. This matters enormously when parsing HTML tags or log lines where you want the shortest possible match between delimiters.</p>
+          </div>
+          <div class="pitfall-item">
+            <h3><code>^</code> and <code>$</code> with multiline flag</h3>
+            <p>Without the <code>m</code> flag, <code>^</code> matches only the very start of the string and <code>$</code> matches only the very end. With <code>m</code> enabled, they match the start and end of <em>each line</em>.</p>
+          </div>
+          <div class="pitfall-item">
+            <h3>dotAll (<code>s</code> flag)</h3>
+            <p>By default, <code>.</code> does NOT match newline characters. If your pattern needs to span multiple lines, enable the <code>s</code> (dotAll) flag. Without it, <code>.*</code> silently stops at line boundaries.</p>
+          </div>
+          <div class="pitfall-item">
+            <h3>Unicode (<code>u</code> flag)</h3>
+            <p>Required for emoji and supplementary-plane characters (code points above U+FFFF). Also enables Unicode property escapes like <code>\p&#123;Letter&#125;</code>. Without <code>u</code>, emoji can produce unexpected match lengths.</p>
+          </div>
+          <div class="pitfall-item">
+            <h3>IPv6 regex is never fully correct</h3>
+            <p>A regex covering all valid IPv6 forms runs to several hundred characters. The "IPv6 (practical)" preset covers the vast majority of real-world addresses, but will miss edge cases. For validation, use a proper IP parsing library — not regex.</p>
+          </div>
+        </div>
+      </details>
+
+    </div><!-- /.regex-widget -->
+
+    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
+      <summary class="cursor-pointer text-base font-semibold text-text-primary">
+        About this tool
+      </summary>
+      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+        <p><strong>What it does.</strong> Tests JavaScript regular expressions in real time with color-coded match highlighting, capture group display, and a collapsible match detail list showing each match value, index range, and group captures.</p>
+        <p><strong>Replace mode.</strong> Preview the result of <code>str.replace(rx, template)</code> with full backreference support: <code>$&amp;</code>, <code>$1</code>/<code>$2</code>, <code>$&lt;name&gt;</code> (named groups).</p>
+        <p><strong>Safety.</strong> A 500 ms wall-clock budget stops the match loop if it exceeds that threshold — catching catastrophic backtracking before it locks up your tab.</p>
+        <p><strong>Presets.</strong> Ten built-in patterns for common IT/ops tasks: email, IPv4, UUID, ISO date, semver, log levels, CIDR v4, IPv6, CIDR v6, and named capture groups.</p>
+        <p><strong>History.</strong> The last five patterns are stored in <code>localStorage</code> (key <code>lab-regex-history</code>) as recall chips. Test strings are not saved.</p>
+        <p><strong>URL state.</strong> Pattern, active flags, and up to 500 chars of test string are reflected in the URL via <code>replaceState</code> for easy sharing.</p>
+        <p><strong>Privacy.</strong> All processing is local — nothing leaves your browser.</p>
+      </div>
+    </details>
+
+    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
+      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">DevOps</span>
+      <span>Added 2026-05-12</span>
+    </div>
+  </section>
+
+<style is:global>
+  /* Regex tester — scoped to .regex-widget. Token aliases map prototype var names to site tokens. */
+  .regex-widget {
+    --color-bg-secondary: var(--color-bg-elevated);
+    --color-bg-tertiary: var(--color-bg-subtle);
+    --color-bg-danger: color-mix(in srgb, var(--color-error) 12%, transparent);
+    --color-text-muted: var(--color-text-tertiary);
+    --color-text-danger: var(--color-error);
+    --color-text-success: var(--color-success);
+    --color-text-warn: var(--color-accent-secondary);
+    --color-border-tertiary: var(--color-border-subtle);
+    --color-accent: var(--color-accent-primary);
+    --color-accent-2: var(--color-accent-secondary);
+    --radius: 10px;
+    --mono: var(--font-mono, ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace);
+    --hl0: rgba(20,184,166,0.30);
+    --hl1: rgba(245,158,11,0.30);
+    --hl2: rgba(139,92,246,0.30);
+    --hl3: rgba(236,72,153,0.30);
+    --hl4: rgba(59,130,246,0.30);
+    --hl5: rgba(34,197,94,0.30);
+    --hl0-border: #14b8a6;
+    --hl1-border: #f59e0b;
+    --hl2-border: #8b5cf6;
+    --hl3-border: #ec4899;
+    --hl4-border: #3b82f6;
+    --hl5-border: #22c55e;
+  }
+  html[data-theme="light"] .regex-widget {
+    --hl0: rgba(15,118,110,0.18);
+    --hl1: rgba(180,83,9,0.18);
+    --hl2: rgba(109,40,217,0.18);
+    --hl3: rgba(219,39,119,0.18);
+    --hl4: rgba(37,99,235,0.18);
+    --hl5: rgba(22,163,74,0.18);
+    --hl0-border: #0F766E;
+    --hl1-border: #B45309;
+    --hl2-border: #6d28d9;
+    --hl3-border: #db2777;
+    --hl4-border: #2563eb;
+    --hl5-border: #16a34a;
+  }
+  .regex-widget [hidden] { display: none !important; }
+  .regex-widget *, .regex-widget *::before, .regex-widget *::after { box-sizing: border-box; }
+
+  .regex-widget .card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .regex-widget .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 10px;
+  }
+  .regex-widget .pattern-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    border: 1.5px solid var(--color-border-tertiary);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--color-bg-tertiary);
+    transition: border-color 0.15s;
+  }
+  .regex-widget .pattern-row:focus-within { border-color: var(--color-accent); }
+  .regex-widget .pattern-row.invalid { border-color: var(--color-text-danger) !important; }
+  .regex-widget .pattern-row.valid   { border-color: var(--color-text-success) !important; }
+  .regex-widget .pattern-delimiter {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 10px;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+    font-family: var(--mono);
+    font-size: 20px;
+    user-select: none;
+    pointer-events: none;
+    border-right: 1px solid var(--color-border-tertiary);
+    flex-shrink: 0;
+  }
+  .regex-widget .pattern-delimiter.right {
+    border-right: none;
+    border-left: 1px solid var(--color-border-tertiary);
+  }
+  .regex-widget #patternInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--color-text-primary);
+    font-family: var(--mono);
+    font-size: 15px;
+    padding: 10px 12px;
+    min-width: 0;
+  }
+  .regex-widget #patternInput::placeholder { color: var(--color-text-muted); }
+  .regex-widget .pattern-flags-inline {
+    display: flex; align-items: center;
+    padding: 0 6px;
+    background: var(--color-bg-tertiary);
+    border-left: 1px solid var(--color-border-tertiary);
+    flex-shrink: 0;
+  }
+  .regex-widget .flag-inline-display {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--color-text-muted);
+    padding: 4px 6px;
+    min-width: 28px;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+  .regex-widget .pattern-actions {
+    display: flex; align-items: center;
+    padding: 0 4px;
+    gap: 2px;
+    background: var(--color-bg-tertiary);
+    border-left: 1px solid var(--color-border-tertiary);
+    flex-shrink: 0;
+  }
+  .regex-widget .icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: flex; align-items: center;
+    transition: color 0.12s, background 0.12s;
+    min-width: 28px; min-height: 28px;
+    justify-content: center;
+  }
+  .regex-widget .icon-btn:hover { color: var(--color-text-primary); background: var(--color-bg-tertiary); }
+  .regex-widget .icon-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+  .regex-widget .icon-btn.copied { color: var(--color-text-success); }
+  .regex-widget .pattern-error {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--color-text-danger);
+    margin-top: 6px;
+    min-height: 18px;
+    padding: 0 2px;
+  }
+  .regex-widget .flags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 14px;
+  }
+  .regex-widget .flags-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-right: 4px;
+  }
+  .regex-widget .flag-chip {
+    position: relative;
+    display: inline-flex; align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--color-border-tertiary);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s, background 0.12s;
+    min-width: 36px; min-height: 28px;
+    justify-content: center;
+  }
+  .regex-widget .flag-chip:hover { border-color: var(--color-accent); color: var(--color-text-primary); }
+  .regex-widget .flag-chip.active {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+    color: var(--color-accent);
+  }
+  .regex-widget .flag-chip:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  .regex-widget .chip-flash { animation: rx-chipFlash 140ms ease; }
+  @keyframes rx-chipFlash {
+    0%   { filter: invert(0); }
+    40%  { filter: invert(0.25); }
+    100% { filter: invert(0); }
+  }
+  .regex-widget .flag-chip[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-tertiary);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 400;
+    white-space: nowrap;
+    padding: 4px 8px;
+    border-radius: 5px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+    z-index: 10;
+  }
+  .regex-widget .flag-chip[data-tip]:hover::after { opacity: 1; }
+  .regex-widget .mode-row {
+    display: flex; align-items: center; gap: 0;
+    border: 1.5px solid var(--color-border-tertiary);
+    border-radius: var(--radius);
+    overflow: hidden;
+    width: fit-content;
+    margin-bottom: 14px;
+  }
+  .regex-widget .mode-btn {
+    background: var(--color-bg-tertiary);
+    border: none;
+    color: var(--color-text-secondary);
+    padding: 7px 20px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .regex-widget .mode-btn + .mode-btn { border-left: 1.5px solid var(--color-border-tertiary); }
+  .regex-widget .mode-btn.active {
+    background: color-mix(in srgb, var(--color-accent) 18%, var(--color-bg-tertiary));
+    color: var(--color-accent);
+  }
+  .regex-widget .mode-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+  .regex-widget #testInput {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    background: var(--color-bg-tertiary);
+    border: 1.5px solid var(--color-border-tertiary);
+    border-radius: var(--radius);
+    color: var(--color-text-primary);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 12px 14px;
+    outline: none;
+    tab-size: 2;
+    transition: border-color 0.15s;
+  }
+  .regex-widget #testInput:focus { border-color: var(--color-accent); }
+  .regex-widget #testInput::placeholder { color: var(--color-text-muted); }
+  .regex-widget .replace-row {
+    display: flex; align-items: stretch; gap: 0;
+    border: 1.5px solid var(--color-border-tertiary);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--color-bg-tertiary);
+    margin-top: 12px;
+    transition: border-color 0.15s;
+  }
+  .regex-widget .replace-row:focus-within { border-color: var(--color-accent); }
+  .regex-widget .replace-prefix {
+    display: flex; align-items: center;
+    padding: 0 12px;
+    background: var(--color-bg-tertiary);
+    border-right: 1px solid var(--color-border-tertiary);
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .regex-widget #replaceInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--color-text-primary);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 9px 12px;
+  }
+  .regex-widget #replaceInput::placeholder { color: var(--color-text-muted); }
+  .regex-widget .mirror-wrap {
+    position: relative;
+    margin-top: 14px;
+    border: 1.5px solid var(--color-border-tertiary);
+    border-radius: var(--radius);
+    background: var(--color-bg-tertiary);
+    overflow: hidden;
+  }
+  .regex-widget .mirror-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px 6px;
+    border-bottom: 1px solid var(--color-border-tertiary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  .regex-widget .mirror-header-right { display: flex; align-items: center; gap: 8px; }
+  .regex-widget #matchCount { font-size: 12px; font-weight: 600; color: var(--color-text-secondary); }
+  .regex-widget #matchCount.has-matches { color: var(--color-text-success); }
+  .regex-widget #matchCount.no-matches  { color: var(--color-text-muted); }
+  .regex-widget #matchCount.invalid     { color: var(--color-text-danger); }
+  .regex-widget #highlightMirror {
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 12px 14px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    min-height: 60px;
+    color: var(--color-text-primary);
+  }
+  .regex-widget .hl-match {
+    border-radius: 3px;
+    border-bottom: 2px solid;
+    cursor: default;
+    position: relative;
+  }
+  .regex-widget .hl-match[data-group-name]::after {
+    content: attr(data-group-name);
+    position: absolute;
+    bottom: calc(100% + 5px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-tertiary);
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+    z-index: 10;
+  }
+  .regex-widget .hl-match[data-group-name]:hover::after { opacity: 1; }
+  .regex-widget .backtrack-warn {
+    color: var(--color-text-warn);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .regex-widget .match-detail { margin-top: 12px; }
+  .regex-widget details.match-detail-inner {
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: var(--radius);
+    background: var(--color-bg-secondary);
+    overflow: hidden;
+  }
+  .regex-widget details.match-detail-inner > summary {
+    padding: 9px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    list-style: none;
+    display: flex; align-items: center; gap: 8px;
+    user-select: none;
+  }
+  .regex-widget details.match-detail-inner > summary::-webkit-details-marker { display: none; }
+  .regex-widget details.match-detail-inner > summary::before {
+    content: "▸";
+    font-size: 11px;
+    color: var(--color-accent);
+    transition: transform 0.14s;
+    display: inline-block;
+  }
+  .regex-widget details.match-detail-inner[open] > summary::before { transform: rotate(90deg); }
+  .regex-widget details.match-detail-inner > summary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+  .regex-widget .match-detail-body {
+    padding: 10px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .regex-widget .match-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+  .regex-widget .match-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--color-text-muted);
+    padding-top: 1px;
+    flex-shrink: 0;
+    min-width: 24px;
+  }
+  .regex-widget .match-text {
+    font-family: var(--mono);
+    background: var(--color-bg-tertiary);
+    border-radius: 4px;
+    padding: 2px 7px;
+    color: var(--color-text-primary);
+    font-size: 13px;
+    word-break: break-all;
+  }
+  .regex-widget .match-meta { color: var(--color-text-muted); font-size: 12px; padding-top: 2px; }
+  .regex-widget .match-groups { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .regex-widget .match-group-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-tertiary);
+  }
+  .regex-widget .copy-matches-btn { margin-left: auto; flex-shrink: 0; }
+  .regex-widget .replace-output {
+    margin-top: 12px;
+    border: 1.5px solid var(--color-border-tertiary);
+    border-radius: var(--radius);
+    background: var(--color-bg-tertiary);
+    overflow: hidden;
+  }
+  .regex-widget .replace-output-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px 6px;
+    border-bottom: 1px solid var(--color-border-tertiary);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  .regex-widget #replaceOutput {
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 12px 14px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    min-height: 60px;
+    color: var(--color-text-primary);
+  }
+  .regex-widget .chips-section { margin-bottom: 14px; }
+  .regex-widget .chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-height: 36px;
+    align-items: flex-start;
+    padding: 2px 0;
+  }
+  .regex-widget .preset-chip {
+    display: inline-flex; align-items: center;
+    padding: 5px 13px;
+    border-radius: 20px;
+    border: 1.5px solid var(--color-border-tertiary);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s, background 0.12s;
+    min-height: 30px;
+  }
+  .regex-widget .preset-chip:hover {
+    border-color: var(--color-accent);
+    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-tertiary));
+  }
+  .regex-widget .preset-chip:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  .regex-widget .history-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 8px 5px 13px;
+    border-radius: 20px;
+    border: 1.5px solid var(--color-border-tertiary);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    min-height: 30px;
+    transition: border-color 0.12s, color 0.12s;
+  }
+  .regex-widget .history-chip:hover { border-color: var(--color-accent-2); color: var(--color-text-primary); }
+  .regex-widget .history-chip:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  .regex-widget .history-chip-x {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--color-bg-secondary);
+    border: none; border-radius: 50%;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+    min-width: 24px; min-height: 24px;
+    transition: background 0.12s, color 0.12s;
+  }
+  .regex-widget .history-chip-x:hover { background: var(--color-bg-danger); color: var(--color-text-danger); }
+  .regex-widget .history-chip-x:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  .regex-widget .history-empty { font-size: 12px; color: var(--color-text-muted); font-style: italic; padding: 6px 2px; }
+  .regex-widget details.pitfall-panel {
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: var(--radius);
+    background: var(--color-bg-secondary);
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .regex-widget details.pitfall-panel > summary {
+    padding: 11px 16px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    list-style: none;
+    display: flex; align-items: center; gap: 9px;
+    user-select: none;
+  }
+  .regex-widget details.pitfall-panel > summary::-webkit-details-marker { display: none; }
+  .regex-widget details.pitfall-panel > summary::before {
+    content: "▸";
+    font-size: 11px;
+    color: var(--color-accent-2);
+    transition: transform 0.14s;
+    display: inline-block;
+  }
+  .regex-widget details.pitfall-panel[open] > summary::before { transform: rotate(90deg); }
+  .regex-widget details.pitfall-panel > summary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+  .regex-widget .pitfall-body { padding: 4px 20px 18px; display: flex; flex-direction: column; gap: 14px; }
+  .regex-widget .pitfall-item h3 { font-size: 13px; font-weight: 700; color: var(--color-accent-2); margin: 0 0 4px; }
+  .regex-widget .pitfall-item p { font-size: 13px; color: var(--color-text-secondary); margin: 0; line-height: 1.6; }
+  .regex-widget .pitfall-item code {
+    font-family: var(--mono);
+    background: var(--color-bg-tertiary);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: var(--color-text-primary);
+  }
+  .regex-widget button.busy { opacity: 0.7; cursor: wait; }
+  .regex-widget .match-detail-body::-webkit-scrollbar { width: 6px; }
+  .regex-widget .match-detail-body::-webkit-scrollbar-track { background: transparent; }
+  .regex-widget .match-detail-body::-webkit-scrollbar-thumb { background: var(--color-border-tertiary); border-radius: 3px; }
+  @media (max-width: 600px) {
+    .regex-widget .mode-btn { padding: 7px 14px; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  'use strict';
+
+  const patternInput       = document.getElementById('patternInput');
+  const patternRow         = document.getElementById('patternRow');
+  const patternError       = document.getElementById('patternError');
+  const activeFlagsDisplay = document.getElementById('activeFlagsDisplay');
+  const copyPatternBtn     = document.getElementById('copyPatternBtn');
+  const testInput          = document.getElementById('testInput');
+  const replaceSection     = document.getElementById('replaceSection');
+  const replaceInput       = document.getElementById('replaceInput');
+  const replaceOutputSection = document.getElementById('replaceOutputSection');
+  const replaceOutput      = document.getElementById('replaceOutput');
+  const copyResultBtn      = document.getElementById('copyResultBtn');
+  const highlightMirror    = document.getElementById('highlightMirror');
+  const matchCount         = document.getElementById('matchCount');
+  const matchDetailWrap    = document.getElementById('matchDetailWrap');
+  const matchDetailSummary = document.getElementById('matchDetailSummary');
+  const matchDetailBody    = document.getElementById('matchDetailBody');
+  const copyMatchesBtn     = document.getElementById('copyMatchesBtn');
+  const presetRow          = document.getElementById('presetRow');
+  const historyRow         = document.getElementById('historyRow');
+  const modeTest           = document.getElementById('modeTest');
+  const modeReplace        = document.getElementById('modeReplace');
+  const flagChips          = document.querySelectorAll('.regex-widget .flag-chip');
+
+  let mode = 'test';
+  let lastMatches = [];
+  let rendering = false;
+  let pendingRender = false;
+
+  const PRESETS = [
+    { label: 'Email',       pattern: '[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}',
+      test: 'Contact us at hello@example.com or support@company.co.uk — we reply within 24h.' },
+    { label: 'IPv4',        pattern: '\\b(?:(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\b',
+      test: 'Server 192.168.1.1 proxies to 10.0.0.254 and 172.16.0.100; gateway is 0.0.0.0.' },
+    { label: 'UUID',        pattern: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
+      test: 'Request id: 550e8400-e29b-41d4-a716-446655440000 — trace: f47ac10b-58cc-4372-a567-0e02b2c3d479' },
+    { label: 'ISO Date',    pattern: '\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])',
+      test: 'Deployed on 2025-01-15. Next review 2025-06-30. Archive cutoff: 2024-12-01.' },
+    { label: 'Semver',      pattern: '\\bv?(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)(?:-[\\w.-]+)?(?:\\+[\\w.-]+)?\\b',
+      test: 'Bumped from v1.2.3 to 2.0.0-beta.1 — also tested against 0.9.11+build.42.' },
+    { label: 'Log level',   pattern: '\\b(DEBUG|INFO|WARN(?:ING)?|ERROR|FATAL|CRITICAL)\\b',
+      test: '2024-01-01T10:00:00Z INFO  App started\n2024-01-01T10:01:23Z ERROR Failed to connect\n2024-01-01T10:01:25Z CRITICAL Database unreachable\n2024-01-01T10:02:00Z WARNING Low disk space' },
+    { label: 'CIDR (v4)',   pattern: '(?:(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\/(?:[0-9]|[1-2]\\d|3[0-2])',
+      test: 'Allow 10.0.0.0/8 and 192.168.0.0/24; block 0.0.0.0/0 except 172.16.0.0/12.' },
+    { label: 'IPv6 (practical)', pattern: '(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?::[0-9a-fA-F]{1,4}){1,6}|:(?::[0-9a-fA-F]{1,4}){1,7}|::(?:[fF]{4}(?::0{1,4})?:)?(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)(?:\\.(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)){3}|::',
+      test: 'Primary: 2001:db8:85a3::8a2e:370:7334\nLoopback: ::1\nFull: 2001:0db8:0000:0000:0000:0000:0000:0001\nIPv4-mapped: ::ffff:192.0.2.1\nLink-local: fe80::1%eth0\nCompressed: 2001:db8::1' },
+    { label: 'CIDR (v6)',   pattern: '(?:(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?::[0-9a-fA-F]{1,4}){1,6}|:(?::[0-9a-fA-F]{1,4}){1,7}|::)\\/(?:12[0-8]|1[01]\\d|[1-9]?\\d)',
+      test: 'Route 2001:db8::/32 to upstream\nAllow fe80::/10 link-local\nBlock ::/0 default except 2001:db8:85a3::/48' },
+    { label: 'Named groups', pattern: '(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})',
+      test: 'Deployments: 2025-03-14, 2025-09-01, 2024-12-31. Next planned: 2026-01-05.' },
+  ];
+
+  const HISTORY_KEY = 'lab-regex-history';
+  const HISTORY_MAX = 5;
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+  }
+  function saveHistory(h) {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch {}
+  }
+  function addToHistory(pattern) {
+    if (!pattern) return;
+    let h = loadHistory().filter(function (p) { return p !== pattern; });
+    h.unshift(pattern);
+    if (h.length > HISTORY_MAX) h = h.slice(0, HISTORY_MAX);
+    saveHistory(h);
+    renderHistory();
+  }
+  function removeFromHistory(pattern) {
+    saveHistory(loadHistory().filter(function (p) { return p !== pattern; }));
+    renderHistory();
+  }
+
+  var HL_BG     = ['var(--hl0)','var(--hl1)','var(--hl2)','var(--hl3)','var(--hl4)','var(--hl5)'];
+  var HL_BORDER = ['var(--hl0-border)','var(--hl1-border)','var(--hl2-border)','var(--hl3-border)','var(--hl4-border)','var(--hl5-border)'];
+
+  function getActiveFlags() {
+    return Array.from(flagChips).filter(function (b) { return b.classList.contains('active'); })
+      .map(function (b) { return b.dataset.flag; }).join('');
+  }
+  function buildRegex(pattern, extraFlags) {
+    return new RegExp(pattern, getActiveFlags() + (extraFlags || ''));
+  }
+
+  function pushState() {
+    var url = new URL(location.href);
+    var p = patternInput.value, f = getActiveFlags(), t = testInput.value.slice(0, 500);
+    if (p) url.searchParams.set('pattern', p); else url.searchParams.delete('pattern');
+    if (f) url.searchParams.set('flags', f);   else url.searchParams.delete('flags');
+    if (t) url.searchParams.set('test', t);    else url.searchParams.delete('test');
+    history.replaceState(null, '', url.toString());
+  }
+  function loadFromURL() {
+    var url = new URL(location.href);
+    var p = url.searchParams.get('pattern');
+    var f = url.searchParams.get('flags');
+    var t = url.searchParams.get('test');
+    if (p) patternInput.value = p;
+    if (f) {
+      flagChips.forEach(function (chip) {
+        var active = f.includes(chip.dataset.flag);
+        chip.classList.toggle('active', active);
+        chip.setAttribute('aria-pressed', String(active));
+      });
+    }
+    if (t) testInput.value = t;
+  }
+
+  var busyTimer = null;
+  function setBusyState(busy) {
+    clearTimeout(busyTimer);
+    if (busy) { busyTimer = setTimeout(function () { copyMatchesBtn.classList.add('busy'); }, 80); }
+    else { copyMatchesBtn.classList.remove('busy'); }
+  }
+
+  function flashChip(el) {
+    el.classList.remove('chip-flash');
+    void el.offsetWidth;
+    el.classList.add('chip-flash');
+    setTimeout(function () { el.classList.remove('chip-flash'); }, 160);
+  }
+
+  function render() {
+    if (rendering) { pendingRender = true; return; }
+    rendering = true;
+    setBusyState(true);
+    requestAnimationFrame(function () {
+      setTimeout(function () {
+        renderImpl();
+        setBusyState(false);
+        rendering = false;
+        if (pendingRender) { pendingRender = false; render(); }
+      }, 0);
+    });
+  }
+
+  function renderImpl() {
+    var patStr = patternInput.value, testStr = testInput.value;
+    activeFlagsDisplay.textContent = getActiveFlags();
+
+    var rx = null;
+    if (patStr) {
+      try {
+        rx = buildRegex(patStr);
+        patternRow.classList.remove('invalid');
+        patternRow.classList.add('valid');
+        patternError.textContent = '';
+      } catch (e) {
+        patternRow.classList.remove('valid');
+        patternRow.classList.add('invalid');
+        patternError.textContent = '⚠ ' + e.message;
+        renderEmpty(testStr, 'invalid');
+        return;
+      }
+    } else {
+      patternRow.classList.remove('valid', 'invalid');
+      patternError.textContent = '';
+      renderEmpty(testStr, 'empty');
+      return;
+    }
+
+    var statsEl = document.getElementById('testStrStats');
+    if (statsEl) {
+      if (testStr) {
+        var lines = testStr.split('\n').length;
+        statsEl.textContent = testStr.length.toLocaleString() + ' chars · ' + lines.toLocaleString() + ' line' + (lines !== 1 ? 's' : '');
+      } else { statsEl.textContent = ''; }
+    }
+
+    var result = collectMatches(rx, testStr);
+    lastMatches = result.matches;
+
+    if (result.timedOut) {
+      matchCount.textContent = result.matches.length + '+ (timed out)';
+      matchCount.className = 'warn-matches';
+      var warn = document.createElement('div');
+      warn.className = 'backtrack-warn';
+      warn.dataset.testid = 'backtrack-warning';
+      warn.textContent = '⚠ Match operation exceeded 500 ms and was stopped — this pattern may cause catastrophic backtracking. Try a shorter test string or simplify nested quantifiers.';
+      highlightMirror.textContent = testStr;
+      var existing = document.querySelector('.regex-widget .backtrack-warn');
+      if (existing) existing.remove();
+      highlightMirror.parentNode.insertBefore(warn, highlightMirror.nextSibling);
+      return;
+    } else {
+      var bw = document.querySelector('.regex-widget .backtrack-warn');
+      if (bw) bw.remove();
+    }
+
+    renderHighlights(testStr, result.matches);
+
+    if (result.matches.length === 0) {
+      matchCount.textContent = 'No matches';
+      matchCount.className = 'no-matches';
+    } else {
+      matchCount.textContent = result.matches.length + (result.matches.length === 1 ? ' match' : ' matches');
+      matchCount.className = 'has-matches';
+    }
+
+    if (result.matches.length > 0) {
+      matchDetailWrap.removeAttribute('hidden');
+      matchDetailSummary.textContent = result.matches.length + (result.matches.length === 1 ? ' match' : ' matches') + ' — click to expand';
+      renderMatchDetail(result.matches);
+    } else {
+      matchDetailWrap.setAttribute('hidden', '');
+    }
+
+    if (mode === 'replace') {
+      try {
+        var rxR = buildRegex(patStr);
+        replaceOutput.textContent = testStr.replace(rxR, replaceInput.value);
+      } catch (_) { replaceOutput.textContent = ''; }
+    }
+
+    pushState();
+  }
+
+  function renderEmpty(testStr, reason) {
+    var statsEl = document.getElementById('testStrStats');
+    if (statsEl) {
+      if (testStr) {
+        var lines = testStr.split('\n').length;
+        statsEl.textContent = testStr.length.toLocaleString() + ' chars · ' + lines.toLocaleString() + ' line' + (lines !== 1 ? 's' : '');
+      } else { statsEl.textContent = ''; }
+    }
+    var bw = document.querySelector('.regex-widget .backtrack-warn');
+    if (bw) bw.remove();
+    highlightMirror.textContent = testStr || '';
+    matchCount.textContent = '—';
+    matchCount.className = reason === 'invalid' ? 'invalid' : 'no-matches';
+    matchDetailWrap.setAttribute('hidden', '');
+    lastMatches = [];
+    if (mode === 'replace') replaceOutput.textContent = testStr;
+    pushState();
+  }
+
+  function collectMatches(rx, str) {
+    var matches = [];
+    if (!str) return { matches: matches, timedOut: false };
+    var deadline = Date.now() + 500;
+    if (rx.flags.includes('g')) {
+      var m, prevIndex = -1;
+      rx.lastIndex = 0;
+      while ((m = rx.exec(str)) !== null) {
+        matches.push(buildMatchObj(m));
+        if (rx.lastIndex === prevIndex) rx.lastIndex++;
+        prevIndex = rx.lastIndex;
+        if (matches.length > 2000) break;
+        if (Date.now() > deadline) return { matches: matches, timedOut: true };
+      }
+    } else {
+      var before = Date.now(), m2 = rx.exec(str);
+      if (m2) matches.push(buildMatchObj(m2));
+      if (Date.now() - before > 500) return { matches: matches, timedOut: true };
+    }
+    return { matches: matches, timedOut: false };
+  }
+
+  function buildMatchObj(m) {
+    return { index: m.index, value: m[0], end: m.index + m[0].length, groups: Array.prototype.slice.call(m, 1), namedGroups: m.groups || {} };
+  }
+
+  function renderHighlights(str, matches) {
+    if (!matches.length) { highlightMirror.textContent = str; return; }
+    var frag = document.createDocumentFragment(), cursor = 0;
+    matches.forEach(function (match, idx) {
+      if (match.index < cursor) return;
+      if (match.index > cursor) frag.appendChild(document.createTextNode(str.slice(cursor, match.index)));
+      var color = idx % HL_BG.length;
+      var span = document.createElement('span');
+      span.className = 'hl-match';
+      span.dataset.matchHighlight = '';
+      span.textContent = match.value;
+      span.style.background = HL_BG[color];
+      span.style.borderBottomColor = HL_BORDER[color];
+      span.title = 'Match ' + (idx + 1) + ': "' + match.value + '" @ ' + match.index;
+      var namedKeys = Object.keys(match.namedGroups);
+      if (namedKeys.length === 1) span.dataset.groupName = namedKeys[0];
+      frag.appendChild(span);
+      cursor = match.end;
+    });
+    if (cursor < str.length) frag.appendChild(document.createTextNode(str.slice(cursor)));
+    highlightMirror.innerHTML = '';
+    highlightMirror.appendChild(frag);
+  }
+
+  function renderMatchDetail(matches) {
+    matchDetailBody.innerHTML = '';
+    var frag = document.createDocumentFragment();
+    matches.slice(0, 200).forEach(function (match, idx) {
+      var row = document.createElement('div'); row.className = 'match-item';
+      var num = document.createElement('span'); num.className = 'match-num'; num.textContent = '#' + (idx + 1);
+      row.appendChild(num);
+      var right = document.createElement('div');
+      var textWrap = document.createElement('div');
+      textWrap.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+      var textEl = document.createElement('span'); textEl.className = 'match-text'; textEl.textContent = match.value || '(empty)';
+      var meta = document.createElement('span'); meta.className = 'match-meta'; meta.textContent = '@ ' + match.index + '–' + match.end;
+      textWrap.appendChild(textEl); textWrap.appendChild(meta); right.appendChild(textWrap);
+      var namedKeys = Object.keys(match.namedGroups);
+      if (match.groups.length > 0 || namedKeys.length > 0) {
+        var groupRow = document.createElement('div'); groupRow.className = 'match-groups';
+        if (namedKeys.length > 0) {
+          namedKeys.forEach(function (k) {
+            var tag = document.createElement('span'); tag.className = 'match-group-tag'; tag.textContent = k + ': ' + match.namedGroups[k]; groupRow.appendChild(tag);
+          });
+        } else {
+          match.groups.forEach(function (g, gi) {
+            if (g === undefined) return;
+            var tag = document.createElement('span'); tag.className = 'match-group-tag'; tag.textContent = '$' + (gi + 1) + ': ' + g; groupRow.appendChild(tag);
+          });
+        }
+        right.appendChild(groupRow);
+      }
+      row.appendChild(right); frag.appendChild(row);
+    });
+    if (matches.length > 200) {
+      var note = document.createElement('div'); note.className = 'match-meta'; note.style.paddingLeft = '32px';
+      note.textContent = '… and ' + (matches.length - 200) + ' more'; frag.appendChild(note);
+    }
+    matchDetailBody.appendChild(frag);
+  }
+
+  function copyText(text, btn, label) {
+    navigator.clipboard.writeText(text).then(function () {
+      var orig = btn.textContent; btn.textContent = label || '✓ copied'; btn.classList.add('copied');
+      setTimeout(function () { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
+    }).catch(function () {});
+  }
+
+  copyPatternBtn.addEventListener('click', function () { copyText(patternInput.value, copyPatternBtn, '✓'); });
+  copyMatchesBtn.addEventListener('click', function () {
+    var payload = lastMatches.map(function (m) {
+      return { match: m.value, index: m.index, end: m.end,
+        groups: m.groups.length > 0 ? m.groups : undefined,
+        namedGroups: Object.keys(m.namedGroups).length > 0 ? m.namedGroups : undefined };
+    });
+    copyText(JSON.stringify(payload, null, 2), copyMatchesBtn, '✓ copied');
+  });
+  copyResultBtn.addEventListener('click', function () { copyText(replaceOutput.textContent, copyResultBtn, '✓ copied'); });
+
+  function renderPresets() {
+    presetRow.innerHTML = '';
+    PRESETS.forEach(function (p) {
+      var btn = document.createElement('button');
+      btn.className = 'preset-chip';
+      btn.textContent = p.label;
+      btn.dataset.preset = p.label;
+      btn.setAttribute('aria-label', 'Load preset: ' + p.label);
+      btn.addEventListener('click', function () {
+        flashChip(btn);
+        patternInput.value = p.pattern;
+        if (p.test) testInput.value = p.test;
+        addToHistory(p.pattern);
+        render();
+      });
+      presetRow.appendChild(btn);
+    });
+  }
+
+  function renderHistory() {
+    historyRow.innerHTML = '';
+    var h = loadHistory();
+    if (h.length === 0) {
+      var empty = document.createElement('span'); empty.className = 'history-empty'; empty.textContent = 'No recent patterns yet';
+      historyRow.appendChild(empty); return;
+    }
+    h.forEach(function (pattern) {
+      var wrap = document.createElement('button');
+      wrap.className = 'history-chip';
+      wrap.dataset.historyChip = '';
+      wrap.setAttribute('aria-label', 'Load recent pattern: ' + pattern);
+      var text = document.createElement('span');
+      text.style.cssText = 'max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      text.textContent = pattern;
+      wrap.appendChild(text);
+      var x = document.createElement('button');
+      x.className = 'history-chip-x';
+      x.dataset.historyRemove = pattern;
+      x.setAttribute('aria-label', 'Remove from history: ' + pattern);
+      x.textContent = '×';
+      x.addEventListener('click', function (e) { e.stopPropagation(); removeFromHistory(pattern); });
+      wrap.appendChild(x);
+      wrap.addEventListener('click', function (e) {
+        if (e.target === x) return;
+        flashChip(wrap); patternInput.value = pattern; render();
+      });
+      historyRow.appendChild(wrap);
+    });
+  }
+
+  flagChips.forEach(function (chip) {
+    chip.setAttribute('aria-pressed', chip.classList.contains('active') ? 'true' : 'false');
+    chip.setAttribute('role', 'button');
+    chip.addEventListener('click', function () {
+      flashChip(chip);
+      chip.classList.toggle('active');
+      chip.setAttribute('aria-pressed', chip.classList.contains('active') ? 'true' : 'false');
+      render();
+    });
+    chip.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chip.click(); }
+    });
+  });
+
+  function setMode(newMode) {
+    mode = newMode;
+    modeTest.classList.toggle('active', mode === 'test');
+    modeReplace.classList.toggle('active', mode === 'replace');
+    modeTest.setAttribute('aria-pressed', String(mode === 'test'));
+    modeReplace.setAttribute('aria-pressed', String(mode === 'replace'));
+    if (mode === 'replace') {
+      replaceSection.removeAttribute('hidden');
+      replaceOutputSection.removeAttribute('hidden');
+    } else {
+      replaceSection.setAttribute('hidden', '');
+      replaceOutputSection.setAttribute('hidden', '');
+    }
+    render();
+  }
+  modeTest.addEventListener('click', function () { setMode('test'); });
+  modeReplace.addEventListener('click', function () { setMode('replace'); });
+
+  patternInput.addEventListener('input', render);
+  testInput.addEventListener('input', render);
+  replaceInput.addEventListener('input', render);
+  patternInput.addEventListener('blur', function () { if (patternInput.value) addToHistory(patternInput.value); });
+
+  renderPresets();
+  renderHistory();
+  loadFromURL();
+  render();
+}());
+</script>
+</Base>
