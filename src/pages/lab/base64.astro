@@ -1,0 +1,973 @@
+---
+import Base from '../../layouts/Base.astro';
+const title = 'Base64 encoder / decoder · Corey Wininger';
+const description =
+  'Encode or decode Base64 in your browser — text and files. Auto-detect, URL-safe variant, data URI builder, MIME detection from magic bytes, line wrapping. Nothing leaves your browser.';
+---
+
+<Base title={title} description={description}>
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-text-primary">Home</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
+        <li aria-hidden="true">›</li>
+        <li class="text-text-secondary">Base64 encoder / decoder</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8">
+      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        Base64 encoder / decoder
+      </h1>
+      <p class="max-w-2xl text-lg text-text-secondary">
+        Encode and decode Base64 strings entirely in your browser — text, files,
+        and data URIs. Auto-detect mode, URL-safe variant, MIME detection. No
+        data leaves your machine.
+      </p>
+    </header>
+
+    <h2 class="sr-only">
+      Base64 encoder and decoder with text and file modes. Auto-detects whether
+      input is plain text or Base64. Supports standard and URL-safe variants,
+      padding control, MIME line wrapping (76-char MIME, 64-char PEM), data URI
+      builder, and file encode/decode with MIME detection from magic bytes.
+    </h2>
+
+    <div class="lab-tool b64-widget py-4">
+
+      <!-- Tab row: Text / File -->
+      <div class="tab-row" role="tablist" aria-label="Input mode">
+        <button class="tab-btn active" role="tab" aria-selected="true" data-tab="text" id="tab-text">Text</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="file" id="tab-file">File</button>
+      </div>
+
+      <!-- TEXT PANEL -->
+      <div id="panel-text" role="tabpanel" aria-labelledby="tab-text">
+
+        <div class="controls">
+          <label id="mode-label">Direction</label>
+          <div class="seg" role="group" aria-labelledby="mode-label" id="mode-seg">
+            <button class="active" data-mode="auto" aria-pressed="true">Auto</button>
+            <button data-mode="encode" aria-pressed="false">Encode</button>
+            <button data-mode="decode" aria-pressed="false">Decode</button>
+          </div>
+          <span id="detect-badge" class="detect-badge plain" hidden></span>
+        </div>
+
+        <div class="controls">
+          <label id="var-label">Variant</label>
+          <div class="tip-wrap">
+            <div class="seg" role="group" aria-labelledby="var-label" id="var-seg">
+              <button class="active" data-var="standard" aria-pressed="true">Standard</button>
+              <button data-var="urlsafe" aria-pressed="false">URL-safe</button>
+            </div>
+            <span class="tip-icon" tabindex="0" role="img" aria-label="Tooltip">?</span>
+            <div class="tooltip">URL-safe variant replaces <code>+</code> with <code>-</code> and <code>/</code> with <code>_</code> — required in JWT headers, URL params, and filenames.</div>
+          </div>
+
+          <label id="pad-label">Padding</label>
+          <div class="seg" role="group" aria-labelledby="pad-label" id="pad-seg">
+            <button class="active" data-pad="with" aria-pressed="true">With =</button>
+            <button data-pad="without" aria-pressed="false">No =</button>
+            <button data-pad="auto" aria-pressed="false">Auto</button>
+          </div>
+
+          <label id="wrap-label">Line wrap</label>
+          <div class="seg" role="group" aria-labelledby="wrap-label" id="wrap-seg">
+            <button class="active" data-wrap="none" aria-pressed="true">None</button>
+            <button data-wrap="76" aria-pressed="false">76 (MIME)</button>
+            <button data-wrap="64" aria-pressed="false">64 (PEM)</button>
+          </div>
+        </div>
+
+        <div class="chip-section">
+          <div class="chip-label">Quick samples</div>
+          <div class="chip-row" role="list">
+            <button class="chip" role="listitem" data-chip="hello" aria-label='Load Hello World sample'>
+              "Hello, World!" <span class="chip-mode-badge">encode</span>
+            </button>
+            <button class="chip" role="listitem" data-chip="k8s" aria-label="Load Kubernetes secret sample">
+              K8s secret value <span class="chip-mode-badge">encode</span>
+            </button>
+            <button class="chip" role="listitem" data-chip="jwt-header" aria-label="Load JWT header sample">
+              JWT header <span class="chip-mode-badge">decode</span>
+            </button>
+            <button class="chip" role="listitem" data-chip="datauri" aria-label="Load data URI prefix sample">
+              data URI prefix <span class="chip-mode-badge">auto</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="stats-bar" aria-live="polite" aria-atomic="true" id="stats-bar">
+          <span class="stat-item"><span class="stat-label">In:</span> <span class="stat-value" id="stat-in">0 chars</span></span>
+          <span class="stat-item"><span class="stat-label">Out:</span> <span class="stat-value" id="stat-out">0 chars</span></span>
+          <span class="stat-item"><span class="stat-label">Ratio:</span> <span class="stat-ratio" id="stat-ratio">—</span></span>
+        </div>
+
+        <div class="panes">
+          <div class="pane">
+            <div class="pane-header">
+              <span class="pane-title" id="input-pane-title">Input</span>
+              <button class="btn btn-ghost" id="clear-btn" style="padding:3px 10px;font-size:12px;" aria-label="Clear input">Clear</button>
+            </div>
+            <textarea id="input-ta" spellcheck="false" autocomplete="off" autocorrect="off"
+                      aria-label="Input text" aria-describedby="input-error" rows="10"
+                      placeholder="Type or paste text here…"></textarea>
+            <div id="input-error" class="error-msg" hidden></div>
+          </div>
+          <div class="pane">
+            <div class="pane-header">
+              <span class="pane-title" id="output-pane-title">Output</span>
+              <button class="btn btn-ghost" id="copy-btn" style="padding:3px 10px;font-size:12px;" aria-label="Copy output to clipboard">Copy</button>
+            </div>
+            <textarea id="output-ta" readonly spellcheck="false" rows="10"
+                      aria-label="Output text" aria-live="polite"
+                      placeholder="Output will appear here…"></textarea>
+          </div>
+        </div>
+
+      </div><!-- /panel-text -->
+
+      <!-- FILE PANEL -->
+      <div id="panel-file" role="tabpanel" aria-labelledby="tab-file" hidden>
+        <div class="file-pane">
+
+          <div class="file-sub-tabs" role="group" aria-label="File operation">
+            <button class="file-sub-btn active" data-file-tab="encode" id="ftab-encode">Encode file → Base64</button>
+            <button class="file-sub-btn" data-file-tab="decode" id="ftab-decode">Decode Base64 → file</button>
+          </div>
+
+          <div id="fpanel-encode">
+            <div class="drop-zone" id="drop-zone" tabindex="0" role="button"
+                 aria-label="Drop a file here or click to browse" aria-describedby="drop-sub">
+              <div class="drop-zone-icon">📂</div>
+              <div class="drop-zone-label">Drop a file here or <strong class="text-accent-primary">click to browse</strong></div>
+              <div class="drop-zone-sub" id="drop-sub">Any file type · max 2 MB recommended</div>
+            </div>
+            <input type="file" id="file-input" aria-label="File picker" />
+
+            <div id="file-info-row" hidden>
+              <div class="file-info">
+                <div>
+                  <div class="file-info-name" id="fi-name">—</div>
+                  <div class="file-info-size" id="fi-size">—</div>
+                </div>
+                <span class="file-info-mime" id="fi-mime">—</span>
+                <button class="btn btn-ghost" id="file-clear-btn" style="padding:4px 10px;font-size:12px;">✕ Clear</button>
+              </div>
+            </div>
+
+            <div id="file-warn-row" hidden>
+              <div class="file-warn-inner">
+                ⚠ File is larger than 2 MB — encoding may be slow and the output very long.
+              </div>
+            </div>
+
+            <div class="checkbox-row" style="margin-top:6px;">
+              <input type="checkbox" id="datauri-chk" />
+              <label for="datauri-chk">Wrap as data URI <code style="font-size:11px;">data:&lt;mime&gt;;base64,…</code> (for embedding in HTML/CSS)</label>
+            </div>
+
+            <div>
+              <div class="pane-header" style="margin-bottom:6px;">
+                <span class="pane-title">Base64 output</span>
+                <button class="btn btn-ghost" id="file-copy-btn" style="padding:3px 10px;font-size:12px;" aria-label="Copy file Base64 output">Copy</button>
+              </div>
+              <textarea id="file-output-ta" readonly spellcheck="false" rows="8"
+                        aria-label="File Base64 output" placeholder="Select a file above to encode it…"></textarea>
+            </div>
+          </div><!-- /fpanel-encode -->
+
+          <div id="fpanel-decode" hidden>
+            <div>
+              <div class="pane-header" style="margin-bottom:6px;">
+                <span class="pane-title">Base64 input</span>
+              </div>
+              <textarea id="file-decode-ta" spellcheck="false" autocomplete="off" rows="8"
+                        aria-label="Base64 to decode to file"
+                        placeholder="Paste Base64-encoded file content here…"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;">
+              <button class="btn btn-primary" id="file-decode-btn" aria-label="Decode Base64 to file">
+                Decode to file
+              </button>
+              <span id="file-decode-mime" class="file-info-mime" hidden></span>
+              <span id="file-decode-error" class="file-decode-error-text" hidden></span>
+            </div>
+            <div id="file-download-row" hidden>
+              <div class="file-info" style="margin-top:10px;">
+                <div>
+                  <div class="file-info-name" id="fd-name">decoded-file.bin</div>
+                  <div class="file-info-size" id="fd-size">—</div>
+                </div>
+                <button class="btn btn-primary" id="file-download-btn" aria-label="Download decoded file">
+                  ⬇ Download
+                </button>
+              </div>
+            </div>
+          </div><!-- /fpanel-decode -->
+
+          <div class="privacy-note">
+            <span class="privacy-note-icon">🔒</span>
+            <span>Files are processed entirely in your browser — nothing is uploaded.</span>
+          </div>
+
+        </div>
+      </div><!-- /panel-file -->
+
+    </div><!-- /.b64-widget -->
+
+    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
+      <summary class="cursor-pointer text-base font-semibold text-text-primary">
+        About this tool
+      </summary>
+      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+        <p><strong>What it does.</strong> Encodes and decodes Base64 in your browser across two modes.
+          <strong>Text mode</strong> converts between plain text and Base64 strings with auto-detection,
+          configurable variant (standard or URL-safe), padding control (with <code>=</code>, without, or auto),
+          and line wrapping for MIME (76 chars) or PEM (64 chars) output.
+          <strong>File mode</strong> encodes any file to Base64 (optionally as a <code>data:</code> URI)
+          or decodes a Base64 string back to a downloadable file with MIME detection from the first 12 magic bytes.</p>
+        <p><strong>Common uses.</strong> Kubernetes secrets store values as Base64 in etcd — encode with
+          <code>echo -n 'value' | base64</code> (the <code>-n</code> flag is critical; omitting it encodes a
+          trailing newline that breaks decoding). JWT header and payload segments are URL-safe Base64 without
+          padding — paste the first dot-segment of any JWT into decode mode to inspect it. Data URIs embed
+          files directly in HTML or CSS; the "Wrap as data URI" checkbox generates the full
+          <code>data:&lt;mime&gt;;base64,…</code> prefix automatically. Email attachments use 76-char line
+          wrapping per RFC 2045 — use the MIME preset when working with raw <code>.eml</code> files.</p>
+        <p><strong>URL-safe vs. standard.</strong> Standard Base64 uses <code>+</code> and <code>/</code>;
+          URL-safe replaces them with <code>-</code> and <code>_</code>. Always use URL-safe for JWT,
+          OAuth tokens, URL query parameters, and filenames — <code>+</code> is interpreted as a space in
+          query strings and <code>/</code> breaks path parsing.</p>
+        <p><strong>Privacy note:</strong> all encoding, decoding, and file processing happens entirely in
+          your browser via the Web APIs. No text, file content, or binary data is transmitted anywhere.</p>
+      </div>
+    </details>
+
+    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
+      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">DevOps</span>
+      <span>Added 2026-05-12</span>
+    </div>
+  </section>
+
+<style is:global>
+.b64-widget {
+  --b64-bg-secondary: var(--color-bg-elevated);
+  --b64-bg-tertiary: var(--color-bg-subtle);
+  --b64-bg-danger: color-mix(in srgb, var(--color-error) 12%, transparent);
+  --b64-text-muted: var(--color-text-tertiary);
+  --b64-text-danger: var(--color-error);
+  --b64-text-success: var(--color-success);
+  --b64-text-warn: var(--color-accent-secondary);
+  --b64-border: var(--color-border-subtle);
+  --b64-accent: var(--color-accent-primary);
+  --b64-accent-2: var(--color-accent-secondary);
+  --b64-radius: 10px;
+  --b64-mono: var(--font-mono);
+}
+
+.b64-widget [hidden] { display: none !important; }
+
+.b64-widget .tab-row {
+  display: flex; gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--b64-border);
+}
+.b64-widget .tab-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 18px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  margin-bottom: -2px;
+  border-bottom: 2px solid transparent;
+  transition: color .15s;
+}
+.b64-widget .tab-btn:hover { color: var(--color-text-primary); }
+.b64-widget .tab-btn.active { color: var(--b64-accent); border-bottom-color: var(--b64-accent); }
+.b64-widget .tab-btn:focus-visible { outline: 2px solid var(--b64-accent); outline-offset: 2px; }
+
+.b64-widget .controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  margin-bottom: 16px;
+}
+.b64-widget .controls label { font-size: 13px; color: var(--color-text-secondary); }
+
+.b64-widget .seg {
+  display: inline-flex;
+  border: 1px solid var(--b64-border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.b64-widget .seg button {
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--b64-border);
+  padding: 5px 13px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background .1s, color .1s;
+  min-height: 32px;
+}
+.b64-widget .seg button:last-child { border-right: none; }
+.b64-widget .seg button:hover { background: var(--b64-bg-tertiary); color: var(--color-text-primary); }
+.b64-widget .seg button.active { background: var(--b64-accent); color: #fff; font-weight: 600; }
+.b64-widget .seg button:focus-visible { outline: 2px solid var(--b64-accent); outline-offset: -2px; }
+
+.b64-widget .tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+.b64-widget .tip-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--b64-bg-tertiary);
+  border: 1px solid var(--b64-border);
+  font-size: 10px; color: var(--b64-text-muted);
+  cursor: help; flex-shrink: 0;
+}
+.b64-widget .tip-icon:hover + .tooltip,
+.b64-widget .tip-icon:focus + .tooltip { display: block; }
+.b64-widget .tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 10;
+  max-width: 280px;
+  background: var(--b64-bg-tertiary);
+  border: 1px solid var(--b64-border);
+  border-radius: 7px;
+  padding: 8px 11px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  pointer-events: none;
+  white-space: normal;
+}
+
+.b64-widget .detect-badge {
+  font-size: 12px; padding: 3px 9px; border-radius: 20px;
+  border: 1px solid; font-weight: 500;
+}
+.b64-widget .detect-badge.b64 {
+  background: color-mix(in srgb, var(--b64-accent) 12%, transparent);
+  border-color: var(--b64-accent); color: var(--b64-accent);
+}
+.b64-widget .detect-badge.plain {
+  background: color-mix(in srgb, var(--b64-accent-2) 12%, transparent);
+  border-color: var(--b64-accent-2); color: var(--b64-accent-2);
+}
+
+.b64-widget .chip-section { margin-bottom: 14px; }
+.b64-widget .chip-label { font-size: 12px; color: var(--b64-text-muted); margin-bottom: 6px; }
+.b64-widget .chip-row { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; }
+.b64-widget .chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; min-height: 28px;
+  border-radius: 20px;
+  border: 1px solid var(--b64-border);
+  background: var(--b64-bg-secondary);
+  font-size: 12px;
+  font-family: var(--b64-mono);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color .1s, color .1s;
+}
+.b64-widget .chip:hover { border-color: var(--b64-accent); color: var(--b64-accent); }
+.b64-widget .chip:focus-visible { outline: 2px solid var(--b64-accent); outline-offset: 2px; }
+.b64-widget .chip.chip-flash {
+  border-color: var(--b64-accent);
+  background: color-mix(in srgb, var(--b64-accent) 15%, var(--b64-bg-secondary));
+  color: var(--b64-accent);
+}
+.b64-widget .chip-mode-badge {
+  font-family: inherit; font-size: 10px;
+  padding: 1px 5px; border-radius: 3px;
+  background: var(--b64-bg-tertiary);
+  color: var(--b64-text-muted);
+  border: 1px solid var(--b64-border);
+}
+
+.b64-widget .stats-bar {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 8px 14px;
+  background: var(--b64-bg-secondary);
+  border: 1px solid var(--b64-border);
+  border-radius: var(--b64-radius);
+  font-size: 13px; color: var(--color-text-secondary);
+  margin-bottom: 12px; min-height: 38px;
+}
+.b64-widget .stat-item { display: flex; gap: 5px; }
+.b64-widget .stat-label { color: var(--b64-text-muted); }
+.b64-widget .stat-value { color: var(--color-text-primary); font-family: var(--b64-mono); }
+.b64-widget .stat-ratio { color: var(--b64-accent); font-family: var(--b64-mono); font-weight: 600; }
+
+.b64-widget .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px) { .b64-widget .panes { grid-template-columns: 1fr; } }
+.b64-widget .pane { display: flex; flex-direction: column; gap: 8px; }
+.b64-widget .pane-header { display: flex; align-items: center; justify-content: space-between; }
+.b64-widget .pane-title {
+  font-size: 13px; font-weight: 600;
+  color: var(--b64-text-muted);
+  text-transform: uppercase; letter-spacing: .05em;
+}
+
+.b64-widget textarea {
+  width: 100%; min-height: 180px;
+  padding: 12px 14px;
+  background: var(--b64-bg-secondary);
+  border: 1px solid var(--b64-border);
+  border-radius: var(--b64-radius);
+  color: var(--color-text-primary);
+  font-family: var(--b64-mono); font-size: 13px; line-height: 1.6;
+  resize: vertical; transition: border-color .15s;
+}
+.b64-widget textarea:focus { outline: 2px solid var(--b64-accent); outline-offset: -1px; border-color: var(--b64-accent); }
+.b64-widget textarea.error { border-color: var(--b64-text-danger) !important; background: var(--b64-bg-danger); }
+.b64-widget textarea[readonly] { background: var(--b64-bg-tertiary); color: var(--color-text-secondary); cursor: default; }
+
+.b64-widget .error-msg {
+  font-size: 12px; color: var(--b64-text-danger);
+  padding: 6px 10px;
+  background: var(--b64-bg-danger);
+  border: 1px solid color-mix(in srgb, var(--b64-text-danger) 30%, transparent);
+  border-radius: 6px; min-height: 28px;
+}
+
+.b64-widget .btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 16px; min-height: 34px;
+  border-radius: 7px; border: none;
+  font: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: opacity .1s, background .1s;
+}
+.b64-widget .btn:focus-visible { outline: 2px solid var(--b64-accent); outline-offset: 2px; }
+.b64-widget .btn-primary { background: var(--b64-accent); color: #fff; }
+.b64-widget .btn-primary:hover { opacity: .85; }
+.b64-widget .btn-ghost {
+  background: var(--b64-bg-tertiary);
+  border: 1px solid var(--b64-border);
+  color: var(--color-text-primary);
+}
+.b64-widget .btn-ghost:hover { border-color: var(--b64-accent); color: var(--b64-accent); }
+.b64-widget .btn-success {
+  background: color-mix(in srgb, var(--b64-text-success) 20%, var(--b64-bg-tertiary));
+  border: 1px solid var(--b64-text-success);
+  color: var(--b64-text-success);
+}
+
+.b64-widget .file-pane { display: flex; flex-direction: column; gap: 14px; }
+.b64-widget .file-sub-tabs { display: flex; gap: 4px; margin-bottom: 4px; }
+.b64-widget .file-sub-btn {
+  padding: 5px 14px; font: inherit; font-size: 13px; font-weight: 500;
+  border: 1px solid var(--b64-border); border-radius: 6px;
+  background: transparent; color: var(--color-text-secondary); cursor: pointer;
+}
+.b64-widget .file-sub-btn.active { background: var(--b64-accent); color: #fff; border-color: var(--b64-accent); }
+.b64-widget .file-sub-btn:focus-visible { outline: 2px solid var(--b64-accent); outline-offset: 2px; }
+
+.b64-widget .drop-zone {
+  border: 2px dashed var(--b64-border);
+  border-radius: var(--b64-radius);
+  padding: 36px 24px; text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.b64-widget .drop-zone:hover,
+.b64-widget .drop-zone.drag-over {
+  border-color: var(--b64-accent);
+  background: color-mix(in srgb, var(--b64-accent) 5%, transparent);
+}
+.b64-widget .drop-zone-icon { font-size: 32px; line-height: 1; margin-bottom: 10px; }
+.b64-widget .drop-zone-label { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 6px; }
+.b64-widget .drop-zone-sub { font-size: 12px; color: var(--b64-text-muted); }
+.b64-widget #file-input { display: none; }
+
+.b64-widget .file-info {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  padding: 10px 14px;
+  background: var(--b64-bg-secondary);
+  border: 1px solid var(--b64-border);
+  border-radius: var(--b64-radius); font-size: 13px;
+}
+.b64-widget .file-info-name { font-family: var(--b64-mono); color: var(--color-text-primary); }
+.b64-widget .file-info-size { color: var(--b64-text-muted); font-size: 12px; }
+.b64-widget .file-info-mime {
+  font-size: 12px; padding: 2px 8px; border-radius: 4px;
+  background: var(--b64-bg-tertiary); border: 1px solid var(--b64-border);
+  color: var(--color-text-secondary); font-family: var(--b64-mono);
+}
+.b64-widget .file-warn-inner {
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--b64-text-warn) 12%, var(--b64-bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--b64-text-warn) 30%, transparent);
+  border-radius: 8px; font-size: 13px; color: var(--b64-text-warn);
+}
+.b64-widget .file-decode-error-text { font-size: 13px; color: var(--b64-text-danger); }
+
+.b64-widget .checkbox-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--color-text-secondary);
+}
+.b64-widget .checkbox-row input[type="checkbox"] {
+  accent-color: var(--b64-accent); width: 14px; height: 14px; cursor: pointer;
+}
+.b64-widget .checkbox-row label { cursor: pointer; }
+
+.b64-widget .privacy-note {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--b64-accent) 8%, var(--b64-bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--b64-accent) 25%, transparent);
+  border-radius: var(--b64-radius); font-size: 12px; color: var(--color-text-secondary);
+}
+.b64-widget .privacy-note-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+</style>
+
+<script is:inline>
+(function () {
+var b64State = {
+  activeTab: 'text',
+  mode: 'auto',
+  variant: 'standard',
+  padding: 'with',
+  lineWrap: 'none',
+  fileTab: 'encode',
+  selectedFile: null,
+  decodedBytes: null,
+  decodedMime: null,
+};
+
+var b64Rendering = false;
+var b64Pending = false;
+var b64Timer = null;
+
+function b64Render() {
+  if (b64Rendering) { b64Pending = true; return; }
+  requestAnimationFrame(function () {
+    setTimeout(function () {
+      b64Rendering = true;
+      try { b64RenderImpl(); }
+      finally {
+        b64Rendering = false;
+        if (b64Pending) { b64Pending = false; b64Render(); }
+      }
+    }, 0);
+  });
+}
+
+function encodeBase64(str) {
+  var bytes = new TextEncoder().encode(str);
+  return uint8ToBase64(bytes, b64State.variant, b64State.padding, b64State.lineWrap);
+}
+
+function uint8ToBase64(bytes, variant, padding, lineWrap) {
+  var binary = '';
+  var chunkSize = 8192;
+  for (var i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  var b64 = btoa(binary);
+
+  if (variant === 'urlsafe') {
+    b64 = b64.replace(/\+/g, '-').replace(/\//g, '_');
+  }
+
+  if (padding === 'without') {
+    b64 = b64.replace(/=+$/, '');
+  } else if (padding === 'auto') {
+    var stripped = b64.replace(/=+$/, '');
+    var mod = stripped.length % 4;
+    if (mod !== 0) b64 = stripped + '===='.slice(0, 4 - mod);
+  }
+
+  if (lineWrap !== 'none') {
+    b64 = wrapLines(b64, parseInt(lineWrap, 10));
+  }
+
+  return b64;
+}
+
+function wrapLines(str, cols) {
+  var clean = str.replace(/\n/g, '');
+  var out = [];
+  for (var i = 0; i < clean.length; i += cols) out.push(clean.slice(i, i + cols));
+  return out.join('\n');
+}
+
+function decodeBase64(str) {
+  var b64 = str.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4 !== 0) b64 += '=';
+  var binary;
+  try { binary = atob(b64); }
+  catch (e) { throw new Error(buildBase64Error(str)); }
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch (e) { return binary; }
+}
+
+function buildBase64Error(str) {
+  var clean = str.replace(/\s/g, '');
+  for (var i = 0; i < clean.length; i++) {
+    if (!/[A-Za-z0-9+/\-_=]/.test(clean[i])) {
+      return "Invalid Base64: unexpected character '" + clean[i] + "' at position " + (i + 1);
+    }
+  }
+  return 'Invalid Base64: malformed input (check for incorrect padding or truncation)';
+}
+
+function looksLikeBase64(str) {
+  if (!str || str.trim().length === 0) return false;
+  var clean = str.replace(/\s/g, '');
+  if (!/^[A-Za-z0-9+/\-_]+=*$/.test(clean)) return false;
+  if (clean.replace(/=+$/, '').length < 4) return false;
+  try {
+    var b64 = clean.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4 !== 0) b64 += '=';
+    atob(b64);
+    return true;
+  } catch (e) { return false; }
+}
+
+function b64RenderImpl() {
+  if (b64State.activeTab !== 'text') return;
+  var inputTA  = document.getElementById('input-ta');
+  var outputTA = document.getElementById('output-ta');
+  var errorDiv = document.getElementById('input-error');
+  var badge    = document.getElementById('detect-badge');
+  var raw = inputTA.value;
+
+  inputTA.classList.remove('error');
+  errorDiv.hidden = true; errorDiv.textContent = '';
+  badge.hidden = true;
+
+  if (!raw) { outputTA.value = ''; updateStats('', ''); return; }
+
+  var effectiveMode = b64State.mode;
+  if (b64State.mode === 'auto') {
+    var isB64 = looksLikeBase64(raw);
+    effectiveMode = isB64 ? 'decode' : 'encode';
+    badge.hidden = false;
+    if (isB64) {
+      badge.textContent = 'Detected: valid Base64 → decoding';
+      badge.className = 'detect-badge b64';
+    } else {
+      badge.textContent = 'Detected: plain text → encoding';
+      badge.className = 'detect-badge plain';
+    }
+  }
+
+  document.getElementById('input-pane-title').textContent  = effectiveMode === 'encode' ? 'Plain text' : 'Base64';
+  document.getElementById('output-pane-title').textContent = effectiveMode === 'encode' ? 'Base64' : 'Plain text';
+
+  var result = '';
+  if (effectiveMode === 'encode') {
+    result = encodeBase64(raw);
+    outputTA.value = result;
+  } else {
+    try {
+      result = decodeBase64(raw);
+      outputTA.value = result;
+    } catch (e) {
+      inputTA.classList.add('error');
+      errorDiv.textContent = e.message;
+      errorDiv.hidden = false;
+      outputTA.value = '';
+      updateStats(raw, '');
+      return;
+    }
+  }
+  updateStats(raw, result);
+}
+
+function updateStats(input, output) {
+  var inLen  = input.replace(/\s/g, '').length;
+  var outLen = output.replace(/\n/g, '').length;
+  document.getElementById('stat-in').textContent    = input.length > 0 ? input.length + ' chars' : '0 chars';
+  document.getElementById('stat-out').textContent   = outLen > 0 ? outLen + ' chars' : '0 chars';
+  var ratioEl = document.getElementById('stat-ratio');
+  if (inLen > 0 && outLen > 0) {
+    var ratio = outLen / inLen;
+    ratioEl.textContent = '~' + ratio.toFixed(2) + (ratio > 1 ? '× expansion' : '× compression');
+  } else {
+    ratioEl.textContent = '—';
+  }
+}
+
+function saveUrlState() {
+  var input = document.getElementById('input-ta').value;
+  var params = new URLSearchParams();
+  if (input.length > 0 && input.length <= 300) params.set('text', input);
+  if (b64State.mode !== 'auto') params.set('mode', b64State.mode);
+  if (b64State.variant !== 'standard') params.set('variant', b64State.variant);
+  var qs = params.toString();
+  history.replaceState(null, '', qs ? '?' + qs : location.pathname);
+}
+
+function loadUrlState() {
+  var params  = new URLSearchParams(location.search);
+  var text    = params.get('text');
+  var mode    = params.get('mode');
+  var variant = params.get('variant');
+  if (text) document.getElementById('input-ta').value = text;
+  if (mode    && ['encode','decode','auto'].indexOf(mode) >= 0)       setMode(mode);
+  if (variant && ['standard','urlsafe'].indexOf(variant) >= 0) setVariant(variant);
+}
+
+function setSegActive(segId, dataAttr, value) {
+  document.getElementById(segId).querySelectorAll('button').forEach(function (btn) {
+    var on = btn.dataset[dataAttr] === value;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-pressed', String(on));
+  });
+}
+
+function setMode(m) {
+  b64State.mode = m;
+  setSegActive('mode-seg', 'mode', m);
+  if (m !== 'auto') document.getElementById('detect-badge').hidden = true;
+}
+
+function setVariant(v) {
+  b64State.variant = v;
+  setSegActive('var-seg', 'var', v);
+}
+
+function flashChip(btn) {
+  btn.classList.add('chip-flash');
+  void btn.offsetWidth;
+  setTimeout(function () { btn.classList.remove('chip-flash'); }, 140);
+}
+
+function formatBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1048576).toFixed(2) + ' MB';
+}
+
+function detectMime(bytes) {
+  var head = bytes.slice(0, 12);
+  var h = Array.from(head).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+  if (h.startsWith('89504e47')) return { mime: 'image/png',  ext: 'png' };
+  if (h.startsWith('ffd8ff'))   return { mime: 'image/jpeg', ext: 'jpg' };
+  if (h.startsWith('47494638')) return { mime: 'image/gif',  ext: 'gif' };
+  if (h.startsWith('25504446')) return { mime: 'application/pdf', ext: 'pdf' };
+  if (h.startsWith('504b0304')) return { mime: 'application/zip', ext: 'zip' };
+  if (h.startsWith('424d'))     return { mime: 'image/bmp',  ext: 'bmp' };
+  if (h.startsWith('49443') || h.startsWith('fffb') || h.startsWith('fff3')) return { mime: 'audio/mpeg', ext: 'mp3' };
+  if (h.startsWith('52494646')) return { mime: 'audio/wav',  ext: 'wav' };
+  if (h.startsWith('1f8b'))     return { mime: 'application/gzip', ext: 'gz' };
+  if (h.startsWith('7f454c46')) return { mime: 'application/octet-stream', ext: 'elf' };
+  if (h.startsWith('efbbbf'))   return { mime: 'text/plain', ext: 'txt' };
+  var sample = bytes.slice(0, 512);
+  var isText = sample.every(function (b) { return b === 9 || b === 10 || b === 13 || (b >= 32 && b <= 126) || b > 127; });
+  return isText ? { mime: 'text/plain', ext: 'txt' } : { mime: 'application/octet-stream', ext: 'bin' };
+}
+
+function processFileEncode(file) {
+  if (!file) return;
+  b64State.selectedFile = file;
+  document.getElementById('file-warn-row').hidden = file.size <= 2097152;
+  document.getElementById('fi-name').textContent = file.name;
+  document.getElementById('fi-size').textContent = formatBytes(file.size);
+  document.getElementById('fi-mime').textContent = file.type || 'unknown';
+  document.getElementById('file-info-row').hidden = false;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    var bytes = new Uint8Array(e.target.result);
+    var b64 = uint8ToBase64(bytes, 'standard', 'with', 'none');
+    if (document.getElementById('datauri-chk').checked) {
+      b64 = 'data:' + (file.type || 'application/octet-stream') + ';base64,' + b64;
+    }
+    document.getElementById('file-output-ta').value = b64;
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function decodeFileBase64() {
+  var raw   = document.getElementById('file-decode-ta').value.trim();
+  var errEl = document.getElementById('file-decode-error');
+  var mimeEl= document.getElementById('file-decode-mime');
+  var dlRow = document.getElementById('file-download-row');
+  errEl.hidden = true; mimeEl.hidden = true; dlRow.hidden = true;
+  b64State.decodedBytes = null; b64State.decodedMime = null;
+
+  if (!raw) { errEl.textContent = 'Paste Base64 input first.'; errEl.hidden = false; return; }
+
+  var b64 = raw.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4 !== 0) b64 += '=';
+  var binary;
+  try { binary = atob(b64); }
+  catch (e) { errEl.textContent = 'Invalid Base64 — could not decode.'; errEl.hidden = false; return; }
+
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  var detected = detectMime(bytes);
+  b64State.decodedBytes = bytes;
+  b64State.decodedMime  = detected.mime;
+
+  mimeEl.textContent = detected.mime; mimeEl.hidden = false;
+  document.getElementById('fd-name').textContent = 'decoded-file.' + detected.ext;
+  document.getElementById('fd-size').textContent = formatBytes(bytes.length);
+  dlRow.hidden = false;
+}
+
+function triggerDownload() {
+  if (!b64State.decodedBytes) return;
+  var detected = detectMime(b64State.decodedBytes);
+  var blob = new Blob([b64State.decodedBytes], { type: b64State.decodedMime });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = 'decoded-file.' + detected.ext;
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+function copyToClipboard(text, btn) {
+  var original = btn.textContent;
+  function onOk()  { btn.textContent = '✓ Copied'; btn.classList.add('btn-success'); setTimeout(function () { btn.textContent = original; btn.classList.remove('btn-success'); }, 1500); }
+  function onFail(){ btn.textContent = 'Failed'; setTimeout(function () { btn.textContent = original; }, 1500); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(onOk).catch(onFail);
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); onOk(); } catch (e) { onFail(); }
+    document.body.removeChild(ta);
+  }
+}
+
+function b64Init() {
+  loadUrlState();
+
+  document.querySelectorAll('.b64-widget .tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      b64State.activeTab = btn.dataset.tab;
+      document.querySelectorAll('.b64-widget .tab-btn').forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-selected', String(b === btn));
+      });
+      document.getElementById('panel-text').hidden = b64State.activeTab !== 'text';
+      document.getElementById('panel-file').hidden = b64State.activeTab !== 'file';
+    });
+  });
+
+  document.getElementById('mode-seg').addEventListener('click', function (e) {
+    var btn = e.target.closest('button'); if (!btn) return;
+    setMode(btn.dataset.mode); b64Render(); saveUrlState();
+  });
+
+  document.getElementById('var-seg').addEventListener('click', function (e) {
+    var btn = e.target.closest('button'); if (!btn) return;
+    setVariant(btn.dataset.var); b64Render(); saveUrlState();
+  });
+
+  document.getElementById('pad-seg').addEventListener('click', function (e) {
+    var btn = e.target.closest('button'); if (!btn) return;
+    b64State.padding = btn.dataset.pad;
+    setSegActive('pad-seg', 'pad', btn.dataset.pad);
+    b64Render();
+  });
+
+  document.getElementById('wrap-seg').addEventListener('click', function (e) {
+    var btn = e.target.closest('button'); if (!btn) return;
+    b64State.lineWrap = btn.dataset.wrap;
+    setSegActive('wrap-seg', 'wrap', btn.dataset.wrap);
+    b64Render();
+  });
+
+  document.getElementById('input-ta').addEventListener('input', function () {
+    clearTimeout(b64Timer);
+    b64Timer = setTimeout(function () { b64Render(); saveUrlState(); }, 200);
+  });
+
+  document.getElementById('clear-btn').addEventListener('click', function () {
+    document.getElementById('input-ta').value = '';
+    document.getElementById('output-ta').value = '';
+    document.getElementById('input-error').hidden = true;
+    document.getElementById('input-ta').classList.remove('error');
+    document.getElementById('detect-badge').hidden = true;
+    updateStats('', '');
+    history.replaceState(null, '', location.pathname);
+  });
+
+  var copyBtn = document.getElementById('copy-btn');
+  copyBtn.addEventListener('click', function () {
+    var text = document.getElementById('output-ta').value;
+    if (text) copyToClipboard(text, copyBtn);
+  });
+
+  document.querySelectorAll('.b64-widget .chip').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      flashChip(chip);
+      var key = chip.dataset.chip;
+      var text = '', mode = 'encode';
+      if (key === 'hello')      { text = 'Hello, World!'; mode = 'encode'; }
+      else if (key === 'k8s')   { text = 'my-secret-password'; mode = 'encode'; }
+      else if (key === 'jwt-header') { text = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'; mode = 'auto'; }
+      else if (key === 'datauri')    { text = 'data:image/png;base64,'; mode = 'auto'; }
+      setMode(mode);
+      document.getElementById('input-ta').value = text;
+      b64Render(); saveUrlState();
+    });
+  });
+
+  document.querySelectorAll('.b64-widget .file-sub-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      b64State.fileTab = btn.dataset.fileTab;
+      document.querySelectorAll('.b64-widget .file-sub-btn').forEach(function (b) { b.classList.toggle('active', b === btn); });
+      document.getElementById('fpanel-encode').hidden = b64State.fileTab !== 'encode';
+      document.getElementById('fpanel-decode').hidden = b64State.fileTab !== 'decode';
+    });
+  });
+
+  var dropZone  = document.getElementById('drop-zone');
+  var fileInput = document.getElementById('file-input');
+
+  dropZone.addEventListener('click',   function () { fileInput.click(); });
+  dropZone.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+  dropZone.addEventListener('dragover', function (e) { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', function ()  { dropZone.classList.remove('drag-over'); });
+  dropZone.addEventListener('drop', function (e) {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    var file = e.dataTransfer.files[0]; if (file) processFileEncode(file);
+  });
+
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files[0]) processFileEncode(fileInput.files[0]);
+  });
+
+  document.getElementById('file-clear-btn').addEventListener('click', function () {
+    b64State.selectedFile = null; fileInput.value = '';
+    document.getElementById('file-info-row').hidden = true;
+    document.getElementById('file-warn-row').hidden = true;
+    document.getElementById('file-output-ta').value = '';
+  });
+
+  document.getElementById('datauri-chk').addEventListener('change', function () {
+    if (b64State.selectedFile) processFileEncode(b64State.selectedFile);
+  });
+
+  var fileCopyBtn = document.getElementById('file-copy-btn');
+  fileCopyBtn.addEventListener('click', function () {
+    var text = document.getElementById('file-output-ta').value;
+    if (text) copyToClipboard(text, fileCopyBtn);
+  });
+
+  document.getElementById('file-decode-btn').addEventListener('click', decodeFileBase64);
+  document.getElementById('file-download-btn').addEventListener('click', triggerDownload);
+
+  if (document.getElementById('input-ta').value.length > 0) b64Render();
+}
+
+document.addEventListener('DOMContentLoaded', b64Init);
+})();
+</script>
+</Base>
