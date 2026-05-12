@@ -76,6 +76,26 @@ export const tools: LabTool[] = [
     isNew: true,
     icon: 'lock',
   },
+  {
+    slug: 'regex',
+    title: 'Regex tester',
+    description:
+      'Test regular expressions live — match highlighting, capture groups, global/case/multiline flags, replace mode, backtracking warnings, presets, and history.',
+    discipline: 'devops',
+    added: '2026-05-12',
+    isNew: true,
+    icon: 'regex',
+  },
+  {
+    slug: 'json-yaml',
+    title: 'JSON ↔ YAML converter',
+    description:
+      'Convert between JSON and YAML instantly — auto-detects input format, handles K8s manifests and Ansible configs, offers indent control and schema options. Offline, nothing leaves your browser.',
+    discipline: 'devops',
+    added: '2026-05-12',
+    isNew: true,
+    icon: 'arrow-left-right',
+  },
 ];
 
 export function toolsByDiscipline(d: Discipline): LabTool[] {
