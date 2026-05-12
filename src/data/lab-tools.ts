@@ -66,6 +66,36 @@ export const tools: LabTool[] = [
     isNew: true,
     icon: 'network',
   },
+  {
+    slug: 'regex',
+    title: 'Regex tester',
+    description:
+      'Test regular expressions live — match highlighting, capture groups, global/case/multiline flags, replace mode, backtracking warnings, presets, and history.',
+    discipline: 'devops',
+    added: '2026-05-12',
+    isNew: true,
+    icon: 'regex',
+  },
+  {
+    slug: 'json-yaml',
+    title: 'JSON ↔ YAML converter',
+    description:
+      'Convert between JSON and YAML in either direction. Configurable indent, real-time validation, copy-to-clipboard, and URL-shareable state.',
+    discipline: 'devops',
+    added: '2026-05-12',
+    isNew: true,
+    icon: 'arrow-left-right',
+  },
+  {
+    slug: 'base64',
+    title: 'Base64 encoder / decoder',
+    description:
+      'Encode and decode Base64 — standard and URL-safe variants, full Unicode support via TextEncoder, and URL-shareable state.',
+    discipline: 'devops',
+    added: '2026-05-12',
+    isNew: true,
+    icon: 'lock',
+  },
 ];
 
 export function toolsByDiscipline(d: Discipline): LabTool[] {
