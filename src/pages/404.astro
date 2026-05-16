@@ -1,770 +1,518 @@
 ---
-// Standalone full-page terminal — intentionally does NOT use Base.astro.
-// The terminal needs height: 100vh with overflow: hidden, which breaks when
-// wrapped in the site Header/Footer. All meta tags, fonts, and analytics
-// are included directly in this file.
+import Base from '../layouts/Base.astro';
 ---
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>404 — Page Not Found · Corey Wininger</title>
-  <meta name="robots" content="noindex,nofollow" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-  <!-- Theme init — mirrors Base.astro to prevent FOUC for light-mode visitors -->
-  <script is:inline>
-    (function () {
-      try {
-        var stored = localStorage.getItem('theme');
-        var theme = (stored === 'light' || stored === 'dark') ? stored
-          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-        document.documentElement.setAttribute('data-theme', theme);
-      } catch (e) {}
-    })();
-  </script>
+<Base title="404 — Page Not Found" noindex={true}>
+  <div class="inc-page" id="main">
 
-  <!-- JetBrains Mono — only font this page needs -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
-
-  <!-- Cloudflare Web Analytics -->
-  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "1e7a78fde1224830b8d35b4c788e7138"}'></script>
-</head>
-<body>
-  <div class="cm-terminal" id="main">
-    <div class="cm-titlebar">
-      <div class="cm-dots" aria-hidden="true">
-        <span class="cm-dot cm-dot--red"></span>
-        <span class="cm-dot cm-dot--yellow"></span>
-        <span class="cm-dot cm-dot--green"></span>
+    <!-- Page header: breadcrumb + timestamp -->
+    <div class="inc-header">
+      <div class="inc-breadcrumb">
+        <a href="/">coreymark.com</a> / status
       </div>
-      <div class="cm-session" aria-hidden="true">visitor@coreymark — bash — 80×24</div>
-      <a href="/" class="cm-home-link" aria-label="Back to Corey Wininger home">← <span class="cm-wm">C.W.</span></a>
+      <div class="inc-ts" id="inc-page-ts" aria-live="off">—</div>
     </div>
 
-    <div class="cm-output" id="output" role="log" aria-live="polite" aria-label="Terminal output"></div>
-
-    <div class="cm-input-row" id="input-row">
-      <span class="cm-prompt" aria-hidden="true">
-        <span class="cm-user">visitor</span><span class="cm-at">@</span><span class="cm-host">coreymark</span><span class="cm-colon">:</span><span class="cm-path" id="cwd">~/404</span><span class="cm-sigil">$</span>
-      </span>
-      <label for="cmd-input" class="sr-only">Terminal command input</label>
-      <input id="cmd-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus />
+    <!-- Amber status banner -->
+    <div class="inc-banner" role="status" aria-label="Partial outage — 1 service unavailable">
+      <div class="inc-banner-dot" aria-hidden="true"></div>
+      <div class="inc-banner-text">Partial outage — 1 service unavailable</div>
+      <div class="inc-banner-badge" aria-hidden="true">Investigating</div>
     </div>
+
+    <!-- Services table -->
+    <div class="inc-section-label" aria-hidden="true">Services</div>
+    <div class="inc-services" role="table" aria-label="Service status">
+
+      <div class="inc-services-head" role="row">
+        <span role="columnheader">Service</span>
+        <span role="columnheader">Status</span>
+        <span role="columnheader">Uptime</span>
+      </div>
+
+      <div class="inc-row" role="row">
+        <div class="inc-svc-col">
+          <div class="inc-svc-name-row"><span class="inc-dot inc-dot--green" aria-hidden="true"></span><span>Homepage</span></div>
+          <span class="inc-svc-path">/</span>
+        </div>
+        <div class="inc-status inc-status--ok" role="cell">Operational</div>
+        <div class="inc-uptime" role="cell">100%</div>
+      </div>
+
+      <div class="inc-row" role="row">
+        <div class="inc-svc-col">
+          <div class="inc-svc-name-row"><span class="inc-dot inc-dot--green" aria-hidden="true"></span><span>Blog</span></div>
+          <span class="inc-svc-path">/blog</span>
+        </div>
+        <div class="inc-status inc-status--ok" role="cell">Operational</div>
+        <div class="inc-uptime" role="cell">100%</div>
+      </div>
+
+      <div class="inc-row" role="row">
+        <div class="inc-svc-col">
+          <div class="inc-svc-name-row"><span class="inc-dot inc-dot--green" aria-hidden="true"></span><span>Lab</span></div>
+          <span class="inc-svc-path">/lab</span>
+        </div>
+        <div class="inc-status inc-status--ok" role="cell">Operational</div>
+        <div class="inc-uptime" role="cell">100%</div>
+      </div>
+
+      <div class="inc-row" role="row">
+        <div class="inc-svc-col">
+          <div class="inc-svc-name-row"><span class="inc-dot inc-dot--green" aria-hidden="true"></span><span>About</span></div>
+          <span class="inc-svc-path">/about</span>
+        </div>
+        <div class="inc-status inc-status--ok" role="cell">Operational</div>
+        <div class="inc-uptime" role="cell">100%</div>
+      </div>
+
+      <div class="inc-row" role="row">
+        <div class="inc-svc-col">
+          <div class="inc-svc-name-row"><span class="inc-dot inc-dot--green" aria-hidden="true"></span><span>Now</span></div>
+          <span class="inc-svc-path">/now</span>
+        </div>
+        <div class="inc-status inc-status--ok" role="cell">Operational</div>
+        <div class="inc-uptime" role="cell">100%</div>
+      </div>
+
+      <div class="inc-row" role="row">
+        <div class="inc-svc-col">
+          <div class="inc-svc-name-row"><span class="inc-dot inc-dot--green" aria-hidden="true"></span><span>Projects</span></div>
+          <span class="inc-svc-path">/projects</span>
+        </div>
+        <div class="inc-status inc-status--ok" role="cell">Operational</div>
+        <div class="inc-uptime" role="cell">100%</div>
+      </div>
+
+      <div class="inc-row" role="row">
+        <div class="inc-svc-col">
+          <div class="inc-svc-name-row"><span class="inc-dot inc-dot--green" aria-hidden="true"></span><span>Contact</span></div>
+          <span class="inc-svc-path">/contact</span>
+        </div>
+        <div class="inc-status inc-status--ok" role="cell">Operational</div>
+        <div class="inc-uptime" role="cell">100%</div>
+      </div>
+
+      <!-- Affected row — JS populates id="inc-affected-name" and id="inc-affected-path" -->
+      <div class="inc-row inc-row--affected" role="row" aria-current="true">
+        <div class="inc-svc-col">
+          <div class="inc-svc-name-row">
+            <span class="inc-dot inc-dot--red" aria-hidden="true"></span>
+            <span id="inc-affected-name">/…</span>
+          </div>
+          <span class="inc-svc-path" id="inc-affected-path">—</span>
+        </div>
+        <div class="inc-status inc-status--bad" role="cell">Not found</div>
+        <div class="inc-uptime inc-uptime--na" role="cell">—</div>
+      </div>
+
+    </div>
+
+    <!-- Incident details panel -->
+    <div class="inc-panel">
+      <div class="inc-panel-head">
+        <div class="inc-incident-id" id="inc-id">INC-……</div>
+        <div class="inc-pill">Identified</div>
+      </div>
+
+      <div class="inc-grid">
+        <div class="inc-grid-label">Detected</div>
+        <div class="inc-grid-value" id="inc-detected">—</div>
+
+        <div class="inc-grid-label">Duration</div>
+        <div class="inc-grid-value" id="inc-duration" aria-live="polite" aria-atomic="true">0s</div>
+
+        <div class="inc-grid-label">Affect</div>
+        <div class="inc-grid-value">1 route · 0 upstream errors</div>
+
+        <div class="inc-grid-label">Severity</div>
+        <div class="inc-grid-value">Low — isolated missing route</div>
+      </div>
+
+      <div class="inc-divider" aria-hidden="true"></div>
+
+      <div class="inc-rca-label">Root cause</div>
+      <p class="inc-rca">
+        Route <code id="inc-rca-path">/…</code> has no registered handler.
+        The page does not exist and has not existed at any prior point in this deployment.
+        No upstream errors detected. All other routes healthy.
+        System behavior: expected.
+      </p>
+    </div>
+
+    <!-- CTAs -->
+    <nav class="inc-cta-row" aria-label="Recovery options">
+      <a href="/" class="inc-cta inc-cta--primary">← Back home</a>
+      <a href="/blog" class="inc-cta inc-cta--secondary">Read the blog</a>
+      <a href="/contact" class="inc-cta inc-cta--secondary">Get in touch</a>
+    </nav>
+
+    <!-- All-clear note -->
+    <div class="inc-all-clear">
+      <span class="inc-all-clear-dot" aria-hidden="true"></span>
+      All other coreymark.com services are fully operational.
+    </div>
+
   </div>
+</Base>
 
-  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
-  <div id="matrix-exit" aria-hidden="true">press any key to exit</div>
-</body>
-</html>
+<style>
+  /*
+   * Uses site global CSS custom properties (--color-bg-primary, etc.) defined in
+   * global.css via @theme and [data-theme="light"] — theme toggle works automatically,
+   * no local [data-theme="light"] block needed.
+   */
 
-<style is:global>
-  :root {
-    --cm-bg:        #0a0e14;
-    --cm-green:     #2DD4BF;
-    --cm-green-dim: #1A9A8A;
-    --cm-cyan:      #79c0ff;
-    --cm-teal:      #2DD4BF;
-    --cm-magenta:   #ff7b72;
-    --cm-gray:      #8b949e;
-    --cm-white:     #e6edf3;
-  }
-
-  /* Reset scoped to this page's root */
-  .cm-terminal, .cm-terminal * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  /* Full-page lock */
-  html:has(.cm-terminal),
-  body:has(.cm-terminal) {
-    height: 100%;
-    overflow: hidden;
-    background: var(--cm-bg);
-  }
-
-  /* CRT scanlines */
-  body:has(.cm-terminal)::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 2px,
-      rgba(0, 0, 0, 0.18) 3px,
-      transparent 4px
-    );
-    pointer-events: none;
-    z-index: 100;
-    opacity: 0.4;
-  }
-
-  /* Vignette */
-  body:has(.cm-terminal)::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
-    pointer-events: none;
-    z-index: 99;
-  }
-
-  .cm-terminal {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    padding: 24px 28px 16px;
-    max-width: 1100px;
+  .inc-page {
+    max-width: 720px;
     margin: 0 auto;
-    color: var(--cm-green);
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 15px;
-    line-height: 1.55;
-    -webkit-font-smoothing: antialiased;
+    padding: 48px 28px 80px;
+    font-size: 14px;
+    line-height: 1.6;
   }
 
-  /* Titlebar */
-  .cm-titlebar {
+  /* ── Page header ── */
+  .inc-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+  .inc-breadcrumb {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+  }
+  .inc-breadcrumb a {
+    color: var(--color-accent-primary);
+    text-decoration: none;
+  }
+  .inc-breadcrumb a:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .inc-ts {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* ── Status banner ── */
+  .inc-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 24px;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-subtle);
+    border-left: 3px solid var(--color-accent-secondary);
+    border-radius: 6px;
+    margin-bottom: 40px;
+  }
+  .inc-banner-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-accent-secondary);
+    flex-shrink: 0;
+    animation: inc-pulse-amber 2s ease-in-out infinite;
+  }
+  @keyframes inc-pulse-amber {
+    0%, 100% { opacity: 0.6; }
+    50%       { opacity: 1; }
+  }
+  .inc-banner-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    flex: 1;
+  }
+  .inc-banner-badge {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--color-accent-secondary);
+    background: color-mix(in srgb, var(--color-accent-secondary) 12%, transparent);
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ── Section label ── */
+  .inc-section-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+
+  /* ── Services table ── */
+  .inc-services {
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .inc-services-head {
+    display: grid;
+    grid-template-columns: 1fr 140px 80px;
+    padding: 10px 20px;
+    background: var(--color-bg-subtle);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+  .inc-services-head span {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+  }
+  .inc-services-head span:not(:first-child) { text-align: center; }
+
+  .inc-row {
+    display: grid;
+    grid-template-columns: 1fr 140px 80px;
+    align-items: center;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--color-border-subtle);
+    transition: background 0.15s ease;
+  }
+  .inc-row:last-child { border-bottom: none; }
+  .inc-row:hover { background: var(--color-bg-elevated); }
+
+  .inc-row--affected {
+    background: color-mix(in srgb, var(--color-error) 6%, transparent);
+    border-left: 2px solid var(--color-error);
+    padding-left: 18px;
+  }
+  .inc-row--affected:hover {
+    background: color-mix(in srgb, var(--color-error) 9%, transparent);
+  }
+
+  .inc-svc-col { display: flex; flex-direction: column; gap: 2px; }
+  .inc-svc-name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+  }
+  .inc-svc-path {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    margin-left: 18px;
+  }
+
+  .inc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .inc-dot--green { background: var(--color-success); }
+  .inc-dot--red   {
+    background: var(--color-error);
+    animation: inc-pulse-red 1.8s ease-in-out infinite;
+  }
+  @keyframes inc-pulse-red {
+    0%, 100% { opacity: 0.7; }
+    50%       { opacity: 1; }
+  }
+
+  .inc-status { font-size: 12px; font-weight: 500; text-align: center; }
+  .inc-status--ok  { color: var(--color-success); }
+  .inc-status--bad { color: var(--color-error); }
+
+  .inc-uptime { font-size: 12px; color: var(--color-text-tertiary); text-align: center; font-variant-numeric: tabular-nums; }
+  .inc-uptime--na { color: var(--color-error); opacity: 0.6; }
+
+  /* ── Incident panel ── */
+  .inc-panel {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 6px;
+    padding: 24px 28px;
+    margin-bottom: 40px;
+  }
+  .inc-panel-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 14px;
-    border-bottom: 1px solid rgba(45, 212, 191, 0.15);
-    margin-bottom: 14px;
-    color: var(--cm-gray);
-    font-size: 12px;
-  }
-  .cm-dots { display: flex; gap: 6px; }
-  .cm-dot {
-    width: 11px; height: 11px; border-radius: 50%;
-    background: #3a3f45;
-  }
-  .cm-dot--red    { background: #ff5f57; }
-  .cm-dot--yellow { background: #febc2e; }
-  .cm-dot--green  { background: #28c840; }
-  .cm-session { letter-spacing: 0.05em; }
-
-  .cm-home-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    font-size: 11px;
-    color: var(--cm-gray);
-    transition: color 0.15s ease;
-  }
-  .cm-home-link:hover { color: var(--cm-green); }
-  .cm-home-link:focus-visible {
-    outline: 2px solid var(--cm-teal);
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-  .cm-wm {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--cm-white);
-    border-bottom: 2px solid var(--cm-teal);
-    padding-bottom: 1px;
-    line-height: 1.1;
-    transition: color 0.15s ease;
-  }
-  .cm-home-link:hover .cm-wm { color: var(--cm-green); }
-
-  /* Output area */
-  .cm-output {
-    flex: 1;
-    overflow-y: auto;
-    padding-right: 8px;
-    scroll-behavior: smooth;
-  }
-  .cm-output::-webkit-scrollbar { width: 6px; }
-  .cm-output::-webkit-scrollbar-track { background: transparent; }
-  .cm-output::-webkit-scrollbar-thumb { background: rgba(45, 212, 191, 0.2); border-radius: 3px; }
-
-  /* Lines */
-  .cm-line { white-space: pre-wrap; word-break: break-word; }
-  .cm-line + .cm-line { margin-top: 1px; }
-  .cm-prompt-line { display: flex; flex-wrap: wrap; gap: 0; margin-top: 4px; }
-
-  /* Prompt */
-  .cm-prompt { color: var(--cm-green); user-select: none; white-space: nowrap; }
-  .cm-user   { color: var(--cm-cyan); }
-  .cm-at     { color: var(--cm-gray); }
-  .cm-host   { color: var(--cm-teal); }
-  .cm-colon  { color: var(--cm-gray); }
-  .cm-path   { color: var(--cm-magenta); }
-  .cm-sigil  { color: var(--cm-green); margin-right: 8px; }
-
-  /* Output text classes */
-  .cm-cmd    { color: var(--cm-white); }
-  .cm-err    { color: var(--cm-magenta); }
-  .cm-warn   { color: var(--cm-teal); }
-  .cm-info   { color: var(--cm-cyan); }
-  .cm-dim    { color: var(--cm-gray); }
-  .cm-ok     { color: var(--cm-green); }
-  .cm-accent { color: var(--cm-teal); }
-  .cm-ascii  { color: var(--cm-green-dim); font-size: 13px; line-height: 1.2; margin: 8px 0; }
-
-  /* Input row */
-  .cm-input-row {
-    display: flex;
-    align-items: baseline;
-    padding-top: 4px;
+    margin-bottom: 20px;
+    gap: 12px;
     flex-wrap: wrap;
   }
-  #cmd-input {
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--cm-white);
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 15px;
-    flex: 1;
-    min-width: 100px;
-    caret-color: var(--cm-green);
-    padding: 0;
-  }
-
-  /* Matrix overlay */
-  #matrix-canvas {
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    background: rgba(0,0,0,0.92);
-    display: none;
-  }
-  #matrix-exit {
-    position: fixed;
-    bottom: 20px; left: 50%;
-    transform: translateX(-50%);
-    z-index: 201;
-    color: var(--cm-green);
-    font-family: 'JetBrains Mono', monospace;
+  .inc-incident-id {
     font-size: 12px;
-    background: rgba(0,0,0,0.6);
-    padding: 6px 12px;
-    border: 1px solid var(--cm-green);
-    border-radius: 3px;
-    display: none;
+    letter-spacing: 0.12em;
+    color: var(--color-accent-primary);
+    font-weight: 500;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .inc-pill {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--color-accent-secondary);
+    background: color-mix(in srgb, var(--color-accent-secondary) 12%, transparent);
+    padding: 3px 10px;
+    border-radius: 20px;
   }
 
-  /* Accessibility */
-  .sr-only {
-    position: absolute;
-    width: 1px;
+  .inc-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 10px 24px;
+    margin-bottom: 20px;
+  }
+  .inc-grid-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+    padding-top: 1px;
+  }
+  .inc-grid-value {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .inc-divider {
     height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0,0,0,0);
-    white-space: nowrap;
-    border-width: 0;
+    background: var(--color-border-subtle);
+    margin: 20px 0;
+  }
+  .inc-rca-label {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .inc-rca {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.75;
+  }
+  .inc-rca code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--color-text-primary);
+    background: var(--color-bg-subtle);
+    padding: 1px 6px;
+    border-radius: 3px;
   }
 
-  /* Reduced motion */
+  /* ── CTAs ── */
+  .inc-cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .inc-cta {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 11px 20px;
+    border-radius: 4px;
+    transition: all 0.18s ease;
+  }
+  .inc-cta--primary {
+    background: var(--color-accent-primary);
+    color: var(--color-bg-primary);
+  }
+  .inc-cta--primary:hover { opacity: 0.88; }
+  .inc-cta--secondary {
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-subtle);
+  }
+  .inc-cta--secondary:hover {
+    border-color: var(--color-accent-primary);
+    color: var(--color-accent-primary);
+  }
+  .inc-cta:focus-visible {
+    outline: 2px solid var(--color-accent-primary);
+    outline-offset: 3px;
+  }
+
+  /* ── All-clear footer ── */
+  .inc-all-clear {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--color-border-subtle);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+  .inc-all-clear-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-success);
+    flex-shrink: 0;
+  }
+
+  /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce) {
-    .cm-terminal, .cm-terminal * {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
+    .inc-banner-dot, .inc-dot--red { animation: none; opacity: 1; }
   }
 
-  /* Mobile */
-  @media (max-width: 600px) {
-    .cm-terminal { padding: 16px 14px 12px; font-size: 13px; }
-    .cm-ascii    { font-size: 10px; }
-    #cmd-input   { font-size: 13px; }
+  /* ── Mobile ── */
+  @media (max-width: 540px) {
+    .inc-page { padding: 32px 20px 60px; }
+    .inc-services-head,
+    .inc-row { grid-template-columns: 1fr 100px 56px; padding: 11px 14px; }
+    .inc-row--affected { padding-left: 12px; }
+    .inc-panel { padding: 18px; }
+    .inc-grid { grid-template-columns: 100px 1fr; }
   }
 </style>
 
 <script is:inline>
 (() => {
-  const output   = document.getElementById('output');
-  const input    = document.getElementById('cmd-input');
-  const cwdEl    = document.getElementById('cwd');
-  const terminal = document.getElementById('main');
+  function incidentId(path) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < path.length; i++) {
+      h ^= path.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return 'INC-' + (h >>> 0).toString(16).toUpperCase().padStart(6, '0').slice(0, 6);
+  }
 
-  let cwd = '~/404';
-  const history = [];
-  let histIdx = -1;
+  var path    = window.location.pathname;
+  var now     = new Date();
+  var started = Date.now();
 
-  // Keep input focused on terminal click (not link clicks)
-  terminal.addEventListener('click', (e) => {
-    if (window.getSelection().toString()) return;
-    if (e.target.tagName !== 'A') input.focus();
+  document.getElementById('inc-id').textContent           = incidentId(path);
+  document.getElementById('inc-affected-name').textContent = path;
+  document.getElementById('inc-affected-path').textContent = path;
+  document.getElementById('inc-rca-path').textContent      = path;
+
+  var fmt = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    timeZoneName: 'short', hour12: false,
   });
+  var ts = fmt.format(now);
+  document.getElementById('inc-detected').textContent  = ts;
+  document.getElementById('inc-page-ts').textContent   = ts;
 
-  // Fake filesystem
-  const fs = {
-    '~/404': [
-      { name: 'README.txt',       type: 'file' },
-      { name: 'the_missing_page', type: 'file' },
-      { name: 'incident.log',     type: 'file' },
-      { name: 'suggestions/',     type: 'dir' },
-    ],
-    '~/404/suggestions': [
-      { name: 'home',    type: 'link', href: '/' },
-      { name: 'blog',    type: 'link', href: '/blog' },
-      { name: 'lab',     type: 'link', href: '/lab' },
-      { name: 'about',   type: 'link', href: '/about' },
-      { name: 'contact', type: 'link', href: '/contact' },
-    ],
-  };
-
-  const files = {
-    'README.txt':
-      'You appear to have arrived at a page that does not exist.\n' +
-      'The infrastructure is healthy. This URL just does not map to anything.\n\n' +
-      'Try `ls`, `help`, or just `home` to navigate.',
-    'the_missing_page':
-      'cat: the_missing_page: file in use by /dev/null\n' +
-      '(it was here a moment ago. probably.)',
-    'incident.log':
-      '[ERROR] HTTP 404 — page not found\n' +
-      '[INFO]  incident logged\n' +
-      '[INFO]  on-call notified (solo operator, so that\'s me)\n' +
-      '[INFO]  RCA in progress. ETA: undetermined.\n' +
-      '[DEBUG] try `home`, `blog`, or `contact` to get back on track',
-  };
-
-  // ====== Helpers ======
-  function print(text, cls) {
-    const div = document.createElement('div');
-    div.className = 'cm-line' + (cls ? ' cm-' + cls : '');
-    div.innerHTML = text;
-    output.appendChild(div);
-    output.scrollTop = output.scrollHeight;
+  function tick() {
+    var e = Math.floor((Date.now() - started) / 1000);
+    var m = Math.floor(e / 60);
+    var s = e % 60;
+    document.getElementById('inc-duration').textContent = m > 0 ? m + 'm ' + s + 's' : s + 's';
   }
-
-  function printPromptEcho(cmd) {
-    const div = document.createElement('div');
-    div.className = 'cm-line cm-prompt-line';
-    div.innerHTML =
-      '<span class="cm-prompt">' +
-        '<span class="cm-user">visitor</span><span class="cm-at">@</span><span class="cm-host">coreymark</span>' +
-        '<span class="cm-colon">:</span><span class="cm-path">' + cwd + '</span><span class="cm-sigil">$</span>' +
-      '</span>' +
-      '<span class="cm-cmd">' + escapeHtml(cmd) + '</span>';
-    output.appendChild(div);
-    output.scrollTop = output.scrollHeight;
-  }
-
-  function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, function(c) {
-      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
-    });
-  }
-
-  // ====== Boot sequence ======
-  var boot = [
-    { text: 'Last login: ' + new Date().toUTCString() + ' on ttys001', cls: 'dim' },
-    { text: ' ', cls: '' },
-    { text:
-'  ┌─────────────────────────────────────────────────┐\n' +
-'  │                                                 │\n' +
-'  │   ERROR 404 — the requested page is missing    │\n' +
-'  │                                                 │\n' +
-'  │   the infrastructure is healthy. the route     │\n' +
-"  │   just doesn't exist yet. or anymore.          │\n" +
-'  │                                                 │\n' +
-'  └─────────────────────────────────────────────────┘',
-      cls: 'ascii' },
-    { text: ' ', cls: '' },
-    { text: 'a 404 has been logged. type <span class="cm-accent">help</span> for available commands, or <span class="cm-accent">home</span> to leave.', cls: '' },
-    { text: ' ', cls: '' },
-  ];
-
-  function bootSequence() {
-    var i = 0;
-    function next() {
-      if (i >= boot.length) { input.focus(); return; }
-      print(boot[i].text, boot[i].cls);
-      i++;
-      setTimeout(next, 120);
-    }
-    next();
-  }
-
-  // ====== Commands ======
-  var commands = {
-    help: function() {
-      print('available commands:', 'info');
-      var items = [
-        ['help',         'show this message'],
-        ['ls',           'list directory contents'],
-        ['cd [dir]',     'change directory'],
-        ['pwd',          'print working directory'],
-        ['cat [file]',   'show file contents'],
-        ['find [name]',  'search for a file'],
-        ['whoami',       'who am i'],
-        ['date',         'current date and time'],
-        ['ping [host]',  'test connectivity'],
-        ['coffee',       'brew a cup'],
-        ['joke',         'request a joke from /dev/humor'],
-        ['fortune',      'a piece of operational wisdom'],
-        ['clear',        'clear the screen'],
-        ['home',         'return to coreymark.com'],
-        ['blog',         'go to the blog'],
-        ['lab',          'go to the lab'],
-        ['about',        'go to the about page'],
-        ['contact',      'get in touch'],
-        ['exit',         'leave the terminal'],
-      ];
-      items.forEach(function(item) {
-        print('  <span class="cm-accent">' + item[0].padEnd(14) + '</span> <span class="cm-dim">' + item[1] + '</span>');
-      });
-      print(' ');
-      print('<span class="cm-dim">tip: there are a few commands not listed here. try things.</span>');
-    },
-
-    ls: function(args) {
-      var dir = fs[cwd];
-      if (!dir) { print('ls: cannot access \'' + cwd + '\': No such directory', 'err'); return; }
-      var out = dir.map(function(entry) {
-        if (entry.type === 'dir')  return '<span class="cm-info">' + entry.name + '</span>';
-        if (entry.type === 'link') return '<span class="cm-accent">' + entry.name + '@</span>';
-        return entry.name;
-      }).join('   ');
-      print(out);
-    },
-
-    pwd: function() { print('/var/www/coreymark.com' + cwd.replace('~', '/home/visitor')); },
-
-    cd: function(args) {
-      var target = (args[0] || '').trim();
-      if (!target || target === '~') { cwd = '~/404'; cwdEl.textContent = cwd; return; }
-      if (target === '..') {
-        if (cwd === '~/404/suggestions') { cwd = '~/404'; cwdEl.textContent = cwd; }
-        else { print('cd: already at the top. you are deep in 404.', 'dim'); }
-        return;
-      }
-      if (target === 'suggestions' || target === 'suggestions/') {
-        cwd = '~/404/suggestions'; cwdEl.textContent = cwd; return;
-      }
-      if (target === '/') { print('cd: nice try. this is a polite terminal.', 'warn'); return; }
-      print('cd: no such directory: ' + escapeHtml(target), 'err');
-    },
-
-    cat: function(args) {
-      var name = (args[0] || '').trim();
-      if (!name) { print('cat: missing operand', 'err'); return; }
-      if (files[name]) { print(escapeHtml(files[name])); return; }
-      if (cwd === '~/404/suggestions') {
-        var entry = fs[cwd].find(function(e) { return e.name === name; });
-        if (entry && entry.type === 'link') {
-          print('opening ' + entry.href + '...', 'info');
-          setTimeout(function() { window.location.href = entry.href; }, 600);
-          return;
-        }
-      }
-      print('cat: ' + escapeHtml(name) + ': No such file or directory', 'err');
-    },
-
-    find: function(args) {
-      var term = (args[0] || '').replace(/['"]/g, '').toLowerCase();
-      if (!term) { print('find: try `find <name>`', 'err'); return; }
-      if (term.includes('page')) {
-        print('find: no matches.', 'err');
-        print('<span class="cm-dim">(the page is not here. the page was never here. accept this and move on.)</span>');
-        return;
-      }
-      if (term.includes('post') || term.includes('article') || term.includes('blog')) {
-        print('find: try `blog` instead. that is literally what you want.', 'warn');
-        return;
-      }
-      if (term.includes('peace') || term.includes('happiness') || term.includes('meaning')) {
-        print('find: ' + term + ': not in $PATH. consider stepping outside.', 'warn');
-        return;
-      }
-      print('find: no results for "' + escapeHtml(term) + '"', 'dim');
-    },
-
-    whoami: function() {
-      print('a lost visitor', 'info');
-      print('<span class="cm-dim">(but a welcome one)</span>');
-    },
-
-    date: function() { print(new Date().toString()); },
-
-    clear: function() { output.innerHTML = ''; },
-
-    ping: function(args) {
-      var host = args[0] || 'coreymark.com';
-      var ip = fakeIp();
-      print('PING ' + escapeHtml(host) + ' (' + ip + '): 56 data bytes');
-      var i = 0;
-      var id = setInterval(function() {
-        if (i >= 3) {
-          clearInterval(id);
-          print(' ');
-          print('--- ' + escapeHtml(host) + ' ping statistics ---');
-          print('3 packets transmitted, 3 received, 0.0% packet loss');
-          print('rtt min/avg/max = ' + (10+Math.random()*5).toFixed(2) + '/' + (15+Math.random()*5).toFixed(2) + '/' + (20+Math.random()*5).toFixed(2) + ' ms');
-          return;
-        }
-        print('64 bytes from ' + ip + ': icmp_seq=' + i + ' ttl=64 time=' + (10+Math.random()*15).toFixed(2) + ' ms');
-        i++;
-      }, 350);
-    },
-
-    coffee: function() {
-      print('HTTP/1.1 418 I\'m a teapot', 'warn');
-      print('<span class="cm-dim">the requested entity body is short and stout.</span>');
-    },
-
-    joke: function() {
-      var jokes = [
-        'there are 10 kinds of people in this world: those who understand binary, and those who don\'t.',
-        'why do programmers prefer dark mode? because light attracts bugs.',
-        'a SQL query walks into a bar, walks up to two tables and asks: "may I join you?"',
-        'there are two hard problems in computer science: cache invalidation, naming things, and off-by-one errors.',
-        'why did the developer go broke? because he used up all his cache.',
-        'i would tell you a UDP joke, but you might not get it.',
-        'the best thing about a boolean is even if you are wrong, you are only off by a bit.',
-      ];
-      print(jokes[Math.floor(Math.random() * jokes.length)]);
-    },
-
-    fortune: function() {
-      var fortunes = [
-        'it is always DNS.',
-        'in case of fire: git commit, git push, leave building.',
-        'the cloud is just someone else\'s computer.',
-        'documentation is a love letter to your future self.',
-        'there is no problem that cannot be solved by adding another layer of abstraction. except too many layers of abstraction.',
-        'backups are like seatbelts. you do not appreciate them until you need them.',
-        '"works on my machine" is not a deployment strategy.',
-        'a well-named variable is worth a thousand comments.',
-        'the best time to plan for outages was before you launched. the second best time is right now.',
-        'vendor lock-in is a feature. for the vendor.',
-      ];
-      print('<span class="cm-accent">' + fortunes[Math.floor(Math.random() * fortunes.length)] + '</span>');
-    },
-
-    home:    function() { goto('/'); },
-    blog:    function() { goto('/blog'); },
-    lab:     function() { goto('/lab'); },
-    about:   function() { goto('/about'); },
-    contact: function() { goto('/contact'); },
-    exit:    function() { print('logout', 'dim'); setTimeout(function() { goto('/'); }, 500); },
-
-    sudo: function(args) {
-      var rest = args.join(' ');
-      if (rest === 'make me a sandwich') {
-        print('okay.', 'ok');
-        print('<span class="cm-dim">(sandwich.exe not found, but the gesture is appreciated.)</span>');
-        return;
-      }
-      if (/rm\s+-rf\s+\//.test(rest)) { print('sudo: nice try.', 'warn'); return; }
-      print('[sudo] password for visitor: ' + '•'.repeat(8), 'dim');
-      setTimeout(function() {
-        print('Sorry, try again. (you are not in the sudoers file. this incident will be reported.)', 'err');
-      }, 400);
-    },
-
-    rm: function(args) {
-      var flags = args.join(' ');
-      if (/-rf\s+\/?$/.test(flags) || flags.includes('-rf /')) {
-        print('rm: it is dangerous to go alone. take this: <span class="cm-accent">↩</span>', 'warn');
-        print('<span class="cm-dim">(no files were harmed in the making of this 404.)</span>');
-        return;
-      }
-      print('rm: refusing to remove anything. this is a museum, not a junkyard.', 'warn');
-    },
-
-    vim:   function() { print('vim: you cannot escape. type <span class="cm-accent">:q</span> to lie to yourself.', 'warn'); },
-    nano:  function() { print('nano: a reasonable choice. respected.', 'ok'); },
-    emacs: function() { print('emacs: an operating system in search of an editor.', 'dim'); },
-    ':q':  function() { print('E37: no write since last change. ha. ha.', 'warn'); },
-    ':q!': function() { print('still here.', 'warn'); },
-    ':wq': function() { print('write failed: this is a 404. nothing to save.', 'warn'); },
-
-    hack:   function() { print('access granted. just kidding. that is not how any of this works.', 'warn'); },
-    matrix: function() { startMatrix(); },
-    konami: function() { konamiPrint(); },
-    '42':   function() { print('the answer to life, the universe, and the missing page.', 'accent'); },
-
-    yes: function(args) {
-      var word = args.join(' ') || 'y';
-      for (var i = 0; i < 8; i++) print(escapeHtml(word));
-      print('<span class="cm-dim">(infinite loop interrupted. you are welcome.)</span>');
-    },
-
-    history: function() {
-      if (history.length === 0) { print('<span class="cm-dim">no history yet.</span>'); return; }
-      history.forEach(function(h, i) { print('  ' + (i+1) + '  ' + escapeHtml(h)); });
-    },
-
-    echo: function(args) { print(escapeHtml(args.join(' '))); },
-
-    'open the pod bay doors': function() { print('i\'m sorry visitor, i\'m afraid i can\'t do that.', 'warn'); },
-    'the cake is a lie':      function() { print('yes. but the 404 is real.', 'warn'); },
-    'hack the planet':        function() { print('HACK THE PLANET!', 'accent'); },
-
-    'tell me a story': function() {
-      print('once, a user clicked a link.');
-      print('the link led nowhere.');
-      print('they checked the blog, found something useful, and came back.', 'ok');
-      print('<span class="cm-dim">(not all stories end in myth. some end in a good read.)</span>');
-    },
-  };
-
-  var aliases = {
-    'dir':     'ls',
-    'cls':     'clear',
-    'back':    'home',
-    '..':      'cd',
-    'q':       'exit',
-    'quit':    'exit',
-    'posts':   'blog',
-    'writing': 'blog',
-  };
-
-  function goto(url) {
-    print('redirecting to ' + url + ' ...', 'info');
-    setTimeout(function() { window.location.href = url; }, 500);
-  }
-
-  function fakeIp() {
-    return '198.51.100.' + Math.floor(Math.random() * 250 + 1);
-  }
-
-  // ====== Command runner ======
-  function run(raw) {
-    var cmd = raw.trim();
-    if (!cmd) return;
-    history.push(cmd);
-    histIdx = history.length;
-
-    var lower = cmd.toLowerCase();
-    if (commands[lower]) { commands[lower]([]); return; }
-
-    var parts = cmd.split(/\s+/);
-    var name  = parts[0].toLowerCase();
-    var args  = parts.slice(1);
-
-    if (aliases[name]) name = aliases[name];
-
-    if (commands[name]) {
-      try { commands[name](args); }
-      catch (e) { print('error: ' + e.message, 'err'); }
-    } else {
-      print('command not found: ' + escapeHtml(name) + '. try <span class="cm-accent">help</span>.', 'err');
-    }
-  }
-
-  // ====== Input handling ======
-  input.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      var v = input.value;
-      printPromptEcho(v);
-      input.value = '';
-      run(v);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (!history.length) return;
-      histIdx = Math.max(0, histIdx - 1);
-      input.value = history[histIdx] || '';
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (!history.length) return;
-      histIdx = Math.min(history.length, histIdx + 1);
-      input.value = history[histIdx] || '';
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      var partial = input.value.trim().toLowerCase();
-      if (!partial) return;
-      var all   = Object.keys(commands).concat(['home', 'ls', 'cat', 'cd']);
-      var match = all.find(function(c) { return c.startsWith(partial); });
-      if (match) input.value = match + ' ';
-    } else if (e.ctrlKey && e.key === 'l') {
-      e.preventDefault();
-      output.innerHTML = '';
-    } else if (e.ctrlKey && e.key === 'c') {
-      printPromptEcho(input.value + '^C');
-      input.value = '';
-    }
-  });
-
-  // ====== Konami code ======
-  var konamiSeq = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
-  var konamiIdx = 0;
-  document.addEventListener('keydown', function(e) {
-    var key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-    if (key === konamiSeq[konamiIdx]) {
-      konamiIdx++;
-      if (konamiIdx === konamiSeq.length) { konamiPrint(); konamiIdx = 0; }
-    } else {
-      konamiIdx = key === konamiSeq[0] ? 1 : 0;
-    }
-  });
-
-  function konamiPrint() {
-    print(' ');
-    print('  ╔══════════════════════════════════════╗', 'accent');
-    print('  ║  +30 LIVES UNLOCKED                  ║', 'accent');
-    print('  ║  (none of them are this page.)       ║', 'accent');
-    print('  ╚══════════════════════════════════════╝', 'accent');
-    print(' ');
-  }
-
-  // ====== Matrix rain ======
-  function startMatrix() {
-    var canvas  = document.getElementById('matrix-canvas');
-    var exitMsg = document.getElementById('matrix-exit');
-    canvas.style.display  = 'block';
-    exitMsg.style.display = 'block';
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-    var ctx      = canvas.getContext('2d');
-    var chars    = 'アイウエオカキクケコ01'.split('');
-    var fontSize = 16;
-    var cols     = Math.floor(canvas.width / fontSize);
-    var drops    = new Array(cols).fill(1);
-    var running  = true;
-
-    function draw() {
-      if (!running) return;
-      ctx.fillStyle = 'rgba(0,0,0,0.06)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#2DD4BF';
-      ctx.font = fontSize + 'px JetBrains Mono, monospace';
-      for (var i = 0; i < drops.length; i++) {
-        var t = chars[Math.floor(Math.random() * chars.length)];
-        ctx.fillText(t, i * fontSize, drops[i] * fontSize);
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
-      }
-      requestAnimationFrame(draw);
-    }
-    draw();
-
-    function stop() {
-      running = false;
-      canvas.style.display  = 'none';
-      exitMsg.style.display = 'none';
-      document.removeEventListener('keydown', stop);
-      canvas.removeEventListener('click', stop);
-      input.focus();
-    }
-    setTimeout(function() {
-      document.addEventListener('keydown', stop);
-      canvas.addEventListener('click', stop);
-    }, 300);
-  }
-
-  // ====== Boot ======
-  bootSequence();
-  setTimeout(function() { input.focus(); }, 50);
+  tick();
+  setInterval(tick, 1000);
 })();
 </script>
