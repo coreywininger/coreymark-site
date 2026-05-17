@@ -112,7 +112,41 @@ import { Mail, Rss } from '@lucide/astro';
       </li>
     </ul>
 
-    <p class="mt-10 text-sm text-text-tertiary">
+    <div class="mt-10 rounded-lg border border-border-subtle bg-bg-elevated p-6">
+      <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-accent-primary">
+        Newsletter
+      </p>
+      <h2 class="mb-2 text-base font-semibold text-text-primary">
+        New posts, straight to your inbox.
+      </h2>
+      <p class="mb-5 text-sm text-text-secondary">
+        No schedule commitment. Unsubscribe any time.
+      </p>
+      <form
+        action="https://buttondown.com/api/emails/embed-subscribe/coreymark"
+        method="post"
+        target="popupwindow"
+        onsubmit="window.open('https://buttondown.com/coreymark', 'popupwindow')"
+        class="flex flex-col gap-3 sm:flex-row"
+      >
+        <input
+          type="email"
+          name="email"
+          id="bd-email-contact"
+          placeholder="your@email.com"
+          required
+          class="flex-1 rounded-md border border-border-subtle bg-transparent px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
+        />
+        <button
+          type="submit"
+          class="rounded-md bg-accent-primary px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+        >
+          Subscribe
+        </button>
+      </form>
+    </div>
+
+    <p class="mt-6 text-sm text-text-tertiary">
       Based in Bedford, IN. Open to on-site Indianapolis, hybrid, or
       remote.
     </p>
