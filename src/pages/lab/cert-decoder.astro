@@ -1,0 +1,922 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const title = 'X.509 certificate decoder';
+const description =
+  'Decode X.509 certificates from PEM — subject, issuer, validity, key type and size, SANs, CA flag, and signature algorithm. 100% client-side, free.';
+---
+
+<Base title={title} description={description}>
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-text-primary">Home</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
+        <li aria-hidden="true">›</li>
+        <li class="text-text-secondary">X.509 certificate decoder</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8">
+      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        X.509 certificate decoder
+      </h1>
+      <p class="max-w-2xl text-lg text-text-secondary">
+        Paste a PEM certificate — see subject, issuer, validity window, key
+        type and size, Subject Alternative Names, CA flag, and signature
+        algorithm. 100% client-side: nothing you paste leaves your browser.
+      </p>
+    </header>
+
+    <h2 class="sr-only">
+      X.509 certificate decoder: paste PEM to see subject DN, issuer DN,
+      not-before and not-after validity dates, public key type (RSA, EC,
+      Ed25519) and bit length, Subject Alternative Names (DNS, IP, email,
+      URI), CA basic-constraint flag, serial number, and signature algorithm.
+      Sample certificates include ISRG Root X1 (RSA 4096), ISRG Root X2
+      (EC P-384), Let's Encrypt R11 (RSA 2048 intermediate), and an expired
+      certificate. All parsing is performed in the browser using a pure-JS
+      ASN.1 DER parser with no external dependencies.
+    </h2>
+
+    <div class="lab-tool cert-widget py-4">
+
+      <p class="cert-chips-label">Try a sample</p>
+      <div class="cert-chips" id="cert-samples">
+        <button class="cert-chip" data-sample="x1">ISRG Root X1 (RSA 4096)</button>
+        <button class="cert-chip" data-sample="x2">ISRG Root X2 (EC P-384)</button>
+        <button class="cert-chip" data-sample="r11">Let's Encrypt R11</button>
+        <button class="cert-chip" data-sample="x3">Expired cert (LE X3)</button>
+      </div>
+
+      <textarea
+        id="cert-input"
+        spellcheck="false"
+        placeholder="Paste a PEM certificate here&#10;-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+      ></textarea>
+
+      <div class="cert-actions">
+        <button class="cert-btn" id="cert-decode-btn">Decode</button>
+        <button class="cert-btn secondary" id="cert-clear-btn">Clear</button>
+      </div>
+
+      <div id="cert-status" class="cert-status" hidden>
+        <span class="dot-led"></span>
+        <span class="msg">Ready</span>
+        <span class="expiry-note" hidden></span>
+      </div>
+
+      <div id="cert-cards" class="cert-cards" hidden></div>
+
+    </div>
+
+    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
+      <summary class="cursor-pointer text-base font-semibold text-text-primary">
+        About this tool
+      </summary>
+      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+        <p><strong>What it does.</strong> Decodes X.509 v1/v2/v3 certificates
+          in PEM format (Base64-encoded DER wrapped in
+          <code>-----BEGIN CERTIFICATE-----</code> headers). Surfaces: subject
+          and issuer Distinguished Names (CN, O, OU, C, ST, L); validity
+          window (Not Before / Not After) with live expiration status; public
+          key type and size (RSA with bit length, EC with named curve,
+          Ed25519/Ed448); Subject Alternative Names (DNS, IP, email, URI);
+          CA flag from the Basic Constraints extension; serial number; and
+          signature algorithm.</p>
+        <p><strong>Status posture.</strong> The status banner turns green for
+          valid certs, amber when expiry is within 30 days, and red for
+          expired or malformed input. The expiry note shows the exact
+          remaining time.</p>
+        <p><strong>How the parser works.</strong> Pure JavaScript — no
+          external crypto libraries, no WebAssembly, no server round-trips.
+          A hand-rolled ASN.1 DER walker reads tag, length, and value bytes
+          directly from the decoded Base64. OIDs are mapped to human-readable
+          names for DN attributes, signature algorithms, EC named curves,
+          and well-known X.509 extensions.</p>
+        <p><strong>What it doesn't do.</strong> Certificate chain validation
+          (fetching issuer certs and verifying signatures requires trusted
+          root stores and OCSP/CRL fetching — out of scope for a static
+          page). Parsing of PKCS#7/CMS bundles or PKCS#12 keystores. Decoding
+          of private keys. Multi-cert PEM bundles (paste one cert at a
+          time).</p>
+        <p><strong>Privacy note:</strong> all parsing happens entirely in
+          your browser. The certificate you paste never leaves the page.</p>
+      </div>
+    </details>
+
+    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
+      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Security</span>
+      <span>Added 2026-05-17</span>
+    </div>
+  </section>
+
+<style is:global>
+  /* X.509 cert decoder widget — scoped under .cert-widget */
+  .cert-widget {
+    --cert-danger:   var(--color-error);
+    --cert-success:  var(--color-success);
+    --cert-warn:     var(--color-accent-secondary);
+    --cert-muted:    var(--color-text-tertiary);
+    --cert-bg2:      var(--color-bg-elevated);
+    --cert-bg3:      var(--color-bg-subtle);
+    --cert-bg-err:   color-mix(in srgb, var(--color-error) 12%, transparent);
+    --cert-bg-warn:  color-mix(in srgb, var(--color-accent-secondary) 10%, transparent);
+    --cert-border:   var(--color-border-subtle);
+    --cert-accent:   var(--color-accent-primary);
+    --cert-mono:     var(--font-mono);
+    --cert-radius:   10px;
+  }
+  .cert-widget [hidden] { display: none !important; }
+  .cert-widget *, .cert-widget *::before, .cert-widget *::after { box-sizing: border-box; }
+
+  /* sample chips */
+  .cert-widget .cert-chips-label {
+    font-size: 12px;
+    color: var(--cert-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 6px;
+  }
+  .cert-widget .cert-chips {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 16px;
+  }
+  .cert-widget .cert-chip {
+    background: var(--cert-bg2);
+    border: 1px solid var(--cert-border);
+    color: var(--color-text-primary);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s;
+  }
+  .cert-widget .cert-chip:hover { border-color: var(--cert-accent); color: var(--cert-accent); }
+  .cert-widget .cert-chip.flash {
+    background: var(--cert-accent);
+    color: var(--color-bg-primary);
+    border-color: var(--cert-accent);
+  }
+
+  /* textarea */
+  .cert-widget textarea#cert-input {
+    width: 100%;
+    min-height: 130px;
+    background: var(--cert-bg2);
+    color: var(--color-text-primary);
+    border: 1px solid var(--cert-border);
+    border-radius: var(--cert-radius);
+    padding: 12px 14px;
+    font: 13px/1.5 var(--cert-mono);
+    resize: vertical;
+    word-break: break-all;
+  }
+  .cert-widget textarea#cert-input:focus {
+    outline: 2px solid var(--cert-accent);
+    outline-offset: -1px;
+  }
+
+  /* action buttons */
+  .cert-widget .cert-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .cert-widget .cert-btn {
+    background: var(--cert-accent);
+    color: var(--color-bg-primary);
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .cert-widget .cert-btn.secondary {
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--cert-border);
+  }
+  .cert-widget .cert-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* status banner */
+  .cert-widget .cert-status {
+    margin: 18px 0 12px;
+    padding: 10px 14px;
+    border-radius: var(--cert-radius);
+    font-size: 14px;
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid var(--cert-border);
+    background: var(--cert-bg2);
+  }
+  .cert-widget .cert-status .dot-led {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--cert-muted);
+    flex-shrink: 0;
+  }
+  .cert-widget .cert-status.ok   .dot-led { background: var(--cert-success); box-shadow: 0 0 6px var(--cert-success); }
+  .cert-widget .cert-status.warn .dot-led { background: var(--cert-warn);    box-shadow: 0 0 6px var(--cert-warn); }
+  .cert-widget .cert-status.err  .dot-led { background: var(--cert-danger);  box-shadow: 0 0 6px var(--cert-danger); }
+  .cert-widget .cert-status.ok   { border-color: var(--cert-success); }
+  .cert-widget .cert-status.warn { border-color: var(--cert-warn);    background: var(--cert-bg-warn); }
+  .cert-widget .cert-status.err  { border-color: var(--cert-danger);  background: var(--cert-bg-err); }
+  .cert-widget .cert-status .expiry-note {
+    margin-left: auto;
+    font-family: var(--cert-mono);
+    font-size: 12.5px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  /* cards grid */
+  .cert-widget .cert-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .cert-widget .cert-card {
+    border: 1px solid var(--cert-border);
+    border-radius: var(--cert-radius);
+    background: var(--cert-bg2);
+    overflow: hidden;
+  }
+  .cert-widget .cert-card.full { grid-column: 1 / -1; }
+  .cert-widget .cert-card-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--cert-border);
+    background: var(--cert-bg3);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+  }
+  .cert-widget .cert-card-head .cert-copy {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--cert-border);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: 11.5px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+  .cert-widget .cert-card-head .cert-copy:hover { border-color: var(--cert-accent); color: var(--cert-accent); }
+  .cert-widget .cert-card-body {
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--color-text-primary);
+  }
+
+  /* field rows inside cards */
+  .cert-widget .cert-field {
+    display: flex;
+    gap: 10px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--cert-border);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .cert-widget .cert-field:last-child { border-bottom: none; }
+  .cert-widget .cert-field .fl {
+    width: 9ch;
+    flex-shrink: 0;
+    color: var(--cert-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding-top: 1px;
+  }
+  .cert-widget .cert-field .fv {
+    font-family: var(--cert-mono);
+    font-size: 12.5px;
+    word-break: break-all;
+    color: var(--color-text-primary);
+  }
+  .cert-widget .cert-field .fv.ok   { color: var(--cert-success); }
+  .cert-widget .cert-field .fv.warn { color: var(--cert-warn); }
+  .cert-widget .cert-field .fv.err  { color: var(--cert-danger); }
+  .cert-widget .cert-field .fv .sub {
+    display: block;
+    font-family: inherit;
+    font-size: 11.5px;
+    color: var(--cert-muted);
+    margin-top: 1px;
+  }
+
+  /* SAN list */
+  .cert-widget .san-list {
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .cert-widget .san-list li {
+    display: flex; align-items: baseline; gap: 8px;
+    font-family: var(--cert-mono);
+    font-size: 12.5px;
+  }
+  .cert-widget .san-list .san-type {
+    flex-shrink: 0;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--cert-muted);
+    background: var(--cert-bg3);
+    border: 1px solid var(--cert-border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: inherit;
+  }
+
+  /* badge */
+  .cert-widget .cert-badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    border: 1px solid var(--cert-border);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+  }
+  .cert-widget .cert-badge.ca  { color: var(--cert-accent); border-color: var(--cert-accent); }
+  .cert-widget .cert-badge.end { color: var(--cert-muted);  border-color: var(--cert-border); }
+
+  @media (max-width: 600px) {
+    .cert-widget .cert-cards { grid-template-columns: 1fr; }
+    .cert-widget .cert-card.full { grid-column: 1; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  /* ── OID maps ──────────────────────────────────────────────── */
+  var ATTR = {
+    '2.5.4.3':  'CN', '2.5.4.6': 'C',  '2.5.4.7': 'L',
+    '2.5.4.8':  'ST', '2.5.4.10': 'O', '2.5.4.11': 'OU',
+    '2.5.4.5':  'serialNumber',
+    '1.2.840.113549.1.9.1': 'emailAddress'
+  };
+  var SIG = {
+    '1.2.840.113549.1.1.4':  'md5WithRSAEncryption',
+    '1.2.840.113549.1.1.5':  'sha1WithRSAEncryption',
+    '1.2.840.113549.1.1.11': 'sha256WithRSAEncryption',
+    '1.2.840.113549.1.1.12': 'sha384WithRSAEncryption',
+    '1.2.840.113549.1.1.13': 'sha512WithRSAEncryption',
+    '1.2.840.10045.4.3.1':   'ecdsa-with-SHA224',
+    '1.2.840.10045.4.3.2':   'ecdsa-with-SHA256',
+    '1.2.840.10045.4.3.3':   'ecdsa-with-SHA384',
+    '1.2.840.10045.4.3.4':   'ecdsa-with-SHA512',
+    '1.3.101.112': 'Ed25519', '1.3.101.113': 'Ed448'
+  };
+  var CURVE = {
+    '1.2.840.10045.3.1.7': 'P-256',
+    '1.3.132.0.34': 'P-384',
+    '1.3.132.0.35': 'P-521',
+    '1.3.132.0.10': 'secp256k1'
+  };
+  var OID_RSA = '1.2.840.113549.1.1.1';
+  var OID_EC  = '1.2.840.10045.2.1';
+  var OID_SAN = '2.5.29.17';
+  var OID_BC  = '2.5.29.19';
+
+  /* ── ASN.1 DER parser ─────────────────────────────────────── */
+  function pemToDer(pem) {
+    var b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+    var bin = atob(b64);
+    var u8 = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return u8;
+  }
+
+  function rlen(d, i) {
+    var b = d[i];
+    if (b < 0x80) return { len: b, skip: 1 };
+    var n = b & 0x7f, v = 0;
+    for (var k = 0; k < n; k++) v = (v << 8) | d[i + 1 + k];
+    return { len: v, skip: 1 + n };
+  }
+
+  function el(d, i) {
+    var tag = d[i];
+    var r = rlen(d, i + 1);
+    var start = i + 1 + r.skip;
+    return { tag: tag, start: start, len: r.len, end: start + r.len };
+  }
+
+  function kids(d, s, e) {
+    var out = [], i = s;
+    while (i < e) { var c = el(d, i); out.push(c); i = c.end; }
+    return out;
+  }
+
+  function oid(d, s, l) {
+    var e = s + l, bytes = [];
+    var first = d[s];
+    bytes.push(Math.floor(first / 40), first % 40);
+    var v = 0;
+    for (var i = s + 1; i < e; i++) {
+      v = (v << 7) | (d[i] & 0x7f);
+      if (!(d[i] & 0x80)) { bytes.push(v); v = 0; }
+    }
+    return bytes.join('.');
+  }
+
+  function strVal(d, s, l, tag) {
+    var bytes = d.slice(s, s + l);
+    if (tag === 0x1e) { // BMPString (2-byte chars)
+      var pairs = [];
+      for (var i = 0; i < bytes.length; i += 2)
+        pairs.push(String.fromCharCode((bytes[i] << 8) | bytes[i + 1]));
+      return pairs.join('');
+    }
+    return new TextDecoder().decode(bytes);
+  }
+
+  function tim(d, e) {
+    var str = strVal(d, e.start, e.len, e.tag);
+    if (e.tag === 0x17) { // UTCTime: YYMMDDHHMMSSZ
+      var yr = parseInt(str.slice(0, 2));
+      yr = yr < 50 ? 2000 + yr : 1900 + yr;
+      return new Date(yr + '-' + str.slice(2,4) + '-' + str.slice(4,6) + 'T' +
+                      str.slice(6,8) + ':' + str.slice(8,10) + ':' + str.slice(10,12) + 'Z');
+    }
+    // GeneralizedTime: YYYYMMDDHHMMSSZ
+    return new Date(str.slice(0,4) + '-' + str.slice(4,6) + '-' + str.slice(6,8) + 'T' +
+                    str.slice(8,10) + ':' + str.slice(10,12) + ':' + str.slice(12,14) + 'Z');
+  }
+
+  function nameMap(d, e) {
+    var out = {};
+    kids(d, e.start, e.end).forEach(function(set) {
+      kids(d, set.start, set.end).forEach(function(seq) {
+        var cs = kids(d, seq.start, seq.end);
+        if (cs.length < 2) return;
+        var k = oid(d, cs[0].start, cs[0].len);
+        var v = strVal(d, cs[1].start, cs[1].len, cs[1].tag);
+        out[ATTR[k] || k] = v;
+      });
+    });
+    return out;
+  }
+
+  function spki(d, e) {
+    var seqs = kids(d, e.start, e.end);
+    if (!seqs.length) return { type: 'Unknown' };
+    var algSeq = seqs[0];
+    var algKids = kids(d, algSeq.start, algSeq.end);
+    if (!algKids.length) return { type: 'Unknown' };
+    var algOid = oid(d, algKids[0].start, algKids[0].len);
+
+    if (algOid === OID_RSA) {
+      if (seqs.length < 2) return { type: 'RSA' };
+      var bs = seqs[1];
+      var inner = el(d, bs.start + 1); // skip unused-bits byte
+      var mods = kids(d, inner.start, inner.end);
+      if (!mods.length) return { type: 'RSA' };
+      var modLen = mods[0].len;
+      if (d[mods[0].start] === 0x00) modLen--;
+      return { type: 'RSA', bits: modLen * 8 };
+    }
+
+    if (algOid === OID_EC) {
+      var curveOid = algKids.length > 1 ? oid(d, algKids[1].start, algKids[1].len) : '';
+      return { type: 'EC', curve: CURVE[curveOid] || curveOid };
+    }
+
+    // Ed25519 / Ed448 — no parameters
+    if (algOid === '1.3.101.112') return { type: 'Ed25519' };
+    if (algOid === '1.3.101.113') return { type: 'Ed448' };
+
+    return { type: algOid };
+  }
+
+  // CRITICAL: seqEl IS the inner SEQUENCE element already — do NOT call el() on it
+  function sans(d, seqEl) {
+    return kids(d, seqEl.start, seqEl.end).map(function(e) {
+      var t = e.tag & 0x1f;
+      var v;
+      if (t === 7) { // iPAddress — raw bytes
+        var bytes = Array.from(d.slice(e.start, e.end));
+        v = bytes.length === 4
+          ? bytes.join('.')
+          : bytes.map(function(b) { return b.toString(16).padStart(2,'0'); }).join(':');
+      } else {
+        v = strVal(d, e.start, e.len, 0);
+      }
+      return { t: ({ 2:'DNS', 1:'email', 6:'URI', 7:'IP' })[t] || '?', v: v };
+    });
+  }
+
+  function parseCert(u8) {
+    var cert = el(u8, 0);
+    var certKids = kids(u8, cert.start, cert.end);
+    if (certKids.length < 3) throw new Error('Not a valid X.509 DER sequence');
+
+    var tbs = certKids[0];
+    var sigAlgEl = certKids[1];
+
+    // outer signature algorithm
+    var sigAlgKids = kids(u8, sigAlgEl.start, sigAlgEl.end);
+    var sigAlgOid = sigAlgKids.length ? oid(u8, sigAlgKids[0].start, sigAlgKids[0].len) : '';
+    var sigAlg = SIG[sigAlgOid] || sigAlgOid;
+
+    var tbsKids = kids(u8, tbs.start, tbs.end);
+    var idx = 0;
+
+    // Version [0] EXPLICIT (optional)
+    var version = 1;
+    if (tbsKids[idx] && tbsKids[idx].tag === 0xa0) {
+      var vEl = el(u8, tbsKids[idx].start);
+      version = u8[vEl.start] + 1;
+      idx++;
+    }
+
+    // serialNumber INTEGER
+    var serialEl = tbsKids[idx++];
+    var serialBytes = Array.from(u8.slice(serialEl.start, serialEl.end));
+    if (serialBytes[0] === 0) serialBytes.shift();
+    var serial = serialBytes.map(function(b) { return b.toString(16).padStart(2,'0'); }).join(':');
+
+    idx++; // skip inner signatureAlgorithm
+
+    var issuer   = nameMap(u8, tbsKids[idx++]);
+    var validEl  = tbsKids[idx++];
+    var valKids  = kids(u8, validEl.start, validEl.end);
+    var notBefore = tim(u8, valKids[0]);
+    var notAfter  = tim(u8, valKids[1]);
+    var subject  = nameMap(u8, tbsKids[idx++]);
+    var keyInfo  = spki(u8, tbsKids[idx++]);
+
+    var sanList = [], isCA = false;
+    for (var i = idx; i < tbsKids.length; i++) {
+      if (tbsKids[i].tag !== 0xa3) continue;
+      var extsEl = el(u8, tbsKids[i].start);
+      var exts = kids(u8, extsEl.start, extsEl.end);
+      exts.forEach(function(extSeq) {
+        var extKids = kids(u8, extSeq.start, extSeq.end);
+        if (!extKids.length) return;
+        var extOid = oid(u8, extKids[0].start, extKids[0].len);
+        var last = extKids[extKids.length - 1]; // OCTET STRING
+        if (last.tag !== 0x04) return;
+        var inner = el(u8, last.start); // unwrap OCTET STRING → inner DER
+
+        if (extOid === OID_SAN) {
+          sanList = sans(u8, inner);
+        }
+        if (extOid === OID_BC) {
+          var bcKids = kids(u8, inner.start, inner.end);
+          bcKids.forEach(function(bc) {
+            if (bc.tag === 0x01) isCA = u8[bc.start] !== 0x00;
+          });
+        }
+      });
+    }
+
+    return { version: version, serial: serial, sigAlg: sigAlg,
+             issuer: issuer, subject: subject, notBefore: notBefore,
+             notAfter: notAfter, keyInfo: keyInfo, sanList: sanList, isCA: isCA };
+  }
+
+  /* ── Formatting helpers ───────────────────────────────────── */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c];
+    });
+  }
+
+  function fmtDate(d) {
+    if (!d || isNaN(d)) return 'invalid';
+    return d.toLocaleString(undefined, {
+      year:'numeric', month:'short', day:'numeric',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', timeZoneName:'short'
+    });
+  }
+
+  function fmtDN(dn) {
+    var order = ['CN','O','OU','C','ST','L','serialNumber','emailAddress'];
+    var parts = [];
+    order.forEach(function(k) { if (dn[k]) parts.push(k + '=' + dn[k]); });
+    Object.keys(dn).forEach(function(k) {
+      if (order.indexOf(k) === -1) parts.push(k + '=' + dn[k]);
+    });
+    return parts.join(', ') || '(empty)';
+  }
+
+  function relTime(d) {
+    var diffMs = d - Date.now();
+    var abs = Math.abs(diffMs), past = diffMs < 0;
+    var v, u;
+    if      (abs < 60000)       { v = Math.round(abs/1000);    u = 'second'; }
+    else if (abs < 3600000)     { v = Math.round(abs/60000);   u = 'minute'; }
+    else if (abs < 86400000)    { v = Math.round(abs/3600000); u = 'hour'; }
+    else if (abs < 2592000000)  { v = Math.round(abs/86400000); u = 'day'; }
+    else                        { v = Math.round(abs/2592000000); u = 'month'; }
+    return past ? v + ' ' + u + (v===1?'':'s') + ' ago' : 'in ' + v + ' ' + u + (v===1?'':'s');
+  }
+
+  function keyStr(ki) {
+    if (ki.type === 'RSA') return 'RSA ' + (ki.bits || '?') + '-bit';
+    if (ki.type === 'EC')  return 'EC ' + (ki.curve || '?');
+    return ki.type || 'Unknown';
+  }
+
+  function card(title, fields, opts) {
+    opts = opts || {};
+    var fullClass = opts.full ? ' full' : '';
+    var copyBtn = opts.copyValue
+      ? '<button class="cert-copy" data-copy="' + esc(opts.copyKey || title) + '">Copy</button>'
+      : '';
+    var rows = fields.map(function(f) {
+      return '<div class="cert-field">' +
+        '<span class="fl">' + esc(f.l) + '</span>' +
+        '<span class="fv' + (f.cls ? ' ' + f.cls : '') + '">' + f.v +
+          (f.sub ? '<span class="sub">' + f.sub + '</span>' : '') +
+        '</span></div>';
+    }).join('');
+    return '<div class="cert-card' + fullClass + '">' +
+      '<div class="cert-card-head">' + esc(title) + copyBtn + '</div>' +
+      '<div class="cert-card-body">' + rows + '</div></div>';
+  }
+
+  /* ── Render ───────────────────────────────────────────────── */
+  var statusEl = document.getElementById('cert-status');
+  var cardsEl  = document.getElementById('cert-cards');
+
+  function setStatus(kind, msg, expiry) {
+    statusEl.hidden = false;
+    statusEl.className = 'cert-status ' + kind;
+    statusEl.querySelector('.msg').textContent = msg;
+    var en = statusEl.querySelector('.expiry-note');
+    if (expiry) { en.hidden = false; en.textContent = expiry; }
+    else        { en.hidden = true; }
+  }
+
+  function renderCert(pem) {
+    var u8;
+    try { u8 = pemToDer(pem); }
+    catch (e) {
+      setStatus('err', 'PEM decode failed: ' + e.message);
+      cardsEl.hidden = true; return;
+    }
+    var c;
+    try { c = parseCert(u8); }
+    catch (e) {
+      setStatus('err', 'Parse error: ' + e.message);
+      cardsEl.hidden = true; return;
+    }
+
+    var now = Date.now();
+    var expired  = c.notAfter  && c.notAfter.getTime()  < now;
+    var notYet   = c.notBefore && c.notBefore.getTime() > now;
+    var expiring = !expired && c.notAfter && (c.notAfter.getTime() - now) < 30 * 86400000;
+
+    var statusKind = 'ok', statusMsg = 'Certificate decoded.', expiryNote = '';
+    if (expired)       { statusKind = 'err';  statusMsg = 'Certificate expired.'; }
+    else if (notYet)   { statusKind = 'warn'; statusMsg = 'Certificate not yet valid.'; }
+    else if (expiring) { statusKind = 'warn'; statusMsg = 'Certificate expiring soon.'; }
+
+    if (c.notAfter) {
+      expiryNote = expired ? 'Expired ' + relTime(c.notAfter)
+                           : 'Expires ' + relTime(c.notAfter);
+    }
+    setStatus(statusKind, statusMsg, expiryNote);
+
+    // validity classes
+    var nbCls = notYet ? 'warn' : '';
+    var naCls = expired ? 'err' : (expiring ? 'warn' : 'ok');
+
+    // key
+    var keyLabel = keyStr(c.keyInfo);
+
+    // extensions card
+    var caBadge = c.isCA
+      ? '<span class="cert-badge ca">CA</span>'
+      : '<span class="cert-badge end">End-entity</span>';
+
+    var html = '';
+
+    // Subject
+    html += card('Subject', [
+      { l: 'CN', v: esc(c.subject.CN || '—') },
+      { l: 'O',  v: esc(c.subject.O  || '—') },
+      { l: 'OU', v: esc(c.subject.OU || '—') },
+      { l: 'C',  v: esc(c.subject.C  || '—') }
+    ]);
+
+    // Issuer
+    html += card('Issuer', [
+      { l: 'CN', v: esc(c.issuer.CN || '—') },
+      { l: 'O',  v: esc(c.issuer.O  || '—') },
+      { l: 'OU', v: esc(c.issuer.OU || '—') },
+      { l: 'C',  v: esc(c.issuer.C  || '—') }
+    ]);
+
+    // Validity
+    html += card('Validity', [
+      { l: 'Not Before', v: esc(fmtDate(c.notBefore)), cls: nbCls,
+        sub: c.notBefore ? relTime(c.notBefore) : '' },
+      { l: 'Not After',  v: esc(fmtDate(c.notAfter)),  cls: naCls,
+        sub: c.notAfter  ? relTime(c.notAfter)  : '' }
+    ]);
+
+    // Key + Extensions
+    html += card('Key & Extensions', [
+      { l: 'Key',     v: esc(keyLabel) },
+      { l: 'Version', v: esc('v' + c.version) },
+      { l: 'CA',      v: caBadge },
+      { l: 'Sig Alg', v: esc(c.sigAlg) }
+    ]);
+
+    // SANs (full-width, only if present)
+    if (c.sanList && c.sanList.length) {
+      var sanItems = c.sanList.map(function(s) {
+        return '<li><span class="san-type">' + esc(s.t) + '</span>' + esc(s.v) + '</li>';
+      }).join('');
+      html += '<div class="cert-card full">' +
+        '<div class="cert-card-head">Subject Alternative Names</div>' +
+        '<div class="cert-card-body"><ul class="san-list">' + sanItems + '</ul></div></div>';
+    }
+
+    // Serial (full-width)
+    html += '<div class="cert-card full">' +
+      '<div class="cert-card-head">Serial Number</div>' +
+      '<div class="cert-card-body"><div class="cert-field">' +
+      '<span class="fl">Hex</span>' +
+      '<span class="fv" style="font-family:var(--cert-mono);font-size:12px;word-break:break-all">' +
+      esc(c.serial) + '</span></div></div></div>';
+
+    cardsEl.innerHTML = html;
+    cardsEl.hidden = false;
+
+    // Wire copy buttons dynamically
+    cardsEl.querySelectorAll('.cert-copy').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var which = btn.dataset.copy;
+        var text = which === 'Subject' ? fmtDN(c.subject)
+                 : which === 'Issuer'  ? fmtDN(c.issuer)
+                 : '';
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(function() {
+          var orig = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(function() { btn.textContent = orig; }, 900);
+        }).catch(function() {});
+      });
+    });
+  }
+
+  /* ── Samples ──────────────────────────────────────────────── */
+  var SAMPLES = {
+    'x1': `-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
+WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
+ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
+MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
+h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
+0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
+A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
+T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
+B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
+B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
+KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
+OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
+jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
+qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
+rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
+HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
+hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
+ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
+3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
+NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
+ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
+TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
+jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
+oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
+4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
+mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
+emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
+-----END CERTIFICATE-----`,
+    'x2': `-----BEGIN CERTIFICATE-----
+MIICGzCCAaGgAwIBAgIQQdKd0XLq7qeAwSxs6S+HUjAKBggqhkjOPQQDAzBPMQsw
+CQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJuZXQgU2VjdXJpdHkgUmVzZWFyY2gg
+R3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBYMjAeFw0yMDA5MDQwMDAwMDBaFw00
+MDA5MTcxNjAwMDBaME8xCzAJBgNVBAYTAlVTMSkwJwYDVQQKEyBJbnRlcm5ldCBT
+ZWN1cml0eSBSZXNlYXJjaCBHcm91cDEVMBMGA1UEAxMMSVNSRyBSb290IFgyMHYw
+EAYHKoZIzj0CAQYFK4EEACIDYgAEzZvVn4CDCuwJSvMWSj5cz3es3mcFDR0HttwW
++1qLFNvicWDEukWVEYmO6gbf9yoWHKS5xcUy4APgHoIYOIvXRdgKam7mAHf7AlF9
+ItgKbppbd9/w+kHsOdx1ymgHDB/qo0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUfEKWrt5LSDv6kviejM9ti6lyN5UwCgYIKoZI
+zj0EAwMDaAAwZQIwe3lORlCEwkSHRhtFcP9Ymd70/aTSVaYgLXTWNLxBo1BfASdW
+tL4ndQavEi51mI38AjEAi/V3bNTIZargCyzuFJ0nN6T5U6VR5CmD1/iQMVtCnwr1
+/q4AaOeMSQ+2b1tbFfLn
+-----END CERTIFICATE-----`,
+    'r11': `-----BEGIN CERTIFICATE-----
+MIIFBjCCAu6gAwIBAgIRAIp9PhPWLzDvI4a9KQdrNPgwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMjQwMzEzMDAwMDAw
+WhcNMjcwMzEyMjM1OTU5WjAzMQswCQYDVQQGEwJVUzEWMBQGA1UEChMNTGV0J3Mg
+RW5jcnlwdDEMMAoGA1UEAxMDUjExMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+CgKCAQEAuoe8XBsAOcvKCs3UZxD5ATylTqVhyybKUvsVAbe5KPUoHu0nsyQYOWcJ
+DAjs4DqwO3cOvfPlOVRBDE6uQdaZdN5R2+97/1i9qLcT9t4x1fJyyXJqC4N0lZxG
+AGQUmfOx2SLZzaiSqhwmej/+71gFewiVgdtxD4774zEJuwm+UE1fj5F2PVqdnoPy
+6cRms+EGZkNIGIBloDcYmpuEMpexsr3E+BUAnSeI++JjF5ZsmydnS8TbKF5pwnnw
+SVzgJFDhxLyhBax7QG0AtMJBP6dYuC/FXJuluwme8f7rsIU5/agK70XEeOtlKsLP
+Xzze41xNG/cLJyuqC0J3U095ah2H2QIDAQABo4H4MIH1MA4GA1UdDwEB/wQEAwIB
+hjAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwEwEgYDVR0TAQH/BAgwBgEB
+/wIBADAdBgNVHQ4EFgQUxc9GpOr0w8B6bJXELbBeki8m47kwHwYDVR0jBBgwFoAU
+ebRZ5nu25eQBc4AIiMgaWPbpm24wMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzAC
+hhZodHRwOi8veDEuaS5sZW5jci5vcmcvMBMGA1UdIAQMMAowCAYGZ4EMAQIBMCcG
+A1UdHwQgMB4wHKAaoBiGFmh0dHA6Ly94MS5jLmxlbmNyLm9yZy8wDQYJKoZIhvcN
+AQELBQADggIBAE7iiV0KAxyQOND1H/lxXPjDj7I3iHpvsCUf7b632IYGjukJhM1y
+v4Hz/MrPU0jtvfZpQtSlET41yBOykh0FX+ou1Nj4ScOt9ZmWnO8m2OG0JAtIIE38
+01S0qcYhyOE2G/93ZCkXufBL713qzXnQv5C/viOykNpKqUgxdKlEC+Hi9i2DcaR1
+e9KUwQUZRhy5j/PEdEglKg3l9dtD4tuTm7kZtB8v32oOjzHTYw+7KdzdZiw/sBtn
+UfhBPORNuay4pJxmY/WrhSMdzFO2q3Gu3MUBcdo27goYKjL9CTF8j/Zz55yctUoV
+aneCWs/ajUX+HypkBTA+c8LGDLnWO2NKq0YD/pnARkAnYGPfUDoHR9gVSp/qRx+Z
+WghiDLZsMwhN1zjtSC0uBWiugF3vTNzYIEFfaPG7Ws3jDrAMMYebQ95JQ+HIBD/R
+PBuHRTBpqKlyDnkSHDHYPiNX3adPoPAcgdF3H2/W0rmoswMWgTlLn1Wu0mrks7/q
+pdWfS6PJ1jty80r2VKsM/Dj3YIDfbjXKdaFU5C+8bhfJGqU3taKauuz0wHVGT3eo
+6FlWkWYtbt4pgdamlwVeZEW+LM7qZEJEsMNPrfC03APKmZsJgpWCDWOKZvkZcvjV
+uYkQ4omYCTX5ohy+knMjdOmdH9c7SpqEWBDC86fiNex+O0XOMEZSa8DA
+-----END CERTIFICATE-----`,
+    'x3': `-----BEGIN CERTIFICATE-----
+MIIFjTCCA3WgAwIBAgIRANOxciY0IzLc9AUoUSrsnGowDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTYxMDA2MTU0MzU1
+WhcNMjExMDA2MTU0MzU1WjBKMQswCQYDVQQGEwJVUzEWMBQGA1UEChMNTGV0J3Mg
+RW5jcnlwdDEjMCEGA1UEAxMaTGV0J3MgRW5jcnlwdCBBdXRob3JpdHkgWDMwggEi
+MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCc0wzwWuUuR7dyXTeDs2hjMOrX
+NSYZJeG9vjXxcJIvt7hLQQWrqZ41CFjssSrEaIcLo+N15Obzp2JxunmBYB/XkZqf
+89B4Z3HIaQ6Vkc/+5pnpYDxIzH7KTXcSJJ1HG1rrueweNwAcnKx7pwXqzkrrvUHl
+Npi5y/1tPJZo3yMqQpAMhnRnyH+lmrhSYRQTP2XpgofL2/oOVvaGifOFP5eGr7Dc
+Gu9rDZUWfcQroGWymQQ2dYBrrErzG5BJeC+ilk8qICUpBMZ0wNAxzY8xOJUWuqgz
+uEPxsR/DMH+ieTETPS02+OP88jNquTkxxa/EjQ0dZBYzqvqEKbbUC8DYfcOTAgMB
+AAGjggFnMIIBYzAOBgNVHQ8BAf8EBAMCAYYwEgYDVR0TAQH/BAgwBgEB/wIBADBU
+BgNVHSAETTBLMAgGBmeBDAECATA/BgsrBgEEAYLfEwEBATAwMC4GCCsGAQUFBwIB
+FiJodHRwOi8vY3BzLnJvb3QteDEubGV0c2VuY3J5cHQub3JnMB0GA1UdDgQWBBSo
+SmpjBH3duubRObemRWXv86jsoTAzBgNVHR8ELDAqMCigJqAkhiJodHRwOi8vY3Js
+LnJvb3QteDEubGV0c2VuY3J5cHQub3JnMHIGCCsGAQUFBwEBBGYwZDAwBggrBgEF
+BQcwAYYkaHR0cDovL29jc3Aucm9vdC14MS5sZXRzZW5jcnlwdC5vcmcvMDAGCCsG
+AQUFBzAChiRodHRwOi8vY2VydC5yb290LXgxLmxldHNlbmNyeXB0Lm9yZy8wHwYD
+VR0jBBgwFoAUebRZ5nu25eQBc4AIiMgaWPbpm24wDQYJKoZIhvcNAQELBQADggIB
+ABnPdSA0LTqmRf/Q1eaM2jLonG4bQdEnqOJQ8nCqxOeTRrToEKtwT++36gTSlBGx
+A/5dut82jJQ2jxN8RI8L9QFXrWi4xXnA2EqA10yjHiR6H9cj6MFiOnb5In1eWsRM
+UM2v3e9tNsCAgBukPHAg1lQh07rvFKm/Bz9BCjaxorALINUfZ9DD64j2igLIxle2
+DPxW8dI/F2loHMjXZjqG8RkqZUdoxtID5+90FgsGIfkMpqgRS05f4zPbCEHqCXl1
+eO5HyELTgcVlLXXQDgAWnRzut1hFJeczY1tjQQno6f6s+nMydLN26WuU4s3UYvOu
+OsUxRlJu7TSRHqDC3lSE5XggVkzdaPkuKGQbGpny+01/47hfXXNB7HntWNZ6N2Vw
+p7G6OfY+YQrZwIaQmhrIqJZuigsrbe3W+gdn5ykE9+Ky0VgVUsfxo52mwFYs1JKY
+2PGDuWx8M6DlS6qQkvHaRUo0FMd8TsSlbF0/v965qGFKhSDeQoMpYnwcmQilRh/0
+ayLThlHLN81gSkJjVrPI0Y8xCVPB4twb1PFUd2fPM3sA1tJ83sZ5v8vgFv2yofKR
+PB0t6JzUA81mSqM3kxl5e+IZwhYAyO0OTg3/fs8HqGTNKd9BqoUwSRBzp06JMg5b
+rUCGwbCUDI0mxadJ3Bz4WxR6fyNpBK2yAinWEsikxqEt
+-----END CERTIFICATE-----`
+  };
+
+  /* ── Wiring ───────────────────────────────────────────────── */
+  var inputEl = document.getElementById('cert-input');
+  var decodeBtn = document.getElementById('cert-decode-btn');
+  var clearBtn  = document.getElementById('cert-clear-btn');
+
+  function flashChip(el) {
+    el.classList.add('flash');
+    setTimeout(function() { el.classList.remove('flash'); }, 140);
+  }
+
+  function doDecode() {
+    var pem = inputEl.value.trim();
+    if (!pem) {
+      statusEl.hidden = true;
+      cardsEl.hidden = true;
+      return;
+    }
+    renderCert(pem);
+  }
+
+  decodeBtn.addEventListener('click', doDecode);
+  clearBtn.addEventListener('click', function() {
+    inputEl.value = '';
+    statusEl.hidden = true;
+    cardsEl.hidden = true;
+  });
+  inputEl.addEventListener('input', doDecode);
+
+  document.getElementById('cert-samples').addEventListener('click', function(e) {
+    var b = e.target.closest('.cert-chip');
+    if (!b) return;
+    flashChip(b);
+    var key = b.dataset.sample;
+    if (SAMPLES[key]) { inputEl.value = SAMPLES[key]; doDecode(); }
+  });
+})();
+</script>
+</Base>

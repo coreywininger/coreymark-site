@@ -88,6 +88,15 @@ export const tools: LabTool[] = [
     added: '2026-05-12',
     icon: 'arrow-left-right',
   },
+  {
+    slug: 'cert-decoder',
+    title: 'X.509 certificate decoder',
+    description:
+      'Decode PEM certificates — subject, issuer, validity window with live expiry status, key type and size, Subject Alternative Names, CA flag, serial number, and signature algorithm. Nothing leaves your browser.',
+    discipline: 'security',
+    added: '2026-05-17',
+    icon: 'shield-check',
+  },
 ];
 
 export function toolsByDiscipline(d: Discipline): LabTool[] {

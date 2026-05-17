@@ -32,7 +32,7 @@ export default function ReadingProgress() {
       aria-hidden="true"
       style={{
         position: 'fixed',
-        top: 0,
+        top: '73px',
         left: 0,
         height: '2px',
         width: `${progress}%`,
