@@ -1,5 +1,6 @@
 ---
 import { Menu, X } from '@lucide/astro';
+import NetworkMotif from './NetworkMotif.astro';
 import ThemeToggle from './ThemeToggle.astro';
 
 const navItems = [
@@ -20,7 +21,13 @@ const isActive = (href: string) => {
 ---
 
 <header class="sticky top-0 z-40 border-b border-border-subtle bg-bg-primary/85 backdrop-blur-md">
-  <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+  <div class="pointer-events-none absolute inset-0 overflow-hidden">
+    <NetworkMotif
+      class="absolute -right-10 -top-10 w-95 text-accent-primary"
+      opacity={0.06}
+    />
+  </div>
+  <div class="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
     <a
       href="/"
       class="transition-opacity hover:opacity-80"
