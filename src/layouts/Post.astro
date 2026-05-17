@@ -7,6 +7,8 @@ import AuthorFooter from '../components/AuthorFooter.astro';
 import BackToTop from '../components/BackToTop.astro';
 import CodeCopyEnhancer from '../components/CodeCopyEnhancer.astro';
 import PartOfProject from '../components/PartOfProject.astro';
+import ShareRow from '../components/ShareRow.astro';
+import NewsletterSignup from '../components/NewsletterSignup.astro';
 
 interface Props {
   title: string;
@@ -44,6 +46,7 @@ const formatDate = (d: Date) =>
     month: 'long',
     day: 'numeric',
   });
+const canonicalUrl = new URL(Astro.url.pathname, 'https://coreymark.com').toString();
 ---
 
 <Base title={title} description={description} image={image} ogType="article">
@@ -55,7 +58,7 @@ const formatDate = (d: Date) =>
     "image": image ? new URL(image, "https://coreymark.com").toString() : "https://coreymark.com/og-default.png",
     "datePublished": pubDate instanceof Date ? pubDate.toISOString() : pubDate,
     "dateModified": updatedDate ? (updatedDate instanceof Date ? updatedDate.toISOString() : updatedDate) : (pubDate instanceof Date ? pubDate.toISOString() : pubDate),
-    "url": new URL(Astro.url.pathname, "https://coreymark.com").toString(),
+    "url": canonicalUrl,
     "author": { "@type": "Person", "name": "Corey Wininger", "url": "https://coreymark.com/about" },
     "publisher": { "@type": "Person", "name": "Corey Wininger", "url": "https://coreymark.com" }
   })} />
@@ -110,7 +113,11 @@ const formatDate = (d: Date) =>
         <slot />
       </div>
 
+      <ShareRow title={title} url={canonicalUrl} />
+
       <AuthorFooter />
+
+      <NewsletterSignup />
 
       {(prev || next) && (
         <nav
