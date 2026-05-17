@@ -21,7 +21,7 @@ test.describe('lab index', () => {
     // Disciplines with at least one tool — render.
     await expect(page.locator('[data-lab-section="networking"]')).toHaveCount(1);
     // Empty disciplines — do not render.
-    await expect(page.locator('[data-lab-section="devops"]')).toHaveCount(0);
+    await expect(page.locator('[data-lab-section="devops"]')).toHaveCount(1);
     await expect(page.locator('[data-lab-section="cloud"]')).toHaveCount(0);
   });
 });

@@ -7,7 +7,6 @@ export type LabTool = {
   discipline: Discipline;
   added: string;
   updated?: string;
-  isNew?: boolean;
   icon: string;
 };
 
@@ -33,7 +32,6 @@ export const tools: LabTool[] = [
       'IPv4 and IPv6 CIDR analysis with hosts-needed inverse, reverse DNS zones, and Cisco ACL syntax.',
     discipline: 'networking',
     added: '2026-05-09',
-    isNew: true,
     icon: 'network',
   },
   {
@@ -43,7 +41,6 @@ export const tools: LabTool[] = [
       'Decode any cron expression. Plain English, field breakdown, past and next fires around any pivot date, with translations to systemd, Kubernetes, GitHub Actions, and AWS EventBridge.',
     discipline: 'systems',
     added: '2026-05-09',
-    isNew: true,
     icon: 'clock',
   },
   {
@@ -53,7 +50,6 @@ export const tools: LabTool[] = [
       'Decode JSON Web Tokens. Header, payload, claims with friendly tooltips, expiration countdown, algorithm warnings, and in-browser HMAC signature verification.',
     discipline: 'security',
     added: '2026-05-10',
-    isNew: true,
     icon: 'key-round',
   },
   {
@@ -63,7 +59,6 @@ export const tools: LabTool[] = [
       "What the edge sees about your request — IP (v4/v6), decimal form, country + EU lookup, region, city, coordinates, ASN, Cloudflare colo, User-Agent. Powered by a tiny Worker at ip.coreymark.com.",
     discipline: 'networking',
     added: '2026-05-11',
-    isNew: true,
     icon: 'network',
   },
   {
@@ -73,7 +68,6 @@ export const tools: LabTool[] = [
       'Encode or decode Base64 instantly — text, files, and data URIs. Standard and URL-safe variants, UTF-8 / emoji support, MIME detection from magic bytes, and line-wrap options. Nothing leaves your browser.',
     discipline: 'devops',
     added: '2026-05-12',
-    isNew: true,
     icon: 'lock',
   },
   {
@@ -83,7 +77,6 @@ export const tools: LabTool[] = [
       'Test regular expressions live — match highlighting, capture groups, global/case/multiline flags, replace mode, backtracking warnings, presets, and history.',
     discipline: 'devops',
     added: '2026-05-12',
-    isNew: true,
     icon: 'regex',
   },
   {
@@ -93,7 +86,6 @@ export const tools: LabTool[] = [
       'Convert between JSON and YAML instantly — auto-detects input format, handles K8s manifests and Ansible configs, offers indent control and schema options. Offline, nothing leaves your browser.',
     discipline: 'devops',
     added: '2026-05-12',
-    isNew: true,
     icon: 'arrow-left-right',
   },
 ];
@@ -106,4 +98,8 @@ export function toolsByDiscipline(d: Discipline): LabTool[] {
 
 export function disciplineLabel(d: Discipline): string {
   return disciplines.find((x) => x.id === d)?.label ?? d;
+}
+
+export function isToolNew(added: string): boolean {
+  return Date.now() - new Date(added).getTime() < 30 * 24 * 60 * 60 * 1000;
 }
