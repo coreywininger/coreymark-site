@@ -9,6 +9,7 @@ import CodeCopyEnhancer from '../components/CodeCopyEnhancer.astro';
 import PartOfProject from '../components/PartOfProject.astro';
 import ShareRow from '../components/ShareRow.astro';
 import NewsletterSignup from '../components/NewsletterSignup.astro';
+import Giscus from '../components/Giscus.astro';
 
 interface Props {
   title: string;
@@ -118,6 +119,8 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://coreymark.com').toStri
       <AuthorFooter />
 
       <NewsletterSignup />
+
+      <Giscus />
 
       {(prev || next) && (
         <nav

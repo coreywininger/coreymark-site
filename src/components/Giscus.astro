@@ -1,0 +1,53 @@
+---
+// No props — Giscus config is fixed for coreymark.com.
+// Dynamically loads Giscus with the correct initial theme and syncs
+// when the site's dark/light toggle fires.
+---
+
+<div id="giscus-container" class="mt-10"></div>
+
+<script>
+  function getTheme(): string {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+
+  function loadGiscus(): void {
+    const container = document.getElementById('giscus-container');
+    if (!container) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://giscus.app/client.js';
+    script.setAttribute('data-repo', 'coreywininger/coreymark-site');
+    script.setAttribute('data-repo-id', 'R_kgDOSG1SZQ');
+    script.setAttribute('data-category', 'Comments');
+    script.setAttribute('data-category-id', 'DIC_kwDOSG1SZc4C9Qe2');
+    script.setAttribute('data-mapping', 'pathname');
+    script.setAttribute('data-strict', '0');
+    script.setAttribute('data-reactions-enabled', '1');
+    script.setAttribute('data-emit-metadata', '0');
+    script.setAttribute('data-input-position', 'bottom');
+    script.setAttribute('data-theme', getTheme());
+    script.setAttribute('data-lang', 'en');
+    script.setAttribute('crossorigin', 'anonymous');
+    script.async = true;
+    container.appendChild(script);
+  }
+
+  function sendTheme(theme: string): void {
+    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+    if (!iframe?.contentWindow) return;
+    iframe.contentWindow.postMessage(
+      { giscus: { setConfig: { theme } } },
+      'https://giscus.app'
+    );
+  }
+
+  // Load Giscus with current theme on page load
+  loadGiscus();
+
+  // Sync theme when the site toggle changes the data-theme attribute on <html>
+  new MutationObserver(() => sendTheme(getTheme())).observe(
+    document.documentElement,
+    { attributes: true, attributeFilter: ['data-theme'] }
+  );
+</script>
