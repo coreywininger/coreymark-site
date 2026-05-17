@@ -1,0 +1,57 @@
+---
+title: "ip.coreymark.com"
+summary: "A Cloudflare Worker that returns full request inspection data — IP (v4/v6), geolocation, ASN, user-agent, headers, and more — designed as a privacy-respecting ifconfig.co alternative."
+pubDate: 2026-05-11
+stack:
+  - Cloudflare Workers
+  - TypeScript
+  - Wrangler
+  - GitHub Actions
+status: live
+featured: false
+links:
+  live: https://ip.coreymark.com
+  repo: https://github.com/coreywininger/coreymark-ip-worker
+draft: false
+---
+
+## Why this project exists
+
+Needed a reliable, privacy-respecting way to inspect what the edge sees
+about a request — IP address, geolocation, ASN, user-agent, and more.
+The existing tools (ifconfig.co, whatismyipaddress.com) work but come
+with ads, tracking, or privacy tradeoffs. This one doesn't.
+
+A reader of /lab/ asked for something like it. Seemed worth building it
+right.
+
+## What it is
+
+A Cloudflare Worker deployed on the `coreymark.com` zone at
+`ip.coreymark.com`. It content-negotiates between HTML and JSON
+depending on the `Accept` header, and exposes a suite of endpoints
+mirroring ifconfig.co's API surface:
+
+`/`, `/ip`, `/ip/decimal`, `/json`, `/all.json`, `/country`,
+`/country-iso`, `/eu`, `/city`, `/asn`, `/ua`, `/headers`, `/health`
+
+The `/lab/whatsmyip/` page on this site fetches from the Worker
+client-side and renders all fields in a readable layout — no server
+round-trip, no data stored anywhere.
+
+## The guardrails
+
+- **Zero server-side logging.** No IPs, no user agents, no request
+  data stored anywhere.
+- **Zero outbound fetches.** The Worker never calls a third-party API.
+  All data comes from Cloudflare's request metadata.
+- **`Cache-Control: no-store`** on every response. No stale data served
+  to a subsequent visitor.
+- **Rate-limited at the edge.** Cloudflare rate limiting rule at the CF
+  edge bounds abuse. The Worker never returns data the caller didn't
+  already supply — nothing privileged to gatekeep.
+
+## Status
+
+Live at [ip.coreymark.com](https://ip.coreymark.com) since May 11,
+2026. The companion page is at [/lab/whatsmyip/](/lab/whatsmyip/).
