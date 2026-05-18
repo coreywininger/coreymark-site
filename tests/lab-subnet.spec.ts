@@ -104,6 +104,7 @@ test.describe('subnet calculator', () => {
     const input = page.locator('#cidr-input');
     await input.fill('192.168.5.0/24');
     await input.press('Enter');
+    await expect(page.locator('[data-stat="Network address"]')).toContainText('192.168.5.0/24');
     await page.reload();
     const stored = await page.evaluate(() =>
       localStorage.getItem('coreymark.lab.subnet.history')
