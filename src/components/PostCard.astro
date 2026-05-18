@@ -26,6 +26,7 @@ const Heading = `h${headingLevel}` as const;
 <article
   class="group relative flex flex-col gap-3 rounded-lg border border-border-subtle bg-bg-elevated p-6 transition-colors hover:border-accent-primary focus-within:ring-2 focus-within:ring-accent-primary focus-within:ring-offset-2 focus-within:ring-offset-bg-primary"
   data-pillar={pillar}
+  data-search-text={`${title} ${description ?? ''}`}
 >
   <div class="flex items-center gap-3 text-xs">
     <span class="font-semibold uppercase tracking-wide text-accent-primary">

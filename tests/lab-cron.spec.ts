@@ -156,6 +156,7 @@ test.describe('cron decoder', () => {
     const input = page.locator('#cron-input');
     await input.fill('15 14 1 * *');
     await input.press('Enter');
+    await expect(page).toHaveTitle(/15 14 1 \* \* — Cron decoder/, { timeout: 5000 });
     await page.reload();
     const stored = await page.evaluate(() =>
       localStorage.getItem('coreymark.lab.cron.history'),

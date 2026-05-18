@@ -1,0 +1,143 @@
+---
+import { X } from '@lucide/astro';
+---
+
+<div
+  id="search-overlay"
+  class="search-overlay"
+  aria-hidden="true"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Site search"
+>
+  <div class="search-overlay-backdrop"></div>
+  <div class="search-overlay-panel">
+    <div class="search-overlay-header">
+      <span class="search-overlay-label">Search</span>
+      <button id="search-close" aria-label="Close search" class="search-close-btn">
+        <X size={18} strokeWidth={1.75} />
+      </button>
+    </div>
+    <div id="pagefind-ui"></div>
+  </div>
+</div>
+
+<style>
+  .search-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+  }
+  .search-overlay.open {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 10vh;
+  }
+  .search-overlay-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+  }
+  .search-overlay-panel {
+    position: relative;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 8px;
+    width: min(640px, 90vw);
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 1.25rem;
+  }
+  .search-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .search-overlay-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-secondary);
+  }
+  .search-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .search-close-btn:hover {
+    color: var(--color-text-primary);
+  }
+
+  :global(#pagefind-ui .pagefind-ui__search-input) {
+    background: var(--color-bg-secondary) !important;
+    border-color: var(--color-border-subtle) !important;
+    color: var(--color-text-primary) !important;
+    border-radius: 6px !important;
+    font-size: 1rem !important;
+  }
+  :global(#pagefind-ui .pagefind-ui__result-title) {
+    color: var(--color-accent-primary) !important;
+  }
+  :global(#pagefind-ui .pagefind-ui__result-excerpt) {
+    color: var(--color-text-secondary) !important;
+  }
+  :global(#pagefind-ui mark) {
+    background: color-mix(in srgb, var(--color-accent-primary) 20%, transparent) !important;
+    color: var(--color-text-primary) !important;
+  }
+</style>
+
+<script>
+  import { PagefindUI } from '@pagefind/default-ui';
+
+  let initialized = false;
+
+  const overlay = document.getElementById('search-overlay') as HTMLElement;
+  const trigger = document.getElementById('search-trigger');
+  const closeBtn = document.getElementById('search-close');
+  const backdrop = overlay?.querySelector('.search-overlay-backdrop');
+
+  function openSearch() {
+    if (!initialized) {
+      new PagefindUI({
+        element: '#pagefind-ui',
+        showImages: false,
+        resetStyles: true,
+      });
+      initialized = true;
+    }
+    overlay?.classList.add('open');
+    overlay?.setAttribute('aria-hidden', 'false');
+    setTimeout(() => {
+      const input = overlay?.querySelector('input[type="text"]') as HTMLInputElement | null;
+      input?.focus();
+    }, 50);
+  }
+
+  function closeSearch() {
+    overlay?.classList.remove('open');
+    overlay?.setAttribute('aria-hidden', 'true');
+  }
+
+  trigger?.addEventListener('click', openSearch);
+  closeBtn?.addEventListener('click', closeSearch);
+  backdrop?.addEventListener('click', closeSearch);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay?.classList.contains('open')) closeSearch();
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      openSearch();
+    }
+  });
+</script>

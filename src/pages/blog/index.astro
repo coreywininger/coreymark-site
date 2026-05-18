@@ -35,6 +35,16 @@ const pillarCounts = pillarOrder.reduce<Record<string, number>>(
       </p>
     </header>
 
+    <div class="mb-6">
+      <input
+        type="text"
+        id="blog-search-input"
+        placeholder="Search posts…"
+        autocomplete="off"
+        class="w-full rounded-lg border border-border-subtle bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none transition-colors"
+      />
+    </div>
+
     <nav aria-label="Filter by pillar" class="mb-8">
       <ul class="flex flex-wrap gap-2 text-sm" data-pillar-filters>
         <li>
@@ -81,6 +91,10 @@ const pillarCounts = pillarOrder.reduce<Record<string, number>>(
   const cards = document.querySelectorAll<HTMLElement>(
     '[data-post-list] [data-pillar]',
   );
+  const searchInput = document.getElementById('blog-search-input') as HTMLInputElement | null;
+
+  let activeFilter = 'all';
+  let searchQuery = '';
 
   const setActive = (target: HTMLButtonElement) => {
     buttons.forEach((b) => {
@@ -95,14 +109,27 @@ const pillarCounts = pillarOrder.reduce<Record<string, number>>(
     });
   };
 
+  function applyFilters() {
+    const q = searchQuery.toLowerCase().trim();
+    cards.forEach((card) => {
+      const pillar = card.dataset.pillar ?? '';
+      const text = (card.getAttribute('data-search-text') ?? '').toLowerCase();
+      const pillarMatch = activeFilter === 'all' || pillar === activeFilter;
+      const searchMatch = !q || text.includes(q);
+      card.hidden = !(pillarMatch && searchMatch);
+    });
+  }
+
   buttons.forEach((button) => {
     button.addEventListener('click', () => {
-      const filter = button.dataset.filter;
+      activeFilter = button.dataset.filter ?? 'all';
       setActive(button);
-      cards.forEach((card) => {
-        const pillar = card.dataset.pillar;
-        card.hidden = filter !== 'all' && pillar !== filter;
-      });
+      applyFilters();
     });
+  });
+
+  searchInput?.addEventListener('input', () => {
+    searchQuery = searchInput.value;
+    applyFilters();
   });
 </script>
