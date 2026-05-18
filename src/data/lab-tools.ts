@@ -97,6 +97,15 @@ export const tools: LabTool[] = [
     added: '2026-05-17',
     icon: 'shield-check',
   },
+  {
+    slug: 'http-status',
+    title: 'HTTP Status Reference',
+    description:
+      'Searchable 1xx–5xx reference. Plain-English descriptions, common causes, and curl test commands for every standard code.',
+    discipline: 'devops',
+    added: '2026-05-18',
+    icon: 'file-question-mark',
+  },
 ];
 
 export function toolsByDiscipline(d: Discipline): LabTool[] {
