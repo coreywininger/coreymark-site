@@ -16,6 +16,7 @@
     }
   },
   "mimeTypes": {
-    ".webmanifest": "application/manifest+json"
+    ".webmanifest": "application/manifest+json",
+    ".pagefind": "application/octet-stream"
   }
 }
