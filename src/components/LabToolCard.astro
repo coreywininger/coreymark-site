@@ -1,5 +1,5 @@
 ---
-import { Network, Server, Shield, GitBranch, Cloud, Clock, KeyRound, Lock, Regex, ArrowLeftRight } from '@lucide/astro';
+import { Network, Server, Shield, GitBranch, Cloud, Clock, KeyRound, Lock, Regex, ArrowLeftRight, FileQuestionMark } from '@lucide/astro';
 import type { LabTool } from '../data/lab-tools';
 import { disciplineLabel, isToolNew } from '../data/lab-tools';
 
@@ -20,6 +20,7 @@ const iconMap = {
   lock: Lock,
   regex: Regex,
   'arrow-left-right': ArrowLeftRight,
+  'file-question-mark': FileQuestionMark,
 } as const;
 
 const Icon = iconMap[tool.icon as keyof typeof iconMap] ?? Network;

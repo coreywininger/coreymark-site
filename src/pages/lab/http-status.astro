@@ -1,0 +1,559 @@
+---
+import Base from '../../layouts/Base.astro';
+const title = 'HTTP Status Reference · Corey Wininger';
+const description =
+  'Searchable HTTP status code reference — every standard 1xx–5xx code with plain-English descriptions, common causes, and curl test commands. Nothing leaves your browser.';
+---
+
+<Base title={title} description={description}>
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-text-primary">Home</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
+        <li aria-hidden="true">›</li>
+        <li class="text-text-secondary">HTTP Status Reference</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8">
+      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+        HTTP Status Reference
+      </h1>
+      <p class="max-w-2xl text-lg text-text-secondary">
+        Every standard HTTP status code — searchable by number, name, or keyword.
+        Plain-English descriptions and curl test commands. Nothing leaves your browser.
+      </p>
+    </header>
+
+    <h2 class="sr-only">
+      Searchable HTTP status code reference covering 1xx through 5xx. Filter by
+      category, toggle common codes, and copy curl test commands.
+    </h2>
+
+    <div class="lab-tool hs-widget py-4">
+      <div class="hs-controls">
+        <div class="hs-search-row">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search by code, name, or keyword (e.g. 502, gateway, timeout)…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Search HTTP status codes"
+          />
+        </div>
+        <div class="hs-chip-row">
+          <span class="hs-chip-label">Filter:</span>
+          <button class="hs-chip active" data-cat="all">All</button>
+          <button class="hs-chip" data-cat="1">1xx</button>
+          <button class="hs-chip" data-cat="2">2xx</button>
+          <button class="hs-chip" data-cat="3">3xx</button>
+          <button class="hs-chip" data-cat="4">4xx</button>
+          <button class="hs-chip" data-cat="5">5xx</button>
+          <label class="hs-common-toggle">
+            <input type="checkbox" id="common-only" />
+            <span>Common only</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="hs-stats-bar" id="stats-bar" aria-live="polite" aria-atomic="true"></div>
+      <div class="hs-results" id="results"></div>
+    </div>
+
+    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
+      <summary class="cursor-pointer text-base font-semibold text-text-primary">
+        About this tool
+      </summary>
+      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+        <p>
+          Covers all standard HTTP status codes defined in RFC 9110 (HTTP Semantics) plus
+          common extensions. "Common" codes are those a practicing engineer encounters
+          regularly in production systems.
+        </p>
+        <p>
+          The curl test command uses <code>httpstat.us</code> — a public service that
+          returns any status code on demand, useful for testing client behavior or load
+          balancer responses. No requests leave your browser, and nothing is sent to
+          coreymark.com servers.
+        </p>
+      </div>
+    </details>
+
+    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
+      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">DevOps</span>
+      <span>Added 2026-05-18</span>
+    </div>
+  </section>
+
+<style is:global>
+.hs-widget {
+  --hs-c1xx: var(--color-accent-secondary, #60a5fa);
+  --hs-c2xx: var(--color-accent-primary);
+  --hs-c3xx: #fbbf24;
+  --hs-c4xx: #f97316;
+  --hs-c5xx: #f87171;
+  --hs-success: var(--color-success, #34d399);
+}
+[data-theme="light"] .hs-widget {
+  --hs-c1xx: #2563eb;
+  --hs-c3xx: #d97706;
+  --hs-c4xx: #ea580c;
+  --hs-c5xx: #dc2626;
+}
+
+.hs-controls { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
+.hs-search-row { display: flex; gap: 0.5rem; }
+
+#search-input {
+  flex: 1;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.12s, opacity 0.12s;
+}
+#search-input:focus { border-color: var(--color-accent-primary); }
+#search-input::placeholder { color: var(--color-text-tertiary); }
+
+.hs-chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.hs-chip {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  border-radius: 4px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.12s;
+  user-select: none;
+}
+.hs-chip:hover { border-color: var(--color-accent-primary); color: var(--color-text-primary); }
+.hs-chip.active { background: var(--color-accent-primary); border-color: var(--color-accent-primary); color: #111318; }
+.hs-chip.flash { background: var(--color-text-primary) !important; color: var(--color-bg-primary) !important; }
+.hs-chip[data-cat="1"].active { background: var(--hs-c1xx); border-color: var(--hs-c1xx); }
+.hs-chip[data-cat="2"].active { background: var(--hs-c2xx); border-color: var(--hs-c2xx); }
+.hs-chip[data-cat="3"].active { background: var(--hs-c3xx); border-color: var(--hs-c3xx); }
+.hs-chip[data-cat="4"].active { background: var(--hs-c4xx); border-color: var(--hs-c4xx); }
+.hs-chip[data-cat="5"].active { background: var(--hs-c5xx); border-color: var(--hs-c5xx); }
+.hs-chip-label { font-size: 0.75rem; color: var(--color-text-tertiary); }
+
+.hs-common-toggle {
+  display: flex; align-items: center; gap: 0.5rem;
+  cursor: pointer; margin-left: auto;
+  font-size: 0.85rem; color: var(--color-text-secondary);
+}
+.hs-common-toggle input { cursor: pointer; accent-color: var(--color-accent-primary); }
+
+.hs-stats-bar { font-size: 0.8rem; color: var(--color-text-tertiary); margin-bottom: 0.75rem; min-height: 1.2em; }
+
+.hs-results { display: flex; flex-direction: column; }
+.hs-code-row {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.hs-code-row:last-child { border-bottom: none; }
+.hs-code-row.highlighted {
+  background: color-mix(in srgb, var(--color-accent-primary) 8%, transparent);
+  border-radius: 6px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.hs-code-badge { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.hs-cat-1 .hs-code-badge { color: var(--hs-c1xx); }
+.hs-cat-2 .hs-code-badge { color: var(--hs-c2xx); }
+.hs-cat-3 .hs-code-badge { color: var(--hs-c3xx); }
+.hs-cat-4 .hs-code-badge { color: var(--hs-c4xx); }
+.hs-cat-5 .hs-code-badge { color: var(--hs-c5xx); }
+
+.hs-code-info { min-width: 0; }
+.hs-code-name {
+  font-weight: 600; font-size: 0.95rem; color: var(--color-text-primary);
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.hs-badge-common {
+  font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  background: color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
+  color: var(--color-accent-primary); border-radius: 3px; padding: 0.1rem 0.35rem;
+}
+.hs-badge-rfc { font-size: 0.65rem; color: var(--color-text-tertiary); font-weight: 400; }
+.hs-code-desc { font-size: 0.875rem; color: var(--color-text-secondary); margin-top: 0.2rem; }
+.hs-code-detail { font-size: 0.8rem; color: var(--color-text-tertiary); margin-top: 0.3rem; line-height: 1.5; }
+.hs-code-detail strong { color: var(--color-text-secondary); }
+
+.hs-code-actions { display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end; flex-shrink: 0; }
+.hs-btn-copy {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  border-radius: 4px; padding: 0.2rem 0.55rem;
+  font-size: 0.75rem; font-family: inherit;
+  cursor: pointer; white-space: nowrap; transition: all 0.12s;
+}
+.hs-btn-copy:hover { border-color: var(--color-accent-primary); color: var(--color-accent-primary); }
+.hs-btn-copy.copied { border-color: var(--hs-success); color: var(--hs-success); }
+
+.hs-empty-state { text-align: center; padding: 3rem 1rem; color: var(--color-text-tertiary); }
+
+@media (max-width: 600px) {
+  .hs-code-row { grid-template-columns: 60px 1fr; }
+  .hs-code-actions { display: none; }
+}
+</style>
+
+<script is:inline>
+(function () {
+var CODES = [
+  // 1xx
+  { code: 100, name: "Continue", cat: 1, common: false, rfc: "RFC 9110",
+    desc: "Server has received the request headers; client should proceed to send the request body.",
+    detail: "<strong>When you see it:</strong> Large uploads where the client sends Expect: 100-continue first. <strong>Action:</strong> Proceed with sending the body." },
+  { code: 101, name: "Switching Protocols", cat: 1, common: false, rfc: "RFC 9110",
+    desc: "Server agrees to switch protocols as requested by the client's Upgrade header.",
+    detail: "<strong>When you see it:</strong> HTTP → WebSocket upgrade negotiation. Normal and expected. <strong>Action:</strong> None — connection handshake is proceeding." },
+  { code: 102, name: "Processing", cat: 1, common: false, rfc: "RFC 2518 (WebDAV)",
+    desc: "Server has received the request and is still processing it. Used to prevent timeout on long requests.",
+    detail: "<strong>When you see it:</strong> WebDAV operations; some API gateways that send periodic keepalives. Not part of core HTTP/1.1." },
+  { code: 103, name: "Early Hints", cat: 1, common: false, rfc: "RFC 8297",
+    desc: "Server sends response headers early to let the client start preloading resources before the final response.",
+    detail: "<strong>When you see it:</strong> CDN/edge optimization. Allows Link: preload headers for critical assets before the full 200 arrives. Browser optimization, not typically seen in API work." },
+
+  // 2xx
+  { code: 200, name: "OK", cat: 2, common: true, rfc: "RFC 9110",
+    desc: "Request succeeded. Response body contains the requested resource or the result of the operation.",
+    detail: "<strong>GET:</strong> Resource in body. <strong>POST:</strong> Result of action in body. <strong>PUT/PATCH:</strong> Updated resource in body. Most common response in existence." },
+  { code: 201, name: "Created", cat: 2, common: true, rfc: "RFC 9110",
+    desc: "Request succeeded and a new resource was created. Location header usually points to the new resource.",
+    detail: "<strong>When you see it:</strong> POST to a resource-creation endpoint. <strong>Should include:</strong> Location header with the URI of the created resource. <strong>Gotcha:</strong> Many APIs return 200 for creation — 201 is more semantically correct." },
+  { code: 202, name: "Accepted", cat: 2, common: false, rfc: "RFC 9110",
+    desc: "Request accepted for processing but processing is not yet complete. Used for async operations.",
+    detail: "<strong>When you see it:</strong> Queued jobs, batch operations, async workflows. The response may include a polling URL. <strong>Gotcha:</strong> No guarantee the processing will ever succeed — check for a callback or polling mechanism." },
+  { code: 203, name: "Non-Authoritative Information", cat: 2, common: false, rfc: "RFC 9110",
+    desc: "Successful response but headers are from a transforming proxy, not the origin server.",
+    detail: "<strong>When you see it:</strong> Proxy or CDN modified the response headers. Body is from the origin. Rarely seen in direct API calls." },
+  { code: 204, name: "No Content", cat: 2, common: true, rfc: "RFC 9110",
+    desc: "Request succeeded but there is no response body to return.",
+    detail: "<strong>When you see it:</strong> DELETE requests, PATCH/PUT when the response doesn't need to echo back the resource. <strong>Gotcha:</strong> Some HTTP clients and frameworks choke on a 204 with an unexpected body — ensure the server sends zero bytes." },
+  { code: 206, name: "Partial Content", cat: 2, common: true, rfc: "RFC 9110",
+    desc: "Server is delivering only part of the resource in response to a Range request.",
+    detail: "<strong>When you see it:</strong> Video streaming, large file downloads with resume support. Client sent a Range header. <strong>Headers to check:</strong> Content-Range (byte range returned), Accept-Ranges (server capability)." },
+  { code: 207, name: "Multi-Status", cat: 2, common: false, rfc: "RFC 4918 (WebDAV)",
+    desc: "Response body contains multiple status codes for multiple independent operations.",
+    detail: "<strong>When you see it:</strong> WebDAV batch operations; some REST APIs that process bulk requests. Body is XML (WebDAV) or JSON with per-item status. <strong>Gotcha:</strong> Overall HTTP code is 207 even if some items failed — must inspect the body." },
+  { code: 226, name: "IM Used", cat: 2, common: false, rfc: "RFC 3229",
+    desc: "Server has fulfilled a GET request and the response is a representation of the result of one or more instance-manipulations applied to the current instance.",
+    detail: "<strong>When you see it:</strong> HTTP delta encoding (RFC 3229). Extremely rare in production — enables bandwidth savings for frequently-updated resources." },
+
+  // 3xx
+  { code: 301, name: "Moved Permanently", cat: 3, common: true, rfc: "RFC 9110",
+    desc: "Resource has permanently moved to the URL in the Location header. Clients should update bookmarks.",
+    detail: "<strong>SEO impact:</strong> Passes link equity. Browsers cache this permanently (until cache clears). <strong>Gotcha:</strong> Browsers may change POST to GET on redirect (use 308 to preserve method). Test with curl to confirm Location header." },
+  { code: 302, name: "Found", cat: 3, common: true, rfc: "RFC 9110",
+    desc: "Resource temporarily at the URL in the Location header. Clients should continue using the original URL.",
+    detail: "<strong>Gotcha:</strong> Like 301, browsers historically change POST to GET. For temporary redirects that preserve method, use 307. For permanent method-preserving redirects, use 308. Overused as a generic redirect." },
+  { code: 303, name: "See Other", cat: 3, common: false, rfc: "RFC 9110",
+    desc: "Response to the request can be found at another URI. Always redirects with GET, regardless of original method.",
+    detail: "<strong>Common pattern:</strong> Post/Redirect/Get (PRG) — after a POST, redirect to a GET to prevent form resubmission on browser refresh. The correct code for this pattern; 302 is often misused here." },
+  { code: 304, name: "Not Modified", cat: 3, common: true, rfc: "RFC 9110",
+    desc: "Resource has not changed since the version specified by the request's If-Modified-Since or If-None-Match headers.",
+    detail: "<strong>When you see it:</strong> Conditional GET cache hit. No body is returned — client uses its cached copy. <strong>Response must NOT include:</strong> body, Content-Type, Content-Length. <strong>Debugging:</strong> Check ETag and Last-Modified header handling if you're not seeing expected cache hits." },
+  { code: 307, name: "Temporary Redirect", cat: 3, common: true, rfc: "RFC 9110",
+    desc: "Resource temporarily at the Location header URL. Client must use the same method for the redirected request.",
+    detail: "<strong>Vs 302:</strong> 307 guarantees method preservation (POST stays POST). Use 307 when temporarily routing POST requests to a different endpoint. Not cached by default." },
+  { code: 308, name: "Permanent Redirect", cat: 3, common: true, rfc: "RFC 9110",
+    desc: "Resource permanently moved to Location header URL. Method and body are preserved on redirect.",
+    detail: "<strong>Vs 301:</strong> 308 preserves the HTTP method (POST stays POST). Use for permanent API endpoint migrations where POST/PUT/DELETE semantics must be maintained. Browsers cache this." },
+
+  // 4xx
+  { code: 400, name: "Bad Request", cat: 4, common: true, rfc: "RFC 9110",
+    desc: "Server cannot process the request due to a client error — malformed syntax, invalid request message framing, or deceptive request routing.",
+    detail: "<strong>Common causes:</strong> Invalid JSON body, missing required fields, wrong Content-Type, query parameter validation failure. <strong>Action:</strong> Check request body and headers. A good API includes a message body describing the specific error." },
+  { code: 401, name: "Unauthorized", cat: 4, common: true, rfc: "RFC 9110",
+    desc: "Request lacks valid authentication credentials. Client must authenticate to get the requested response.",
+    detail: "<strong>Gotcha:</strong> Despite the name, 401 means <em>unauthenticated</em>, not unauthorized. <strong>Vs 403:</strong> 401 = \"who are you?\" 403 = \"I know who you are, but you can't do this.\" Response should include WWW-Authenticate header. <strong>Action:</strong> Check Bearer token, API key, or session cookie." },
+  { code: 402, name: "Payment Required", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "Reserved for future use. Originally intended for digital payment systems. Now used by some APIs for quota/billing errors.",
+    detail: "<strong>In practice:</strong> Stripe, OpenAI, and other paid APIs return this when a billing limit is hit or payment method fails. No standard behavior defined." },
+  { code: 403, name: "Forbidden", cat: 4, common: true, rfc: "RFC 9110",
+    desc: "Server understood the request but refuses to authorize it. Authentication won't help.",
+    detail: "<strong>Vs 401:</strong> 403 = authenticated but not permitted. 401 = not authenticated. <strong>Common causes:</strong> Missing IAM role or permission, IP allowlist block, rate limiting at the authorization layer, CORS preflight failure. <strong>Gotcha:</strong> Servers sometimes return 403 instead of 404 to avoid revealing that a resource exists." },
+  { code: 404, name: "Not Found", cat: 4, common: true, rfc: "RFC 9110",
+    desc: "Server cannot find the requested resource. The URL may be wrong, the resource may have been deleted, or it may never have existed.",
+    detail: "<strong>Common causes:</strong> Typo in URL, resource deleted, wrong API version in path, case-sensitive path mismatch on Linux servers. <strong>Vs 410:</strong> 404 = unknown/missing. 410 = was here, now permanently gone. <strong>Note:</strong> Servers deliberately return 404 (vs 403) to avoid leaking that a resource exists." },
+  { code: 405, name: "Method Not Allowed", cat: 4, common: true, rfc: "RFC 9110",
+    desc: "The HTTP method is not supported for the requested resource. Response must include an Allow header listing supported methods.",
+    detail: "<strong>Common causes:</strong> POSTing to a read-only endpoint, using DELETE on a resource that doesn't support it, sending GET where POST is required. <strong>Action:</strong> Check the Allow response header for the correct method list." },
+  { code: 406, name: "Not Acceptable", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "Server cannot produce a response matching the acceptable content types listed in the request's Accept headers.",
+    detail: "<strong>Common causes:</strong> Client requested Accept: application/xml but server only speaks JSON. <strong>Action:</strong> Check Accept, Accept-Encoding, Accept-Language headers. In practice, many APIs ignore this and return their default format regardless." },
+  { code: 407, name: "Proxy Authentication Required", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "Client must authenticate with the proxy server before making the request.",
+    detail: "<strong>When you see it:</strong> Corporate proxy environments, explicit proxy configurations. Proxy-Authenticate header will specify the authentication scheme. Similar to 401 but for proxies." },
+  { code: 408, name: "Request Timeout", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "Server timed out waiting for the request. Client may repeat the request without modification.",
+    detail: "<strong>When you see it:</strong> Slow network connection, keep-alive connection that went idle. <strong>Vs 504:</strong> 408 is client → server timeout. 504 is upstream server timeout." },
+  { code: 409, name: "Conflict", cat: 4, common: true, rfc: "RFC 9110",
+    desc: "Request conflicts with the current state of the server.",
+    detail: "<strong>Common causes:</strong> Optimistic locking conflict (ETag mismatch), unique constraint violation (duplicate resource), creating a resource that already exists, version conflicts in APIs. <strong>Action:</strong> Re-fetch the resource and retry, or resolve the conflict before retrying." },
+  { code: 410, name: "Gone", cat: 4, common: true, rfc: "RFC 9110",
+    desc: "Resource existed here but has been permanently removed. Unlike 404, the server knows it's gone for good.",
+    detail: "<strong>SEO:</strong> Tells search engines to remove the URL from their index. Better than 404 for explicitly decommissioned pages. <strong>In APIs:</strong> Use for deleted resources when you want clients to stop retrying rather than assuming a transient error." },
+  { code: 411, name: "Length Required", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "Server requires the request to use a Content-Length header.",
+    detail: "<strong>When you see it:</strong> Server doesn't support chunked Transfer-Encoding. Rare in modern APIs. <strong>Action:</strong> Add Content-Length: [byte count] header to your request." },
+  { code: 412, name: "Precondition Failed", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "One or more conditions given in the request header fields were false when tested on the server.",
+    detail: "<strong>Common causes:</strong> If-Match / If-None-Match / If-Unmodified-Since conditional request failed — usually an optimistic locking mechanism. <strong>Action:</strong> Re-fetch the current resource state and retry with updated ETag." },
+  { code: 413, name: "Content Too Large", cat: 4, common: true, rfc: "RFC 9110",
+    desc: "Request body exceeds the server's maximum allowed size.",
+    detail: "<strong>Common causes:</strong> File upload over limit, JSON body too large, nginx/Apache body size limit hit. <strong>Action:</strong> Check server's client_max_body_size (nginx) or LimitRequestBody (Apache) config. For APIs, reduce payload or use multipart/chunked transfer." },
+  { code: 414, name: "URI Too Long", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "The request URI is longer than the server is willing to process.",
+    detail: "<strong>Common causes:</strong> Overly long query strings, accidentally encoding a large payload into a GET URL instead of POST body. Most servers limit URLs to 8KB. <strong>Action:</strong> Move data to request body with POST/PUT." },
+  { code: 415, name: "Unsupported Media Type", cat: 4, common: true, rfc: "RFC 9110",
+    desc: "Server refuses the request because the Content-Type or Content-Encoding is not supported.",
+    detail: "<strong>Common causes:</strong> Sending application/x-www-form-urlencoded to an endpoint that expects application/json, or vice versa. <strong>Action:</strong> Check Content-Type header on your request matches what the server expects." },
+  { code: 416, name: "Range Not Satisfiable", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "The server cannot satisfy the Range header in the request — the range falls outside the resource's current extent.",
+    detail: "<strong>When you see it:</strong> Range request (e.g., for partial download) specifies a byte range beyond the file's actual size. Response includes Content-Range with the total size." },
+  { code: 417, name: "Expectation Failed", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "Server cannot meet the requirements of the Expect request header.",
+    detail: "<strong>Common cause:</strong> Client sent Expect: 100-continue but server doesn't support it. Rarely encountered with modern servers." },
+  { code: 418, name: "I'm a Teapot", cat: 4, common: false, rfc: "RFC 2324 (HTCPCP)",
+    desc: "The server refuses to brew coffee because it is, permanently, a teapot.",
+    detail: "<strong>Origin:</strong> April Fools' RFC 2324 (Hyper Text Coffee Pot Control Protocol, 1998). <strong>In practice:</strong> Some APIs use it as a catch-all for requests they intentionally refuse. Not intended for real use but forever part of the spec." },
+  { code: 421, name: "Misdirected Request", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "Request was directed at a server that is not able to produce a response for that combination of scheme and authority.",
+    detail: "<strong>When you see it:</strong> HTTP/2 connection reuse issues, misconfigured reverse proxy or load balancer routing requests to the wrong backend. Indicates a routing infrastructure problem." },
+  { code: 422, name: "Unprocessable Content", cat: 4, common: true, rfc: "RFC 9110",
+    desc: "Server understands the request's Content-Type and syntax is correct, but the semantic content is invalid.",
+    detail: "<strong>When you see it:</strong> Widely used by REST APIs for validation errors — well-formed JSON but business logic validation failed (e.g., invalid email format, start date after end date). <strong>Vs 400:</strong> 400 = can't parse it. 422 = parsed it but it's logically wrong." },
+  { code: 423, name: "Locked", cat: 4, common: false, rfc: "RFC 4918 (WebDAV)",
+    desc: "The resource being accessed is locked.",
+    detail: "<strong>When you see it:</strong> WebDAV environments. Resource is exclusively locked by another client. <strong>Action:</strong> Wait for lock release, or use LOCK/UNLOCK methods (WebDAV)." },
+  { code: 425, name: "Too Early", cat: 4, common: false, rfc: "RFC 8470",
+    desc: "Server is unwilling to risk processing a request that might be replayed.",
+    detail: "<strong>When you see it:</strong> TLS 1.3 early data (0-RTT) — server refuses to process a request sent in the early data phase that could be replayed by an attacker. Rare in typical API work." },
+  { code: 426, name: "Upgrade Required", cat: 4, common: false, rfc: "RFC 9110",
+    desc: "Client should switch to a different protocol, specified in the Upgrade header.",
+    detail: "<strong>When you see it:</strong> Server requires TLS where plain HTTP was used, or a specific protocol version. Response includes Upgrade header. Rare in practice — most servers either enforce TLS at the load balancer or redirect via 301." },
+  { code: 428, name: "Precondition Required", cat: 4, common: false, rfc: "RFC 6585",
+    desc: "Origin server requires the request to be conditional. Used to prevent lost update problems.",
+    detail: "<strong>When you see it:</strong> API enforces optimistic locking — client must send If-Match (ETag) to prevent overwriting concurrent changes. <strong>Action:</strong> Fetch the resource first, include the ETag in If-Match, then retry the update." },
+  { code: 429, name: "Too Many Requests", cat: 4, common: true, rfc: "RFC 6585",
+    desc: "Client has sent too many requests in a given time window. Rate limit exceeded.",
+    detail: "<strong>Headers to check:</strong> Retry-After (when to retry), X-RateLimit-Limit (limit), X-RateLimit-Remaining (requests left), X-RateLimit-Reset (reset timestamp). <strong>Action:</strong> Implement exponential backoff with jitter. Cache responses where possible." },
+  { code: 431, name: "Request Header Fields Too Large", cat: 4, common: false, rfc: "RFC 6585",
+    desc: "Server is unwilling to process the request because its header fields are too large.",
+    detail: "<strong>Common causes:</strong> Excessively large cookies, very long Authorization headers (e.g., JWT with many claims), large number of custom headers. <strong>Action:</strong> Trim cookies, reduce JWT payload, or check server header size limits." },
+  { code: 451, name: "Unavailable For Legal Reasons", cat: 4, common: false, rfc: "RFC 7725",
+    desc: "Server is denying access to the resource as a consequence of a legal demand.",
+    detail: "<strong>When you see it:</strong> DMCA takedowns, court orders, government-mandated content removal, geo-based legal restrictions. Response may include a Link header with a reference to the legal notice. Named after Fahrenheit 451." },
+
+  // 5xx
+  { code: 500, name: "Internal Server Error", cat: 5, common: true, rfc: "RFC 9110",
+    desc: "Server encountered an unexpected condition that prevented it from fulfilling the request.",
+    detail: "<strong>Translation:</strong> The server crashed or threw an unhandled exception. <strong>Action:</strong> Check server logs immediately — this is almost always a bug or misconfiguration. Usually includes a stack trace in logs. If intermittent, check for memory pressure, timeouts, or upstream dependencies." },
+  { code: 501, name: "Not Implemented", cat: 5, common: false, rfc: "RFC 9110",
+    desc: "Server does not support the functionality required to fulfill the request. Usually refers to an unimplemented HTTP method.",
+    detail: "<strong>Vs 405:</strong> 405 means the method exists but isn't allowed on this resource. 501 means the server doesn't implement this method at all. <strong>In practice:</strong> If your nginx is returning this, check proxy_pass config." },
+  { code: 502, name: "Bad Gateway", cat: 5, common: true, rfc: "RFC 9110",
+    desc: "Server acting as a gateway or proxy received an invalid response from the upstream server.",
+    detail: "<strong>Where to look:</strong> Upstream app server (not the proxy). <strong>Common causes:</strong> App server crashed, upstream container/process not responding, upstream returned an invalid HTTP response, keep-alive timeout mismatch. <strong>Quick check:</strong> Is the upstream service running? Check health endpoint directly." },
+  { code: 503, name: "Service Unavailable", cat: 5, common: true, rfc: "RFC 9110",
+    desc: "Server is not ready to handle the request. Usually temporary — the server is down for maintenance or overloaded.",
+    detail: "<strong>Headers to check:</strong> Retry-After (when service may return). <strong>Common causes:</strong> Deployment in progress, circuit breaker open, connection pool exhausted, DDoS mitigation active, health check failure causing LB to pull server from rotation. <strong>Vs 502:</strong> 503 = server is aware it can't serve. 502 = upstream gave garbage." },
+  { code: 504, name: "Gateway Timeout", cat: 5, common: true, rfc: "RFC 9110",
+    desc: "Server acting as a gateway or proxy did not receive a timely response from an upstream server.",
+    detail: "<strong>Translation:</strong> The proxy (nginx, load balancer, API gateway) waited too long for the backend. <strong>Common causes:</strong> Long-running DB query, slow third-party API, worker thread pool saturated. <strong>Check:</strong> proxy_read_timeout (nginx), upstream health, slow query logs." },
+  { code: 505, name: "HTTP Version Not Supported", cat: 5, common: false, rfc: "RFC 9110",
+    desc: "Server does not support the HTTP version used in the request.",
+    detail: "<strong>When you see it:</strong> Sending an HTTP/2 request to a server that only understands HTTP/1.1, or a very old client sending HTTP/0.9. Rare with modern infrastructure." },
+  { code: 506, name: "Variant Also Negotiates", cat: 5, common: false, rfc: "RFC 2295",
+    desc: "Transparent content negotiation for the request results in a circular reference.",
+    detail: "<strong>When you see it:</strong> Server misconfiguration in content negotiation (Transparent Content Negotiation protocol). Essentially a config bug. Extremely rare." },
+  { code: 507, name: "Insufficient Storage", cat: 5, common: false, rfc: "RFC 4918 (WebDAV)",
+    desc: "Server is unable to store the representation needed to complete the request.",
+    detail: "<strong>When you see it:</strong> WebDAV, some file storage APIs. Server disk is full or quota is exceeded. <strong>Action:</strong> Free disk space, expand quota, or check storage backend health." },
+  { code: 508, name: "Loop Detected", cat: 5, common: false, rfc: "RFC 5842 (WebDAV)",
+    desc: "Server detected an infinite loop while processing the request.",
+    detail: "<strong>When you see it:</strong> WebDAV COPY/MOVE operations that would create a cycle. Also sometimes returned by misconfigured reverse proxies pointing at themselves. <strong>Action:</strong> Check proxy_pass configuration for circular routing." },
+  { code: 510, name: "Not Extended", cat: 5, common: false, rfc: "RFC 2774",
+    desc: "Further extensions to the request are required for the server to fulfill it.",
+    detail: "<strong>When you see it:</strong> HTTP Extension Framework (RFC 2774). Extremely rare — requires specific extension support not common in modern implementations." },
+  { code: 511, name: "Network Authentication Required", cat: 5, common: false, rfc: "RFC 6585",
+    desc: "Client needs to authenticate to gain network access. Typically used by captive portals.",
+    detail: "<strong>When you see it:</strong> Hotel/airport Wi-Fi captive portal, enterprise network access control. Response includes a Link header pointing to the authentication page. <strong>Gotcha:</strong> If you're seeing this from an API call, your client is being intercepted by a captive portal — not an API error." },
+];
+
+var activeCat = 'all';
+var commonOnly = false;
+var searchTerm = '';
+var highlightCode = null;
+
+var hsRendering = false;
+var hsPending = false;
+var hsSearchTimer;
+var hsBusyTimer;
+
+var params = new URLSearchParams(location.search);
+if (params.has('code')) {
+  var c = parseInt(params.get('code'));
+  if (!isNaN(c) && CODES.some(function(x) { return x.code === c; })) {
+    highlightCode = c;
+    activeCat = 'all';
+  }
+}
+
+function setBusyState(busy) {
+  var input = document.getElementById('search-input');
+  if (busy) {
+    clearTimeout(hsBusyTimer);
+    hsBusyTimer = setTimeout(function() {
+      input.placeholder = 'Searching…';
+      input.style.opacity = '0.7';
+    }, 80);
+  } else {
+    clearTimeout(hsBusyTimer);
+    input.placeholder = 'Search by code, name, or keyword (e.g. 502, gateway, timeout)…';
+    input.style.opacity = '';
+  }
+}
+
+function flashChip(btn) {
+  btn.classList.add('flash');
+  setTimeout(function() { btn.classList.remove('flash'); }, 140);
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = orig; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+function curlCmd(code) {
+  return 'curl -s -o /dev/null -w "%{http_code}" https://httpstat.us/' + code;
+}
+
+function getFiltered() {
+  return CODES.filter(function(c) {
+    if (activeCat !== 'all' && c.cat !== parseInt(activeCat)) return false;
+    if (commonOnly && !c.common) return false;
+    if (searchTerm) {
+      var q = searchTerm.toLowerCase();
+      return String(c.code).includes(q) ||
+             c.name.toLowerCase().includes(q) ||
+             c.desc.toLowerCase().includes(q) ||
+             (c.detail && c.detail.replace(/<[^>]+>/g, '').toLowerCase().includes(q));
+    }
+    return true;
+  });
+}
+
+function render() {
+  var filtered = getFiltered();
+  var resultsEl = document.getElementById('results');
+  var statsEl = document.getElementById('stats-bar');
+
+  statsEl.textContent = 'Showing ' + filtered.length + ' of ' + CODES.length + ' codes';
+
+  if (filtered.length === 0) {
+    resultsEl.innerHTML = '<div class="hs-empty-state">No codes match your search. Try a different keyword or clear the filter.</div>';
+    return;
+  }
+
+  resultsEl.innerHTML = filtered.map(function(c) {
+    var isHighlighted = highlightCode === c.code;
+    return '<div class="hs-code-row hs-cat-' + c.cat + (isHighlighted ? ' highlighted' : '') + '" id="code-' + c.code + '" data-code-row>' +
+      '<div class="hs-code-badge">' + c.code + '</div>' +
+      '<div class="hs-code-info">' +
+        '<div class="hs-code-name">' +
+          c.name +
+          (c.common ? ' <span class="hs-badge-common">common</span>' : '') +
+          ' <span class="hs-badge-rfc">' + c.rfc + '</span>' +
+        '</div>' +
+        '<div class="hs-code-desc">' + c.desc + '</div>' +
+        (c.detail ? '<div class="hs-code-detail">' + c.detail + '</div>' : '') +
+      '</div>' +
+      '<div class="hs-code-actions">' +
+        '<button class="hs-btn-copy" data-copy="' + c.code + '" title="Copy status code">Copy ' + c.code + '</button>' +
+        '<button class="hs-btn-copy" data-curl="' + c.code + '" title="Copy curl test command">curl test</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  if (highlightCode) {
+    var el = document.getElementById('code-' + highlightCode);
+    if (el) setTimeout(function() { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+  }
+
+  resultsEl.querySelectorAll('.hs-btn-copy[data-copy]').forEach(function(btn) {
+    btn.addEventListener('click', function() { copyToClipboard(btn.dataset.copy, btn); });
+  });
+  resultsEl.querySelectorAll('.hs-btn-copy[data-curl]').forEach(function(btn) {
+    btn.addEventListener('click', function() { copyToClipboard(curlCmd(parseInt(btn.dataset.curl)), btn); });
+  });
+}
+
+function scheduleRender() {
+  if (hsRendering) { hsPending = true; return; }
+  requestAnimationFrame(function() {
+    setTimeout(function() {
+      hsRendering = true;
+      try { render(); }
+      finally {
+        hsRendering = false;
+        setBusyState(false);
+        if (hsPending) { hsPending = false; scheduleRender(); }
+      }
+    }, 0);
+  });
+}
+
+document.querySelectorAll('.hs-chip[data-cat]').forEach(function(chip) {
+  chip.addEventListener('click', function() {
+    activeCat = chip.dataset.cat;
+    document.querySelectorAll('.hs-chip[data-cat]').forEach(function(c) { c.classList.remove('active'); });
+    chip.classList.add('active');
+    flashChip(chip);
+    highlightCode = null;
+    scheduleRender();
+  });
+});
+
+document.getElementById('common-only').addEventListener('change', function(e) {
+  commonOnly = e.target.checked;
+  highlightCode = null;
+  scheduleRender();
+});
+
+document.getElementById('search-input').addEventListener('input', function(e) {
+  clearTimeout(hsSearchTimer);
+  setBusyState(true);
+  hsSearchTimer = setTimeout(function() {
+    searchTerm = e.target.value.trim();
+    highlightCode = null;
+    scheduleRender();
+  }, 120);
+});
+
+scheduleRender();
+})();
+</script>
+</Base>
