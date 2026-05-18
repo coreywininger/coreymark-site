@@ -19,7 +19,7 @@
     "@astrojs/react": "^5.0.5",
     "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "^3.7.2",
-    "@lucide/astro": "^1.8.0",
+    "@lucide/astro": "^1.16.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.2",
     "@types/react": "^19.2.14",
