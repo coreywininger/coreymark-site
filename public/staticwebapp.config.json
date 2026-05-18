@@ -17,6 +17,9 @@
   },
   "mimeTypes": {
     ".webmanifest": "application/manifest+json",
-    ".pagefind": "application/octet-stream"
+    ".pagefind": "application/octet-stream",
+    ".pf_fragment": "application/octet-stream",
+    ".pf_index": "application/octet-stream",
+    ".pf_meta": "application/octet-stream"
   }
 }
