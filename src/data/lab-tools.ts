@@ -112,3 +112,7 @@ export function disciplineLabel(d: Discipline): string {
 export function isToolNew(added: string): boolean {
   return Date.now() - new Date(added).getTime() < 30 * 24 * 60 * 60 * 1000;
 }
+
+export function isNewPost(pubDate: Date | string): boolean {
+  return Date.now() - new Date(pubDate).getTime() < 14 * 24 * 60 * 60 * 1000;
+}

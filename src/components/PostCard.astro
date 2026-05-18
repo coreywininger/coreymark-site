@@ -2,6 +2,7 @@
 import type { CollectionEntry } from 'astro:content';
 import { PILLAR_META } from '../content.config';
 import { readingTime } from '../lib/readingTime';
+import { isNewPost } from '../data/lab-tools';
 
 interface Props {
   post: CollectionEntry<'blog'>;
@@ -41,6 +42,14 @@ const Heading = `h${headingLevel}` as const;
         <span class="text-text-tertiary">·</span>
         <span class="rounded bg-bg-subtle px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-secondary">
           Draft
+        </span>
+      </>
+    )}
+    {isNewPost(pubDate) && (
+      <>
+        <span class="text-text-tertiary">·</span>
+        <span class="rounded border border-accent-primary/40 bg-accent-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-primary">
+          New
         </span>
       </>
     )}
