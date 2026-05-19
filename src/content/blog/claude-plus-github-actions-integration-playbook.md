@@ -9,6 +9,8 @@ draft: false
 project: dailybriefing
 ---
 
+> **Update — May 2026:** The DailyBriefing repo was redesigned to remove all Google OAuth dependencies. The pattern described in this post is still accurate for multi-user apps or any case where OAuth is genuinely the right tool. If you're building a single-user personal automation, the follow-up post — [DailyBriefing v2: Removing Google OAuth](/blog/dailybriefing-v2-removing-oauth/) — covers what replaced it and why.
+
 Most guides for "send yourself a daily email" stop at the part where everything works on a demo account with a hardcoded API key. The interesting part — the part that decides whether the system still runs six months from now on infrastructure you trust — starts right after that.
 
 This post is that part.
