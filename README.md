@@ -10,6 +10,7 @@ A field report on what it actually took to ship this site with AI assistance is 
 
 ```bash
 npm install
+npx playwright install          # download browser binaries (required once; re-run after Playwright upgrades)
 npm run dev      # local dev server at http://localhost:4321
 npm run build    # production build → dist/
 npm test         # Playwright end-to-end tests
