@@ -1,6 +1,6 @@
 ---
 title: "\"It depends\" is where IT loses the business"
-description: "The most technically-honest answer IT gives is also the one that quietly costs it credibility. Here's why the reflexive hedge reads as evasion — and how to answer honestly without it."
+description: "The most technically-honest answer IT gives is also the one that quietly costs it credibility. Here's why the reflexive hedge reads as evasion."
 pubDate: 2026-06-03
 pillar: business
 tags: [business, leadership, it-strategy]
