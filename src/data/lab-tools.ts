@@ -9,7 +9,6 @@ export type LabTool = {
   discipline: Discipline;
   added: string;
   updated?: string;
-  icon: string;
   /** Short example shown on tool tiles: what you type… */
   sampleInput?: string;
   /** …and what you get back. */
@@ -39,7 +38,6 @@ export const tools: LabTool[] = [
       'IPv4 and IPv6 CIDR analysis with hosts-needed inverse, reverse DNS zones, and Cisco ACL syntax.',
     discipline: 'networking',
     added: '2026-05-09',
-    icon: 'network',
     sampleInput: '10.0.0.0/22',
     sampleOutput: '1,022 usable hosts',
   },
@@ -51,7 +49,6 @@ export const tools: LabTool[] = [
       'Decode any cron expression. Plain English, field breakdown, past and next fires around any pivot date, with translations to systemd, Kubernetes, GitHub Actions, and AWS EventBridge.',
     discipline: 'systems',
     added: '2026-05-09',
-    icon: 'clock',
     sampleInput: '0 7 * * 1-5',
     sampleOutput: '7:00 AM, Monday to Friday',
   },
@@ -63,7 +60,6 @@ export const tools: LabTool[] = [
       'Decode JSON Web Tokens. Header, payload, claims with friendly tooltips, expiration countdown, algorithm warnings, and in-browser HMAC signature verification.',
     discipline: 'security',
     added: '2026-05-10',
-    icon: 'key-round',
     sampleInput: 'eyJhbGciOiJIUzI1NiJ9…',
     sampleOutput: 'Header, claims, expiry',
   },
@@ -75,7 +71,6 @@ export const tools: LabTool[] = [
       "What the edge sees about your request — IP (v4/v6), decimal form, country + EU lookup, region, city, coordinates, ASN, Cloudflare colo, User-Agent. Powered by a tiny Worker at ip.coreymark.com.",
     discipline: 'networking',
     added: '2026-05-11',
-    icon: 'network',
     sampleInput: 'curl ip.coreymark.com',
     sampleOutput: 'Public IP, headers, TLS',
   },
@@ -87,7 +82,6 @@ export const tools: LabTool[] = [
       'Encode or decode Base64 instantly — text, files, and data URIs. Standard and URL-safe variants, UTF-8 / emoji support, MIME detection from magic bytes, and line-wrap options. Nothing leaves your browser.',
     discipline: 'devops',
     added: '2026-05-12',
-    icon: 'lock',
     sampleInput: 'aGVsbG8gd29ybGQ=',
     sampleOutput: 'hello world',
   },
@@ -99,7 +93,6 @@ export const tools: LabTool[] = [
       'Test regular expressions live — match highlighting, capture groups, global/case/multiline flags, replace mode, backtracking warnings, presets, and history.',
     discipline: 'devops',
     added: '2026-05-12',
-    icon: 'regex',
     sampleInput: '^\\d{3}-\\d{4}$',
     sampleOutput: 'Matches as you type',
   },
@@ -111,7 +104,6 @@ export const tools: LabTool[] = [
       'Convert between JSON and YAML instantly — auto-detects input format, handles K8s manifests and Ansible configs, offers indent control and schema options. Offline, nothing leaves your browser.',
     discipline: 'devops',
     added: '2026-05-12',
-    icon: 'arrow-left-right',
     sampleInput: '{"replicas": 3}',
     sampleOutput: 'replicas: 3',
   },
@@ -123,7 +115,6 @@ export const tools: LabTool[] = [
       'Decode PEM certificates — subject, issuer, validity window with live expiry status, key type and size, Subject Alternative Names, CA flag, serial number, and signature algorithm. Nothing leaves your browser.',
     discipline: 'security',
     added: '2026-05-17',
-    icon: 'shield-check',
     sampleInput: '-----BEGIN CERTIFICATE-----',
     sampleOutput: 'Issuer, names, expiry date',
   },
@@ -135,7 +126,6 @@ export const tools: LabTool[] = [
       'Searchable 1xx–5xx reference. Plain-English descriptions, common causes, and curl test commands for every standard code.',
     discipline: 'devops',
     added: '2026-05-18',
-    icon: 'file-question-mark',
     sampleInput: '429',
     sampleOutput: 'Too Many Requests',
   },
@@ -150,20 +140,7 @@ export const disciplineColor: Record<Discipline, string> = {
   cloud: 'blue',
 };
 
-export function toolsByDiscipline(d: Discipline): LabTool[] {
-  return tools
-    .filter((t) => t.discipline === d)
-    .sort((a, b) => (a.added < b.added ? 1 : a.added > b.added ? -1 : 0));
-}
-
 export function disciplineLabel(d: Discipline): string {
   return disciplines.find((x) => x.id === d)?.label ?? d;
 }
 
-export function isToolNew(added: string): boolean {
-  return Date.now() - new Date(added).getTime() < 30 * 24 * 60 * 60 * 1000;
-}
-
-export function isNewPost(pubDate: Date | string): boolean {
-  return Date.now() - new Date(pubDate).getTime() < 14 * 24 * 60 * 60 * 1000;
-}
