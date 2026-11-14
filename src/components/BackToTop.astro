@@ -1,31 +1,57 @@
 ---
-import { ArrowUp } from '@lucide/astro';
+import { ChevronUp } from '@lucide/astro';
 ---
 
-<button
-  type="button"
-  data-back-to-top
-  aria-label="Back to top"
-  class="pointer-events-none fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-border-subtle bg-accent-primary text-bg-primary opacity-0 shadow-lg transition-opacity data-[visible]:pointer-events-auto data-[visible]:opacity-100 hover:opacity-90"
->
-  <ArrowUp size={20} strokeWidth={2} aria-hidden="true" />
+<button type="button" class="totop" data-back-to-top aria-label="Back to top">
+  <ChevronUp size={20} strokeWidth={2.2} aria-hidden="true" />
 </button>
 
+<style>
+  .totop {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    z-index: 30;
+    width: 48px;
+    height: 48px;
+    border: 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: var(--bg);
+    cursor: pointer;
+    box-shadow: 0 12px 30px -10px var(--accent);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition: opacity 250ms ease, transform 250ms ease, box-shadow 200ms ease, visibility 0s linear 250ms;
+  }
+  .totop[data-visible] {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition-delay: 0s;
+  }
+  .totop:hover {
+    box-shadow: 0 12px 30px -10px var(--accent),
+      0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  @media (max-width: 560px) {
+    .totop { right: 16px; bottom: 16px; }
+  }
+</style>
+
 <script>
-  const btn = document.querySelector<HTMLButtonElement>(
-    '[data-back-to-top]',
-  );
+  const btn = document.querySelector<HTMLButtonElement>('[data-back-to-top]');
   if (btn) {
-    const threshold = 800;
+    const threshold = 500;
     let ticking = false;
 
     const update = () => {
       ticking = false;
-      if (window.scrollY > threshold) {
-        btn.dataset.visible = 'true';
-      } else {
-        delete btn.dataset.visible;
-      }
+      btn.toggleAttribute('data-visible', window.scrollY > threshold);
     };
 
     window.addEventListener(
@@ -40,10 +66,10 @@ import { ArrowUp } from '@lucide/astro';
     );
 
     btn.addEventListener('click', () => {
-      const reduce = window.matchMedia(
-        '(prefers-reduced-motion: reduce)',
-      ).matches;
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+      // Hand focus back to the top of the document for keyboard users.
+      document.querySelector<HTMLElement>('[data-brand]')?.focus({ preventScroll: true });
     });
 
     update();

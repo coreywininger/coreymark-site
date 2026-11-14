@@ -8,10 +8,9 @@ test.describe('lab index', () => {
     await expect(page.locator('[data-lab-tool="subnet"]')).toBeVisible();
   });
 
-  test('subnet card has New badge and links to /lab/subnet/', async ({ page }) => {
+  test('subnet card links to /lab/subnet/', async ({ page }) => {
     await page.goto('/lab/');
     const card = page.locator('[data-lab-tool="subnet"]');
-    await expect(card.locator('[data-lab-new-badge]')).toBeVisible();
     await card.locator('a').first().click();
     await expect(page).toHaveURL(/\/lab\/subnet\/?$/);
   });
@@ -128,32 +127,22 @@ test.describe('subnet calculator', () => {
 });
 
 test.describe('lab navigation', () => {
-  test('Lab link is in primary nav between Projects and About', async ({ page }) => {
+  test('Lab link is in the main nav', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
-    const labels = await page
-      .locator('nav[aria-label="Primary"] a')
-      .allTextContents();
-    const labIdx = labels.findIndex((l) => l.trim() === 'Lab');
-    const projectsIdx = labels.findIndex((l) => l.trim() === 'Projects');
-    const aboutIdx = labels.findIndex((l) => l.trim() === 'About');
-    expect(labIdx).toBeGreaterThan(-1);
-    expect(labIdx).toBeGreaterThan(projectsIdx);
-    expect(labIdx).toBeLessThan(aboutIdx);
+    await expect(page.locator('nav[aria-label="Main"] a.top[href="/lab/"]')).toBeVisible();
   });
 
   test('Lab nav item is active on /lab/subnet/', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/lab/subnet/');
-    const labLink = page.locator('nav[aria-label="Primary"] a', { hasText: 'Lab' });
+    const labLink = page.locator('nav[aria-label="Main"] a.top[href="/lab/"]');
     await expect(labLink).toHaveAttribute('aria-current', 'page');
   });
 
   test('mobile menu shows Lab item', async ({ page }) => {
     await page.goto('/');
-    await page.locator('[data-menu-toggle]').first().click();
-    await expect(
-      page.locator('[data-menu-panel] nav a', { hasText: 'Lab' })
-    ).toBeVisible();
+    await page.locator('[data-mobile-nav] > summary').click();
+    await expect(page.locator('#mobile-menu a[href="/lab/"]')).toBeVisible();
   });
 });

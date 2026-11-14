@@ -1,0 +1,208 @@
+---
+// Theme + font picker. Replaces the old dark/light ThemeToggle.
+// State lives on <html> as data-theme / data-font (applied pre-paint by the
+// inline script in Base.astro) and in localStorage. Anything that needs to
+// react to a change can either observe those attributes or listen for the
+// `appearancechange` event on document (detail: { theme, font }).
+import { THEMES, FONTS, DEFAULT_FONT } from '../data/appearance';
+---
+
+<div class="tp" data-theme-picker>
+  <button
+    type="button"
+    class="btn-ghost tp-btn"
+    aria-expanded="false"
+    aria-controls="appearance"
+    aria-label="Theme and font"
+    data-theme-button
+  >
+    <span class="wheel" aria-hidden="true"></span>
+    <span class="slabel">Theme</span>
+  </button>
+
+  <div id="appearance" class="tp-panel" hidden data-theme-panel>
+    <p class="tp-h">Color scheme</p>
+    <div role="group" aria-label="Color scheme" class="tp-grid">
+      {THEMES.map((t) => (
+        <button
+          type="button"
+          class="swatch"
+          aria-pressed="false"
+          data-theme-option={t.id}
+          data-theme-bg={t.bg}
+          style={`background: ${t.bg}`}
+        >
+          <span class="dots" aria-hidden="true">
+            {t.dots.map((c) => <span style={`background: ${c}`} />)}
+          </span>
+          <span>{t.label}</span>
+        </button>
+      ))}
+    </div>
+    <label for="fontpick" class="tp-h">Font</label>
+    <select id="fontpick" class="tp-select" data-font-select>
+      {FONTS.map((f) => (
+        <option value={f.id} selected={f.id === DEFAULT_FONT}>{f.label}</option>
+      ))}
+    </select>
+  </div>
+</div>
+
+<style>
+  .tp { position: relative; }
+  .tp-btn {
+    min-height: 44px;
+    padding: 0 12px;
+    gap: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .wheel {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: conic-gradient(var(--red), var(--yellow), var(--green), var(--cyan), var(--blue), var(--magenta), var(--red));
+  }
+  .tp-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: min(300px, calc(100vw - 32px));
+    z-index: 45;
+    background: var(--surface);
+    border: 1px solid var(--line2);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+  }
+  .tp-h {
+    display: block;
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  label.tp-h { margin-bottom: 6px; }
+  .tp-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px 12px;
+    min-height: 56px;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    color: #f2f2f2;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 160ms ease;
+  }
+  .swatch:hover { border-color: rgba(255, 255, 255, 0.3); }
+  .swatch[aria-pressed='true'] { border-color: var(--accent); }
+  .dots { display: flex; gap: 3px; }
+  .dots > span { width: 10px; height: 10px; border-radius: 50%; }
+  .tp-select {
+    width: 100%;
+    min-height: 44px;
+    padding: 6px 10px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--line2);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  @media (max-width: 920px) {
+    .tp-btn { width: 44px; padding: 0; justify-content: center; }
+  }
+</style>
+
+<script>
+  const root = document.documentElement;
+  const picker = document.querySelector<HTMLElement>('[data-theme-picker]');
+  const button = picker?.querySelector<HTMLButtonElement>('[data-theme-button]');
+  const panel = picker?.querySelector<HTMLElement>('[data-theme-panel]');
+  const swatches = picker?.querySelectorAll<HTMLButtonElement>('[data-theme-option]') ?? [];
+  const select = picker?.querySelector<HTMLSelectElement>('[data-font-select]');
+
+  const store = (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* storage blocked: the choice still applies for this page view */
+    }
+  };
+
+  const sync = () => {
+    const theme = root.getAttribute('data-theme');
+    swatches.forEach((s) =>
+      s.setAttribute('aria-pressed', s.dataset.themeOption === theme ? 'true' : 'false'),
+    );
+    const font = root.getAttribute('data-font');
+    if (select && font) select.value = font;
+  };
+
+  const announce = () =>
+    document.dispatchEvent(
+      new CustomEvent('appearancechange', {
+        detail: { theme: root.getAttribute('data-theme'), font: root.getAttribute('data-font') },
+      }),
+    );
+
+  const setOpen = (open: boolean) => {
+    if (!panel || !button) return;
+    panel.hidden = !open;
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+
+  if (picker && button && panel) {
+    button.addEventListener('click', () => setOpen(panel.hidden));
+
+    swatches.forEach((s) =>
+      s.addEventListener('click', () => {
+        const theme = s.dataset.themeOption!;
+        root.setAttribute('data-theme', theme);
+        document
+          .querySelector('meta[name="theme-color"]')
+          ?.setAttribute('content', s.dataset.themeBg ?? '');
+        store('theme', theme);
+        announce();
+      }),
+    );
+
+    select?.addEventListener('change', () => {
+      root.setAttribute('data-font', select.value);
+      store('font', select.value);
+      announce();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !panel.hidden) {
+        setOpen(false);
+        button.focus();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (!panel.hidden && !picker.contains(e.target as Node)) setOpen(false);
+    });
+
+    // Single place that keeps the controls in step with <html>, whoever
+    // changed it (this picker, another tab's storage event, devtools).
+    new MutationObserver(sync).observe(root, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'data-font'],
+    });
+    sync();
+  }
+</script>

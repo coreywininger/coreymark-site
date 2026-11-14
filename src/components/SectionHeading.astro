@@ -1,0 +1,32 @@
+---
+// Section heading with a mono prefix (`~/` or `##`) in a palette color.
+interface Props {
+  title: string;
+  prefix?: '~/' | '##';
+  color?: string;
+  id?: string;
+  as?: 'h2' | 'h3';
+}
+const { title, prefix = '~/', color = 'accent', id, as: Tag = 'h2' } = Astro.props;
+---
+
+<Tag id={id} class:list={['sh', prefix === '##' && 'hash']} style={`--c: var(--${color})`} data-anchor={id ? '' : undefined}>
+  <span class="pre" aria-hidden="true">{prefix}</span>{title}
+</Tag>
+
+<style>
+  .sh {
+    margin: 0 0 28px;
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--text);
+  }
+  .pre {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--c);
+  }
+  .hash .pre { font-size: 22px; margin-right: 10px; }
+</style>

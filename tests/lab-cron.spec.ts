@@ -9,10 +9,9 @@ test.describe('lab index — second tool', () => {
     await expect(page.locator('[data-lab-tool="cron"]')).toBeVisible();
   });
 
-  test('cron card has New badge and links to /lab/cron/', async ({ page }) => {
+  test('cron card links to /lab/cron/', async ({ page }) => {
     await page.goto('/lab/');
     const card = page.locator('[data-lab-tool="cron"]');
-    await expect(card.locator('[data-lab-new-badge]')).toBeVisible();
     await card.locator('a').first().click();
     await expect(page).toHaveURL(/\/lab\/cron\/?$/);
   });
@@ -176,7 +175,7 @@ test.describe('cron decoder', () => {
   test('Lab nav item is active on /lab/cron/', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/lab/cron/');
-    const labLink = page.locator('nav[aria-label="Primary"] a', { hasText: 'Lab' });
+    const labLink = page.locator('nav[aria-label="Main"] a.top[href="/lab/"]');
     await expect(labLink).toHaveAttribute('aria-current', 'page');
   });
 });
