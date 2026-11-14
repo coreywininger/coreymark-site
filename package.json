@@ -12,7 +12,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "playwright test",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "audit:lab": "node scripts/audit-lab.mjs lab-audit"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.6",

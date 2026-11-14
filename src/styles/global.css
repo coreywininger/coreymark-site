@@ -348,6 +348,15 @@ section[id],
   color: var(--text);
   background: color-mix(in srgb, var(--text) 8%, transparent);
 }
+@media (pointer: coarse) {
+  /* "~" is 20px wide and "lab" 37px. Widen the hit area to at least 44px with
+     padding, and pull it back with an equal negative margin so the visible
+     spacing between parts is exactly what it is with a mouse. */
+  .crumb {
+    padding-inline: 18px;
+    margin-inline: -12px;
+  }
+}
 .crumb[aria-current] { color: var(--c, var(--accent)); }
 .crumb[aria-current]:hover {
   color: var(--c, var(--accent));
