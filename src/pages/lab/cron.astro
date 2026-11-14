@@ -1,34 +1,13 @@
 ---
-import Base from '../../layouts/Base.astro';
+import LabToolLayout from '../../layouts/LabToolLayout.astro';
 import { Share2 } from '@lucide/astro';
 
-const title = 'Cron decoder';
 const description =
   'Decode any cron expression. Plain English, field breakdown, past and next fires, translations to systemd, Kubernetes, GitHub Actions, and AWS EventBridge. All client-side, free.';
 ---
 
-<Base title={title} description={description}>
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
-      <ol class="flex flex-wrap items-center gap-2">
-        <li><a href="/" class="hover:text-text-primary">Home</a></li>
-        <li aria-hidden="true">›</li>
-        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
-        <li aria-hidden="true">›</li>
-        <li class="text-text-secondary">Cron decoder</li>
-      </ol>
-    </nav>
-
-    <header class="mb-8">
-      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        Cron decoder
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        Paste a cron expression — get the plain-English meaning, the next and
-        last 5 fire times, and translations to systemd, Kubernetes, GitHub
-        Actions, and AWS EventBridge schedules.
-      </p>
-    </header>
+<LabToolLayout slug="cron" description={description} note="5-field standard cron">
+  <Fragment slot="intro">Paste a cron expression to see what it means in plain English and when it will run next.</Fragment>
 
     <h2 class="sr-only">
       Cron expression decoder with plain-English description, field breakdown,
@@ -66,23 +45,33 @@ const description =
         </button>
       </div>
 
+      {/* Five color-coded field chips mirroring the expression as you type.
+          Decorative: the same information is in the field breakdown below. */}
+      <div id="cron-field-chips" class="cron-fields" aria-hidden="true" data-cron-fields>
+        {['minute', 'hour', 'day', 'month', 'weekday'].map((name, i) => (
+          <div class="cron-field" data-cron-field={name} style={`--c: var(--${['cyan', 'blue', 'magenta', 'yellow', 'red'][i]})`}>
+            <span class="cron-field-val">·</span>
+            <span class="cron-field-name">{name}</span>
+          </div>
+        ))}
+      </div>
+
       <div id="recent-row" class="mb-4 flex flex-wrap items-center gap-1.5"></div>
       <div id="preset-row" class="mb-6 flex flex-wrap items-center gap-1.5"></div>
 
       <div
         id="error-row"
         role="alert"
-        class="mb-5 hidden rounded-md px-3 py-2.5 text-[13px]"
-        style="background: color-mix(in srgb, var(--color-error) 12%, transparent); color: var(--color-error);"
+        class="cron-error mb-5 hidden"
       ></div>
 
       <div
         id="description-card"
-        class="mb-6 hidden rounded-lg bg-bg-subtle px-4 py-4"
+        class="cron-english mb-6 hidden"
         style="transition: opacity 0.15s ease;"
       >
-        <p class="m-0 mb-1.5 text-xs text-text-secondary">In plain English</p>
-        <p id="description-text" class="m-0 text-base font-medium leading-relaxed"></p>
+        <p class="cron-english-label">in plain English</p>
+        <p id="description-text" class="cron-english-text" aria-live="polite"></p>
         <p id="frequency-text" class="m-0 mt-2 text-[13px] text-text-secondary"></p>
       </div>
 
@@ -148,14 +137,14 @@ const description =
         style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));"
       >
         <div>
-          <p class="m-0 mb-2 text-[13px] text-text-secondary">Last 5 fires (before pivot)</p>
+          <p class="m-0 mb-2 text-[13px] text-text-secondary">Last 5 runs (before pivot)</p>
           <div
             id="past-list"
             class="overflow-hidden rounded-md border border-border-subtle"
           ></div>
         </div>
         <div>
-          <p class="m-0 mb-2 text-[13px] text-text-secondary">Next 5 fires (after pivot)</p>
+          <p class="m-0 mb-2 text-[13px] text-text-secondary">Next 5 runs (after pivot)</p>
           <div
             id="next-list"
             class="overflow-hidden rounded-md border border-border-subtle"
@@ -190,11 +179,25 @@ const description =
       </div>
     </div>
 
-    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
-      <summary class="cursor-pointer text-base font-semibold text-text-primary">
-        About this tool
-      </summary>
-      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+    <div slot="reference-extra" class="cron-ref" data-cron-reference>
+      <h2 class="cron-ref-h"><span aria-hidden="true">##</span>How the five fields work</h2>
+      <div class="cron-ref-scroll" role="region" aria-label="How the five fields work" tabindex="0">
+        <table>
+          <thead>
+            <tr><th scope="col">field</th><th scope="col">allowed</th><th scope="col">example</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row" style="color: var(--cyan)">Minute</th><td>0–59</td><td>*/15 = every 15 min</td></tr>
+            <tr><th scope="row" style="color: var(--blue)">Hour</th><td>0–23</td><td>9-17 = 9 AM to 5 PM</td></tr>
+            <tr><th scope="row" style="color: var(--magenta)">Day of month</th><td>1–31</td><td>1 = the 1st</td></tr>
+            <tr><th scope="row" style="color: var(--yellow)">Month</th><td>1–12</td><td>1,4,7,10 = quarterly</td></tr>
+            <tr><th scope="row" style="color: var(--red)">Day of week</th><td>0–6 (Sun = 0)</td><td>1-5 = weekdays</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div slot="reference" class="prose max-w-none" data-tool-about>
         <p><strong>What it does.</strong> Parses standard 5-field POSIX cron
           expressions (minute · hour · day-of-month · month · day-of-week) plus
           the common shortcuts: <code>@yearly</code>, <code>@annually</code>,
@@ -221,16 +224,79 @@ const description =
           Schedule Expressions documentation (EventBridge cron syntax).</p>
         <p><strong>Privacy note:</strong> all parsing and computation runs in
           your browser. Nothing is sent anywhere.</p>
-      </div>
-    </details>
-
-    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
-      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Systems</span>
-      <span>Added 2026-05-09</span>
     </div>
-  </section>
+
 
 <style is:global>
+  .cron-ref { margin-bottom: 48px; }
+  .cron-ref-h { margin: 0 0 18px; font-size: 28px; font-weight: 700; letter-spacing: -0.015em; }
+  .cron-ref-h > span { font-family: var(--font-mono); font-weight: 500; font-size: 22px; color: var(--green); margin-right: 10px; }
+  .cron-ref-scroll { overflow-x: auto; border: 1px solid var(--line2); border-radius: 12px; }
+  .cron-ref table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 15px; }
+  .cron-ref thead tr { background: var(--surface); text-align: left; font-family: var(--font-mono); font-size: 13px; color: var(--text3); }
+  .cron-ref th, .cron-ref td { padding: 12px 16px; }
+  .cron-ref thead th { font-weight: 500; }
+  .cron-ref tbody th { text-align: left; border-top: 1px solid var(--line); }
+  .cron-ref tbody td { font-family: var(--font-mono); color: var(--text2); border-top: 1px solid var(--line); }
+  .cron-widget .cron-fields {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin: -8px 0 18px;
+  }
+  .cron-widget .cron-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border-radius: 8px;
+    /* 6% tint: at the board's 10%, red drops under 4.5:1 in Dracula and Gruvbox. */
+    background: color-mix(in srgb, var(--c) 6%, transparent);
+    border-top: 2px solid var(--c);
+    min-width: 0;
+  }
+  .cron-widget .cron-field-val {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--c);
+  }
+  .cron-widget .cron-field-name { font-size: 12px; color: var(--text2); }
+  .cron-widget .cron-field[data-bad] {
+    background: color-mix(in srgb, var(--red) 16%, transparent);
+    border-top-color: var(--red);
+    outline: 1px solid var(--red);
+  }
+  .cron-widget .cron-field[data-bad] .cron-field-val { color: var(--text); }
+  .cron-widget .cron-english {
+    padding: 22px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--green) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
+  }
+  .cron-widget .cron-english-label { margin: 0 0 6px; font-family: var(--font-mono); font-size: 13px; color: var(--green); }
+  .cron-widget .cron-english-text {
+    margin: 0;
+    font-family: var(--font-head);
+    font-size: clamp(20px, 3vw, 28px);
+    line-height: 1.25;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .cron-widget .cron-error {
+    padding: 16px 18px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--red) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--red) 35%, transparent);
+    color: var(--text);
+    font-size: 15px;
+  }
+  .cron-widget #cron-input { font-size: 20px; letter-spacing: 0.04em; padding: 12px 14px; min-height: 52px; }
   .cron-widget .cron-chip {
     font-size: 12px;
     padding: 4px 10px;
@@ -563,7 +629,7 @@ const description =
     var fields = [];
     for (var i = 0; i < 5; i++) {
       var f = parseField(parts[i], FIELD_DEFS[i]);
-      if (f === null) return { error: 'Invalid ' + FIELD_DEFS[i].name.toLowerCase() + ' field: "' + parts[i] + '"' };
+      if (f === null) return { error: 'Invalid ' + FIELD_DEFS[i].name.toLowerCase() + ' field: "' + parts[i] + '". Allowed: ' + FIELD_DEFS[i].min + ' to ' + FIELD_DEFS[i].max + (FIELD_DEFS[i].names ? ' or names like ' + FIELD_DEFS[i].names[0] : '') + ', with * , - and /.', field: i };
       fields.push(f);
     }
     return { fields: fields, raw: t };
@@ -1087,8 +1153,23 @@ const description =
     });
   }
 
+  // Field chips under the input: mirror the five fields as typed, and flag
+  // the one the parser rejected.
+  var fieldChips = document.querySelectorAll('#cron-field-chips .cron-field');
+  function updateFieldChips(badIndex) {
+    var raw = input.value.trim();
+    var parts = raw.charAt(0) === '@' ? [] : raw.split(/\s+/).filter(Boolean);
+    for (var i = 0; i < fieldChips.length; i++) {
+      fieldChips[i].querySelector('.cron-field-val').textContent = parts[i] || '·';
+      if (badIndex === i) fieldChips[i].setAttribute('data-bad', '');
+      else fieldChips[i].removeAttribute('data-bad');
+    }
+  }
+  input.addEventListener('input', function () { updateFieldChips(-1); });
+
   function renderImpl() {
     var parsed = parseCron(input.value);
+    updateFieldChips(parsed.error && typeof parsed.field === 'number' ? parsed.field : -1);
     if (parsed.error) {
       errorRow.classList.remove('hidden');
       errorRow.classList.add('block');
@@ -1149,4 +1230,4 @@ const description =
   render();
 })();
 </script>
-</Base>
+</LabToolLayout>

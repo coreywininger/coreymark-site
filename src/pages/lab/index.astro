@@ -1,45 +1,227 @@
 ---
 import Base from '../../layouts/Base.astro';
-import LabToolCard from '../../components/LabToolCard.astro';
-import { disciplines, toolsByDiscipline } from '../../data/lab-tools';
+import PageHero from '../../components/PageHero.astro';
+import PrivacyBadge from '../../components/PrivacyBadge.astro';
+import { disciplines, disciplineColor, disciplineLabel, tools } from '../../data/lab-tools';
 
-const populated = disciplines
-  .map((d) => ({ ...d, tools: toolsByDiscipline(d.id) }))
-  .filter((d) => d.tools.length > 0);
+// Only disciplines that actually have tools get a chip.
+const areas = disciplines
+  .map((d) => ({ ...d, count: tools.filter((t) => t.discipline === d.id).length }))
+  .filter((d) => d.count > 0);
+
+// Grouped by discipline (in the order above), newest first within each.
+const ordered = areas.flatMap((d) =>
+  tools.filter((t) => t.discipline === d.id).sort((a, b) => (a.added < b.added ? 1 : a.added > b.added ? -1 : 0)),
+);
 ---
 
 <Base
   title="Lab"
-  description="Small, focused tools I've built for everyday IT work. Networking, systems, security, DevOps, and cloud utilities — all client-side, all free."
+  description="Small, focused tools for everyday IT work: subnets, cron schedules, certificates, tokens. They run in your browser."
 >
-  <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-    <header class="mb-12">
-      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-primary">
-        Lab
-      </p>
-      <h1 class="mb-4 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        Small tools, sharp edges.
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        Focused IT utilities I've built for everyday work — single-purpose,
-        fast, free, and entirely client-side. Bookmark what helps; ignore
-        what doesn't.
-      </p>
-    </header>
+  <PageHero
+    title="Lab"
+    color="green"
+    glow="cyan"
+    intro="Small tools I kept reaching for at work: subnets, cron schedules, certificates, tokens. Each one does a single job and does it fast."
+    crumbs={[{ label: 'lab', href: '/lab/', title: 'The Lab' }]}
+  >
+    <div class="rise d3"><PrivacyBadge /></div>
+  </PageHero>
 
-    {populated.map((d) => (
-      <section class="mb-14" data-lab-section={d.id}>
-        <header class="mb-5">
-          <h2 class="text-2xl font-semibold leading-tight tracking-tight">
-            {d.label}
-          </h2>
-          <p class="mt-1 text-sm text-text-secondary">{d.description}</p>
-        </header>
+  <div class="filters" data-filter-bar>
+    <div class="filters-inner">
+      <div role="group" aria-label="Filter by area" class="chips" data-discipline-filters>
+        <button type="button" class="chip" data-filter="all" aria-pressed="true" style="--c: var(--accent)">
+          <span class="sq" aria-hidden="true"></span>All tools <span class="n">{tools.length}</span>
+        </button>
+        {areas.map((d) => (
+          <button type="button" class="chip" data-filter={d.id} aria-pressed="false" style={`--c: var(--${disciplineColor[d.id]})`}>
+            <span class="sq" aria-hidden="true"></span>{d.label} <span class="n">{d.count}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
 
-        <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {d.tools.map((tool) => <LabToolCard tool={tool} />)}
-        </div>
-      </section>
-    ))}
-  </section>
+  <div class="list">
+    <p class="sr-only" aria-live="polite" data-result-count></p>
+    <ul class="grid" data-lab-list>
+      {ordered.map((t) => (
+        <li data-lab-tool={t.slug} data-discipline={t.discipline}>
+          <a class="tcard" href={`/lab/${t.slug}/`} style={`--c: var(--${disciplineColor[t.discipline]})`}>
+            <span class="strip">
+              <span class="cmd">~/lab/{t.slug}</span>
+              <span class="tag">{disciplineLabel(t.discipline)}</span>
+            </span>
+            <span class="body">
+              <span class="name">{t.title}</span>
+              <span class="desc">{t.blurb}</span>
+              {t.sampleInput && (
+                <span class="sample">
+                  <span class="in"><span class="dollar">$</span> {t.sampleInput}</span>
+                  {t.sampleOutput && <span class="out">→ {t.sampleOutput}</span>}
+                </span>
+              )}
+              <span class="open">Open tool</span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
 </Base>
+
+<style>
+  .filters {
+    position: sticky;
+    top: var(--header-h);
+    z-index: 15;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  :global(html:not([data-js])) .filters { display: none; }
+  .filters-inner { max-width: 1120px; margin: 0 auto; padding: 14px 32px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text2);
+    background: transparent;
+    border: 1px solid var(--line2);
+    transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease;
+  }
+  .chip:hover { transform: translateY(-1px); border-color: var(--c); }
+  .chip[aria-pressed='true'] {
+    color: var(--text);
+    background: color-mix(in srgb, var(--c) 18%, transparent);
+    border-color: var(--c);
+  }
+  .sq { width: 8px; height: 8px; border-radius: 2px; background: var(--c); }
+  .n { font-weight: 500; }
+
+  .list { max-width: 1120px; margin: 0 auto; padding: 40px 32px 0; }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+    gap: 20px;
+  }
+  .grid li { display: flex; }
+  .grid li[hidden] { display: none; }
+  .tcard {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--line2);
+    text-decoration: none;
+    transition: border-color 180ms ease, transform 180ms ease, box-shadow 200ms ease;
+  }
+  .tcard:hover {
+    border-color: var(--c);
+    transform: translateY(-3px);
+    box-shadow: 0 18px 36px -22px color-mix(in srgb, var(--c) 70%, transparent);
+  }
+  .strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .cmd { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--c); }
+  .tag {
+    flex: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--c);
+    border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+  }
+  .body { display: flex; flex-direction: column; gap: 10px; padding: 20px 18px 18px; flex: 1; }
+  .name { font-family: var(--font-head); font-size: 21px; font-weight: 700; color: var(--text); }
+  .desc { color: var(--text2); font-size: 16px; }
+  .sample {
+    margin-top: auto;
+    display: block;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .in { display: block; color: var(--text3); overflow-wrap: anywhere; }
+  .dollar { color: var(--green); }
+  .out { display: block; color: var(--c); margin-top: 4px; }
+  .open { font-size: 15px; font-weight: 600; color: var(--text2); transition: color 150ms ease; }
+  .tcard:hover .open { color: var(--c); }
+
+  @media (max-width: 760px) {
+    .filters-inner { padding: 10px 16px; }
+    .chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin: 0 -16px;
+      padding: 2px 16px;
+      scrollbar-width: none;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+    .list { padding: 28px 16px 0; }
+  }
+</style>
+
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-discipline-filters]');
+  const list = document.querySelector<HTMLElement>('[data-lab-list]');
+  if (bar && list) {
+    const chips = [...bar.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+    const items = [...list.querySelectorAll<HTMLElement>('[data-lab-tool]')];
+    const count = document.querySelector<HTMLElement>('[data-result-count]');
+    const valid = new Set(chips.map((c) => c.dataset.filter));
+
+    const apply = (area: string, updateUrl = true) => {
+      const a = valid.has(area) ? area : 'all';
+      let shown = 0;
+      for (const item of items) {
+        const match = a === 'all' || item.dataset.discipline === a;
+        item.hidden = !match;
+        if (match) shown++;
+      }
+      chips.forEach((c) => c.setAttribute('aria-pressed', c.dataset.filter === a ? 'true' : 'false'));
+      if (count) count.textContent = `${shown} ${shown === 1 ? 'tool' : 'tools'}`;
+      if (updateUrl) {
+        const url = new URL(window.location.href);
+        if (a === 'all') url.searchParams.delete('area');
+        else url.searchParams.set('area', a);
+        history.replaceState(null, '', url);
+      }
+    };
+
+    chips.forEach((c) => c.addEventListener('click', () => apply(c.dataset.filter ?? 'all')));
+    const initial = new URLSearchParams(window.location.search).get('area');
+    if (initial) apply(initial, false);
+  }
+</script>
