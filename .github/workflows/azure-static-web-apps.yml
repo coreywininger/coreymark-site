@@ -11,6 +11,17 @@ permissions:
   contents: read
   pull-requests: write
 
+# One run at a time per pull request (and one at a time for main), in the order
+# the events arrived. Without this, merging a PR while its deploy was still
+# uploading let "Close preview environment" finish first; the deploy then
+# created the preview after it had been "closed", and nothing ever removed it.
+# Three of those filled the Free plan's preview slots (see site-history,
+# 2026-11-14). cancel-in-progress stays false: a cancelled runner does not stop
+# an upload Azure has already accepted, so the close must wait for the deploy.
+concurrency:
+  group: swa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build_and_deploy:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
