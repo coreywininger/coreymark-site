@@ -11,10 +11,9 @@ test.describe('lab index — third tool', () => {
     await expect(page.locator('[data-lab-tool="jwt"]')).toBeVisible();
   });
 
-  test('jwt card has New badge and links to /lab/jwt/', async ({ page }) => {
+  test('jwt card links to /lab/jwt/', async ({ page }) => {
     await page.goto('/lab/');
     const card = page.locator('[data-lab-tool="jwt"]');
-    await expect(card.locator('[data-lab-new-badge]')).toBeVisible();
     await card.locator('a').first().click();
     await expect(page).toHaveURL(/\/lab\/jwt\/?$/);
   });
@@ -215,7 +214,7 @@ test.describe('jwt decoder', () => {
   test('Lab nav item is active on /lab/jwt/', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/lab/jwt/');
-    const labLink = page.locator('nav[aria-label="Primary"] a', { hasText: 'Lab' });
+    const labLink = page.locator('nav[aria-label="Main"] a.top[href="/lab/"]');
     await expect(labLink).toHaveAttribute('aria-current', 'page');
   });
 

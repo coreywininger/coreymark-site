@@ -8,18 +8,22 @@ test.describe('back to top', () => {
 
     const btn = page.locator('[data-back-to-top]');
     await expect(btn).toBeAttached();
-    await expect(btn).not.toHaveAttribute('data-visible', 'true');
+    await expect(btn).not.toHaveAttribute('data-visible');
+    await expect(btn).toBeHidden();
 
     await page.evaluate(() => window.scrollTo(0, 1200));
-    await expect(btn).toHaveAttribute('data-visible', 'true');
+    await expect(btn).toHaveAttribute('data-visible', '');
+    await expect(btn).toBeVisible();
 
     await btn.click();
     await page.waitForFunction(() => window.scrollY < 50);
     expect(await page.evaluate(() => window.scrollY)).toBeLessThan(50);
   });
 
-  test('does not render on non-post pages', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('[data-back-to-top]')).toHaveCount(0);
+  test('renders on every page, not only posts', async ({ page }) => {
+    for (const route of ['/', '/now/', '/lab/']) {
+      await page.goto(route);
+      await expect(page.locator('[data-back-to-top]')).toHaveCount(1);
+    }
   });
 });

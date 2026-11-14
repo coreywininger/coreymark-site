@@ -4,6 +4,8 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import SearchOverlay from '../components/SearchOverlay.astro';
+import BackToTop from '../components/BackToTop.astro';
+import { THEME_BG, FONTS, DEFAULT_THEME, DEFAULT_FONT } from '../data/appearance';
 
 interface Props {
   title?: string;
@@ -31,51 +33,21 @@ const origin = Astro.site?.href ?? Astro.url.origin;
 const canonicalURL = canonical ?? new URL(Astro.url.pathname, origin).href;
 const ogImageURL = new URL(image, origin).href;
 const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
+
+// Runs synchronously in <head>, before first paint: applies the reader's
+// saved theme + font set (no flash; a saved value that is no longer in
+// appearance.ts is removed from localStorage), keeps <meta name="theme-color"> in step,
+// and flags Apple platforms so the search shortcut label reads ⌘K vs Ctrl K.
+const prePaint = `(function(){var d=document.documentElement,T=${JSON.stringify(THEME_BG)},F=${JSON.stringify(FONTS.map((f) => f.id))};try{var t=localStorage.getItem('theme');if(t!==null){if(typeof T[t]==='string'&&T.hasOwnProperty(t)){d.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',T[t]);}else{localStorage.removeItem('theme');}}var f=localStorage.getItem('font');if(f!==null){if(F.indexOf(f)>-1){d.setAttribute('data-font',f);}else{localStorage.removeItem('font');}}}catch(e){}try{var p=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||'';if(/mac|iphone|ipad|ipod/i.test(p))d.setAttribute('data-platform','mac');}catch(e){}})();`;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme={DEFAULT_THEME} data-font={DEFAULT_FONT}>
   <head>
     <meta charset="utf-8" />
-    <script is:inline>
-      (function () {
-        var DARK_BG  = '#12151C';
-        var LIGHT_BG = '#FAFAF7';
-        try {
-          var stored = localStorage.getItem('theme');
-          var explicit = stored === 'light' || stored === 'dark';
-          var theme;
-          if (explicit) {
-            theme = stored;
-          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-            theme = 'light';
-          } else {
-            theme = 'dark';
-          }
-          document.documentElement.setAttribute('data-theme', theme);
-
-          // The paired <meta name="theme-color"> tags below this script
-          // aren't in the DOM yet — this script runs first and blocks the
-          // parser. Defer the collapse to DOMContentLoaded. The meta tags
-          // affect mobile browser chrome only (not body paint), so deferring
-          // doesn't cause a visible flash.
-          if (explicit) {
-            document.addEventListener('DOMContentLoaded', function () {
-              var existing = document.querySelectorAll('meta[name="theme-color"]');
-              for (var i = 0; i < existing.length; i++) existing[i].parentNode.removeChild(existing[i]);
-              var m = document.createElement('meta');
-              m.setAttribute('name', 'theme-color');
-              m.setAttribute('content', theme === 'light' ? LIGHT_BG : DARK_BG);
-              document.head.appendChild(m);
-            });
-          }
-        } catch (e) {
-          /* localStorage blocked / parse error — fall back to dark, no-op */
-        }
-      })();
-    </script>
-
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content={THEME_BG[DEFAULT_THEME]} />
+    <script is:inline set:html={prePaint} />
 
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
@@ -86,11 +58,18 @@ const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
     <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#FAFAF7" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#12151C" media="(prefers-color-scheme: dark)" />
 
-    <Font cssVariable="--font-sans" preload />
-    <Font cssVariable="--font-mono" />
+    {/* Default set: preloaded. */}
+    <Font cssVariable="--af-redhat-display" preload />
+    <Font cssVariable="--af-redhat-text" preload />
+    <Font cssVariable="--af-redhat-mono" preload />
+    {/* Alternates: @font-face only, fetched when a reader selects the set. */}
+    <Font cssVariable="--af-plex-sans" />
+    <Font cssVariable="--af-plex-mono" />
+    <Font cssVariable="--af-geist" />
+    <Font cssVariable="--af-geist-mono" />
+    <Font cssVariable="--af-martian-mono" />
+    <Font cssVariable="--af-jetbrains-mono" />
 
     <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={SITE_NAME} />
@@ -120,7 +99,7 @@ const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
   <body class="flex min-h-screen flex-col">
     <a
       href="#main"
-      class="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-bg-elevated focus:px-3 focus:py-2 focus:text-text-primary"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-surface focus:px-3 focus:py-2 focus:text-text"
     >
       Skip to content
     </a>
@@ -129,6 +108,7 @@ const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
       <slot />
     </main>
     <Footer />
+    <BackToTop />
     <SearchOverlay />
   </body>
 </html>

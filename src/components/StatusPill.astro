@@ -1,0 +1,15 @@
+---
+// Status pill. running = solid pulsing green dot; progress = yellow ring.
+// `label` overrides the default text (e.g. "Rebuilding").
+interface Props {
+  status: 'running' | 'progress';
+  label?: string;
+}
+const { status, label } = Astro.props;
+const running = status === 'running';
+const text = label ?? (running ? 'Running' : 'In progress');
+---
+
+<span class="status-pill" data-status={status} style={`--c: var(--${running ? 'green' : 'yellow'})`}>
+  <span class:list={['dot', running ? 'solid pulse' : 'ring']} aria-hidden="true"></span>{text}
+</span>

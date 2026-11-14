@@ -1,50 +1,46 @@
 ---
-import { Rss } from '@lucide/astro';
-import NetworkMotif from './NetworkMotif.astro';
-import SocialIcon from './SocialIcons.astro';
-
+// Evaluated at build time, so the year is the build date's year.
 const year = new Date().getFullYear();
 ---
 
-<footer class="relative mt-24 border-t border-border-subtle bg-bg-primary" data-pagefind-ignore>
-  <div class="pointer-events-none absolute inset-0 overflow-hidden">
-    <NetworkMotif
-      class="absolute -right-20 -top-16 w-[480px] text-accent-primary"
-      opacity={0.08}
-    />
-  </div>
-
-  <div class="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between">
-    <div class="text-sm text-text-tertiary">
-      © {year} Corey Wininger. All opinions are my own.
+<footer class="site-footer" data-pagefind-ignore>
+  <div class="inner">
+    <div class="left">
+      <span class="echo"><span class="prompt">$</span> echo "Corey Wininger, Bedford, Indiana"</span>
+      <small class="copy" data-copyright>© {year} Corey Wininger</small>
     </div>
-
-    <div class="flex items-center gap-5">
-      <a
-        href="https://www.linkedin.com/in/coreywininger/"
-        rel="me noopener"
-        target="_blank"
-        class="text-text-secondary transition-colors hover:text-accent-primary"
-        aria-label="LinkedIn"
-      >
-        <SocialIcon name="linkedin" size={20} />
-      </a>
-      <a
-        href="https://github.com/coreywininger"
-        rel="me noopener"
-        target="_blank"
-        class="text-text-secondary transition-colors hover:text-accent-primary"
-        aria-label="GitHub"
-      >
-        <SocialIcon name="github" size={20} />
-      </a>
-      <a
-        href="/rss.xml"
-        class="text-text-secondary transition-colors hover:text-accent-primary"
-        aria-label="RSS feed"
-      >
-        <Rss size={20} strokeWidth={1.75} />
-      </a>
-    </div>
+    <span class="links">
+      <a class="navlink" href="https://www.linkedin.com/in/coreywininger/" rel="me noopener" target="_blank">LinkedIn</a>
+      <a class="navlink" href="https://github.com/coreywininger" rel="me noopener" target="_blank">GitHub</a>
+      <a class="navlink" href="/rss.xml">RSS</a>
+    </span>
   </div>
 </footer>
+
+<style>
+  .site-footer {
+    margin-top: 96px;
+    border-top: 1px solid var(--line);
+    background: var(--surface2);
+  }
+  .inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 36px 32px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    color: var(--text3);
+    font-size: 15px;
+  }
+  .left { display: flex; flex-direction: column; gap: 6px; }
+  .echo { font-family: var(--font-mono); font-size: 14px; }
+  .copy { font-size: 13px; color: var(--text3); }
+  .prompt { color: var(--green); }
+  .links { display: flex; gap: 24px; }
+  @media (max-width: 560px) {
+    .inner { padding: 28px 16px; }
+  }
+</style>

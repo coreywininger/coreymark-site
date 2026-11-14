@@ -104,7 +104,7 @@ test.describe('HTTP Status Reference', () => {
   test('Lab nav item is active on /lab/http-status/', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/lab/http-status/');
-    const labLink = page.locator('nav[aria-label="Primary"] a', { hasText: 'Lab' });
+    const labLink = page.locator('nav[aria-label="Main"] a.top[href="/lab/"]');
     await expect(labLink).toHaveAttribute('aria-current', 'page');
   });
 });

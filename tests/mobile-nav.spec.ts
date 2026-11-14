@@ -1,52 +1,110 @@
 import { expect, test } from '@playwright/test';
 
-test.describe('mobile nav drawer', () => {
-  test('opens full-screen and renders all nav items (regression for #1)', async ({ page }) => {
+const HREFS = ['/blog/', '/lab/', '/projects/', '/now/', '/about/', '/contact/'];
+
+test.describe('mobile nav menu', () => {
+  test('opens a sheet that fits the viewport with all six links', async ({ page }) => {
     await page.goto('/');
 
-    const panel = page.locator('#mobile-menu');
-    await expect(panel).toBeHidden();
+    const sheet = page.locator('#mobile-menu');
+    const summary = page.locator('[data-mobile-nav] > summary');
+    await expect(sheet).toBeHidden();
 
-    await page.getByRole('button', { name: 'Open menu' }).click();
-
-    await expect(panel).toBeVisible();
+    await summary.click();
+    await expect(sheet).toBeVisible();
 
     const viewport = page.viewportSize();
     if (!viewport) throw new Error('viewport size unavailable');
-    const box = await panel.boundingBox();
+    const box = await sheet.boundingBox();
     expect(box).not.toBeNull();
-    expect(box!.height).toBeGreaterThan(viewport.height * 0.9);
-    expect(box!.width).toBeGreaterThan(viewport.width * 0.9);
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
 
-    const labels = ['Home', 'Blog', 'Projects', 'About', 'Now', 'Contact'];
-    for (const label of labels) {
-      const link = panel.getByRole('link', { name: label });
+    await expect(sheet.locator('a')).toHaveCount(HREFS.length);
+    for (const href of HREFS) {
+      const link = sheet.locator(`a[href="${href}"]`);
       await expect(link).toBeVisible();
       const linkBox = await link.boundingBox();
-      expect(linkBox).not.toBeNull();
       expect(linkBox!.height).toBeGreaterThanOrEqual(44);
     }
   });
 
-  test('Enter on hamburger transfers focus into drawer (regression for #4)', async ({ page }) => {
+  test('header stays on one row with 44px controls', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    const toggle = page.getByRole('button', { name: 'Open menu' });
-    await toggle.focus();
-    await toggle.press('Enter');
-
-    await expect(page.locator('#mobile-menu')).toBeVisible();
-    const focused = page.locator(':focus');
-    await expect(focused).toHaveJSProperty('tagName', 'A');
-    await expect(focused).toHaveAttribute('href', '/');
+    const facts = await page.evaluate(() => {
+      const header = document.querySelector('[data-site-header]')!;
+      const controls = [...header.querySelectorAll<HTMLElement>('a, button, summary')].filter(
+        (e) => e.checkVisibility({ visibilityProperty: true, contentVisibilityAuto: true }),
+      );
+      const mids = controls.map((e) => {
+        const r = e.getBoundingClientRect();
+        return Math.round(r.top + r.height / 2);
+      });
+      return {
+        rows: new Set(mids).size,
+        minHeight: Math.min(...controls.map((e) => e.getBoundingClientRect().height)),
+        hScroll: document.documentElement.scrollWidth > window.innerWidth,
+      };
+    });
+    expect(facts.rows).toBe(1);
+    expect(facts.minHeight).toBeGreaterThanOrEqual(44);
+    expect(facts.hScroll).toBe(false);
   });
 
-  test('close button dismisses drawer', async ({ page }) => {
+  test('marks the current page with aria-current', async ({ page }) => {
+    await page.goto('/now/');
+    await page.locator('[data-mobile-nav] > summary').click();
+    const sheet = page.locator('#mobile-menu');
+    await expect(sheet.locator('a[aria-current="page"]')).toHaveCount(1);
+    await expect(sheet.locator('a[aria-current="page"]')).toHaveAttribute('href', '/now/');
+  });
+
+  test('Escape and click-away close the menu', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'Open menu' }).click();
+    await page.waitForLoadState('networkidle');
+    const nav = page.locator('[data-mobile-nav]');
+    const summary = nav.locator('> summary');
+    const sheet = page.locator('#mobile-menu');
+
+    await summary.click();
+    await expect(sheet).toBeVisible();
+    await expect(summary).toHaveAttribute('aria-label', 'Close menu');
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+    await expect(summary).toHaveAttribute('aria-label', 'Open menu');
+    await expect(summary).toBeFocused();
+
+    await summary.click();
+    await expect(sheet).toBeVisible();
+    await page.locator('main').click({ position: { x: 10, y: 400 } });
+    await expect(sheet).toBeHidden();
+  });
+
+  test('keyboard: Enter on the menu button opens it', async ({ page }) => {
+    await page.goto('/');
+    const summary = page.locator('[data-mobile-nav] > summary');
+    await summary.focus();
+    await summary.press('Enter');
     await expect(page.locator('#mobile-menu')).toBeVisible();
-    await page.getByRole('button', { name: 'Close menu' }).click();
-    await expect(page.locator('#mobile-menu')).toBeHidden();
+  });
+});
+
+test.describe('desktop nav', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test('shows six inline links, no menu button, aria-current on the active page', async ({ page }) => {
+    await page.goto('/lab/');
+    const nav = page.locator('[data-site-header] nav[aria-label="Main"]');
+    await expect(page.locator('[data-mobile-nav]')).toBeHidden();
+    for (const href of HREFS) {
+      await expect(nav.locator(`a.top[href="${href}"]`)).toBeVisible();
+    }
+    await expect(nav.locator('a.top[aria-current="page"]')).toHaveCount(1);
+    await expect(nav.locator('a.top[aria-current="page"]')).toHaveAttribute('href', '/lab/');
+  });
+
+  test('brand links home', async ({ page }) => {
+    await page.goto('/lab/');
+    await expect(page.locator('[data-brand]')).toHaveAttribute('href', '/');
   });
 });
