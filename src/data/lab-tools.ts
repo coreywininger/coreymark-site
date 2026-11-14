@@ -8,6 +8,10 @@ export type LabTool = {
   added: string;
   updated?: string;
   icon: string;
+  /** Short example shown on tool tiles: what you type… */
+  sampleInput?: string;
+  /** …and what you get back. */
+  sampleOutput?: string;
 };
 
 export type DisciplineMeta = {
@@ -33,6 +37,8 @@ export const tools: LabTool[] = [
     discipline: 'networking',
     added: '2026-05-09',
     icon: 'network',
+    sampleInput: '10.0.0.0/22',
+    sampleOutput: '1,022 usable hosts',
   },
   {
     slug: 'cron',
@@ -42,6 +48,8 @@ export const tools: LabTool[] = [
     discipline: 'systems',
     added: '2026-05-09',
     icon: 'clock',
+    sampleInput: '0 7 * * 1-5',
+    sampleOutput: '7:00 AM, Monday to Friday',
   },
   {
     slug: 'jwt',
@@ -51,6 +59,8 @@ export const tools: LabTool[] = [
     discipline: 'security',
     added: '2026-05-10',
     icon: 'key-round',
+    sampleInput: 'eyJhbGciOiJIUzI1NiJ9…',
+    sampleOutput: 'Header, claims, expiry',
   },
   {
     slug: 'whatsmyip',
@@ -60,6 +70,8 @@ export const tools: LabTool[] = [
     discipline: 'networking',
     added: '2026-05-11',
     icon: 'network',
+    sampleInput: 'your connection',
+    sampleOutput: 'Public IP, headers, TLS',
   },
   {
     slug: 'base64',
@@ -69,6 +81,8 @@ export const tools: LabTool[] = [
     discipline: 'devops',
     added: '2026-05-12',
     icon: 'lock',
+    sampleInput: 'aGVsbG8gd29ybGQ=',
+    sampleOutput: 'hello world',
   },
   {
     slug: 'regex',
@@ -78,6 +92,8 @@ export const tools: LabTool[] = [
     discipline: 'devops',
     added: '2026-05-12',
     icon: 'regex',
+    sampleInput: '^\\d{3}-\\d{4}$',
+    sampleOutput: 'Matches as you type',
   },
   {
     slug: 'json-yaml',
@@ -87,6 +103,8 @@ export const tools: LabTool[] = [
     discipline: 'devops',
     added: '2026-05-12',
     icon: 'arrow-left-right',
+    sampleInput: '{"replicas": 3}',
+    sampleOutput: 'replicas: 3',
   },
   {
     slug: 'cert-decoder',
@@ -96,6 +114,8 @@ export const tools: LabTool[] = [
     discipline: 'security',
     added: '2026-05-17',
     icon: 'shield-check',
+    sampleInput: '-----BEGIN CERTIFICATE-----',
+    sampleOutput: 'Issuer, names, expiry date',
   },
   {
     slug: 'http-status',
@@ -105,8 +125,19 @@ export const tools: LabTool[] = [
     discipline: 'devops',
     added: '2026-05-18',
     icon: 'file-question-mark',
+    sampleInput: '429',
+    sampleOutput: 'Too Many Requests',
   },
 ];
+
+/** Palette token per discipline (tile, tag and card accents). */
+export const disciplineColor: Record<Discipline, string> = {
+  networking: 'cyan',
+  systems: 'green',
+  security: 'red',
+  devops: 'magenta',
+  cloud: 'blue',
+};
 
 export function toolsByDiscipline(d: Discipline): LabTool[] {
   return tools

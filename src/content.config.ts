@@ -32,6 +32,12 @@ const projects = defineCollection({
       })
       .default({}),
     status: z.enum(['live', 'wip', 'archived']),
+    /** Overrides the default status wording, e.g. "Rebuilding" for wip. */
+    statusLabel: z.string().optional(),
+    /** One line for the homepage inventory table; falls back to summary. */
+    tagline: z.string().optional(),
+    /** Where it runs, lowercase, e.g. "github actions · claude". */
+    runsOn: z.string().default(''),
     featured: z.boolean().default(false),
     heroImage: z.string().optional(),
   }),
@@ -42,6 +48,17 @@ const now = defineCollection({
   schema: z.object({
     updatedDate: z.coerce.date(),
     title: z.string().default('Now'),
+    // Structured sections: the single source for the /now/ page and the
+    // homepage ~/now status panel.
+    sections: z
+      .array(
+        z.object({
+          label: z.string(),
+          status: z.enum(['progress', 'running', 'job', 'next']),
+          items: z.array(z.object({ title: z.string(), note: z.string() })),
+        }),
+      )
+      .default([]),
   }),
 });
 
