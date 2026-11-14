@@ -1,9 +1,15 @@
 ---
 // Evaluated at build time, so the year is the build date's year.
 const year = new Date().getFullYear();
+
+interface Props {
+  /** No top margin: the page's last section sits directly on the footer. */
+  flush?: boolean;
+}
+const { flush = false } = Astro.props;
 ---
 
-<footer class="site-footer" data-pagefind-ignore>
+<footer class:list={['site-footer', flush && 'flush']} data-pagefind-ignore>
   <div class="inner">
     <div class="left">
       <span class="echo"><span class="prompt">$</span> echo "Corey Wininger, Bedford, Indiana"</span>
@@ -23,6 +29,7 @@ const year = new Date().getFullYear();
     border-top: 1px solid var(--line);
     background: var(--surface2);
   }
+  .flush { margin-top: 0; }
   .inner {
     max-width: 1200px;
     margin: 0 auto;

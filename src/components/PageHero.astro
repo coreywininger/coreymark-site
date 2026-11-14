@@ -2,7 +2,8 @@
 // Shared page hero: grid + glow background, breadcrumb, `~/` heading, intro.
 // `color` is the page's palette token (heading prefix, current crumb, first
 // glow). Default slot renders under the intro; `before` renders between the
-// breadcrumb and the heading (e.g. a topic chip).
+// breadcrumb and the heading (e.g. a topic chip); `aside` sits to the right of
+// the heading block (e.g. an RSS button) and wraps below it on narrow screens.
 import Crumbs from './Crumbs.astro';
 
 interface Props {
@@ -27,11 +28,16 @@ const { title, prefix = '~/', intro, crumbs, color = 'accent', glow = 'magenta' 
   <div class="hero-inner">
     {crumbs && crumbs.length > 0 && <div class="hero-crumbs"><Crumbs items={crumbs} color={color} /></div>}
     <slot name="before" />
-    <h1 class="rise d1">
-      {prefix && <span class="pre" aria-hidden="true">{prefix}</span>}{title}
-    </h1>
-    {intro && <p class="intro rise d2">{intro}</p>}
-    <slot />
+    <div class="hero-row">
+      <div class="hero-main">
+        <h1 class="rise d1">
+          {prefix && <span class="pre" aria-hidden="true">{prefix}</span>}{title}
+        </h1>
+        {intro && <p class="intro rise d2">{intro}</p>}
+        <slot />
+      </div>
+      {Astro.slots.has('aside') && <div class="hero-aside rise d3"><slot name="aside" /></div>}
+    </div>
   </div>
 </section>
 
@@ -52,6 +58,14 @@ const { title, prefix = '~/', intro, crumbs, color = 'accent', glow = 'magenta' 
     padding: 64px 32px 48px;
   }
   .hero-crumbs { margin-bottom: 24px; }
+  .hero-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+  }
+  .hero-main { flex: 1 1 480px; min-width: 0; }
   h1 {
     margin: 0 0 16px;
     font-size: clamp(40px, 5vw, 58px);

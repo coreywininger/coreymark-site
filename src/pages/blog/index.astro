@@ -1,135 +1,353 @@
 ---
 import { getCollection } from 'astro:content';
+import { Rss } from '@lucide/astro';
 import Base from '../../layouts/Base.astro';
-import PostCard from '../../components/PostCard.astro';
-import { PILLAR_META, type Pillar } from '../../content.config';
+import PageHero from '../../components/PageHero.astro';
 import { publishedOnly, sortByPubDateDesc } from '../../lib/content';
+import { readingTime } from '../../lib/readingTime';
+import { TOPICS, topicFor } from '../../data/topics';
 
-const allPosts = await getCollection('blog', publishedOnly);
-const posts = sortByPubDateDesc(allPosts);
+const posts = sortByPubDateDesc(await getCollection('blog', publishedOnly));
+const pillars = TOPICS.filter((t) => t.id !== 'lab');
+const countFor = (id: string) => posts.filter((p) => p.data.pillar === id).length;
 
-const pillarOrder: Pillar[] = ['ops', 'business', 'ai', 'cloud', 'personal'];
-const pillarCounts = pillarOrder.reduce<Record<string, number>>(
-  (acc, p) => {
-    acc[p] = posts.filter((post) => post.data.pillar === p).length;
-    return acc;
-  },
-  {},
-);
+// Frontmatter dates are date-only (UTC midnight); format in UTC.
+const monthLabel = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const dayLabel = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+const groups: { label: string; posts: typeof posts }[] = [];
+for (const post of posts) {
+  const label = monthLabel(post.data.pubDate);
+  const group = groups.find((g) => g.label === label);
+  if (group) group.posts.push(post);
+  else groups.push({ label, posts: [post] });
+}
+const plural = (n: number) => `${n} ${n === 1 ? 'post' : 'posts'}`;
 ---
 
 <Base
-  title="Blog"
-  description="Writing on IT operations, translating tech to the business, AI for IT, and hybrid cloud."
+  title="Writing"
+  description="Notes on running IT, explaining it to the business, where AI helps, and what the cloud really costs."
 >
-  <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-    <header class="mb-10">
-      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-primary">
-        Blog
-      </p>
-      <h1 class="mb-4 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        Field notes, not thought leadership.
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        Four pillars plus a personal lane. Filter below.
-      </p>
-    </header>
+  <PageHero
+    title="Writing"
+    intro="Notes on running IT, explaining it to the business, where AI helps, and what the cloud really costs. Newest first."
+    crumbs={[{ label: 'writing', href: '/blog/', title: 'All writing' }]}
+  >
+    <a slot="aside" class="btn-ghost rss" href="/rss.xml" data-rss-link>
+      <Rss size={16} strokeWidth={2} aria-hidden="true" />RSS feed
+    </a>
+  </PageHero>
 
-    <div class="mb-6">
-      <input
-        type="text"
-        id="blog-search-input"
-        placeholder="Search posts…"
-        autocomplete="off"
-        class="w-full rounded-lg border border-border-subtle bg-bg-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none transition-colors"
-      />
-    </div>
-
-    <nav aria-label="Filter by pillar" class="mb-8">
-      <ul class="flex flex-wrap gap-2 text-sm" data-pillar-filters>
-        <li>
-          <button
-            type="button"
-            data-filter="all"
-            aria-pressed="true"
-            class="rounded-full border border-accent-primary bg-accent-primary px-3 py-1.5 font-semibold text-bg-primary transition-colors"
-          >
-            All · {posts.length}
+  <div class="filters" data-filter-bar>
+    <div class="filters-inner">
+      <div role="group" aria-label="Filter by topic" class="chips" data-pillar-filters>
+        <button type="button" class="chip" data-filter="all" aria-pressed="true" style="--c: var(--accent)">
+          <span class="sq" aria-hidden="true"></span>All <span class="n">{posts.length}</span>
+        </button>
+        {pillars.map((t) => (
+          <button type="button" class="chip" data-filter={t.id} aria-pressed="false" style={`--c: var(--${t.color})`}>
+            <span class="sq" aria-hidden="true"></span>{t.label} <span class="n">{countFor(t.id)}</span>
           </button>
-        </li>
-        {pillarOrder.map((p) => (
-          <li>
-            <button
-              type="button"
-              data-filter={p}
-              aria-pressed="false"
-              class="rounded-full border border-border-subtle px-3 py-1.5 text-text-secondary transition-colors hover:border-accent-primary hover:text-accent-primary"
-            >
-              {PILLAR_META[p].label} · {pillarCounts[p]}
-            </button>
-          </li>
         ))}
-      </ul>
-    </nav>
-
-    {posts.length === 0 ? (
-      <p class="text-text-secondary">
-        Nothing here yet. The first posts land at soft-launch.
-      </p>
-    ) : (
-      <div class="grid gap-5 md:grid-cols-2" data-post-list>
-        {posts.map((post) => <PostCard post={post} />)}
       </div>
-    )}
-  </section>
+      <label class="search">
+        <span class="slash" aria-hidden="true">/</span>
+        <span class="sr-only">Filter posts by title</span>
+        <input type="search" id="blog-search-input" placeholder="filter by title" autocomplete="off" spellcheck="false" />
+      </label>
+    </div>
+  </div>
+
+  <div class="list" data-post-list data-total={posts.length}>
+    <p class="summary" aria-live="polite" data-result-count>{plural(posts.length)}</p>
+
+    {groups.map((g) => (
+      <section class="group" data-month-group>
+        <h2>{g.label} <span class="gcount" data-group-count>{plural(g.posts.length)}</span></h2>
+        <ol>
+          {g.posts.map((post) => {
+            const t = topicFor(post.data.pillar);
+            return (
+              <li class="row" data-post-row data-pillar={post.data.pillar} data-title={post.data.title.toLowerCase()} style={`--c: var(--${t.color})`}>
+                <time datetime={post.data.pubDate.toISOString().slice(0, 10)}>{dayLabel(post.data.pubDate)}</time>
+                <div class="main">
+                  <a class="postlink" href={`/blog/${post.id}/`}>{post.data.title}</a>
+                  <p>{post.data.description}</p>
+                </div>
+                <div class="meta">
+                  <span class="topic" data-row-topic>{t.label}</span>
+                  <span class="mins" data-reading-time>
+                    {post.data.draft && <span class="draft">draft · </span>}{readingTime(post.body ?? '')} min
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    ))}
+
+    <div class="empty" hidden data-empty-state>
+      <p class="empty-h">0 results</p>
+      <p class="empty-p">No posts match that filter. Try a different word or topic.</p>
+      <button type="button" class="btn-ghost" data-clear-filters>Clear filters</button>
+    </div>
+  </div>
 </Base>
 
-<script>
-  const buttons = document.querySelectorAll<HTMLButtonElement>(
-    '[data-pillar-filters] [data-filter]',
-  );
-  const cards = document.querySelectorAll<HTMLElement>(
-    '[data-post-list] [data-pillar]',
-  );
-  const searchInput = document.getElementById('blog-search-input') as HTMLInputElement | null;
+<style>
+  .rss { font-size: 15px; font-weight: 500; padding: 0 16px; gap: 8px; }
 
-  let activeFilter = 'all';
-  let searchQuery = '';
-
-  const setActive = (target: HTMLButtonElement) => {
-    buttons.forEach((b) => {
-      const active = b === target;
-      b.setAttribute('aria-pressed', String(active));
-      b.classList.toggle('bg-accent-primary', active);
-      b.classList.toggle('border-accent-primary', active);
-      b.classList.toggle('text-bg-primary', active);
-      b.classList.toggle('font-semibold', active);
-      b.classList.toggle('border-border-subtle', !active);
-      b.classList.toggle('text-text-secondary', !active);
-    });
-  };
-
-  function applyFilters() {
-    const q = searchQuery.toLowerCase().trim();
-    cards.forEach((card) => {
-      const pillar = card.dataset.pillar ?? '';
-      const text = (card.getAttribute('data-search-text') ?? '').toLowerCase();
-      const pillarMatch = activeFilter === 'all' || pillar === activeFilter;
-      const searchMatch = !q || text.includes(q);
-      card.hidden = !(pillarMatch && searchMatch);
-    });
+  /* ---------- sticky filter bar ---------- */
+  .filters {
+    position: sticky;
+    top: var(--header-h);
+    z-index: 15;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
   }
+  /* The filters need JS; without it the full list is simply shown. */
+  :global(html:not([data-js])) .filters { display: none; }
+  .filters-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 14px 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text2);
+    background: transparent;
+    border: 1px solid var(--line2);
+    transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease;
+  }
+  .chip:hover { transform: translateY(-1px); border-color: var(--c); }
+  .chip[aria-pressed='true'] {
+    color: var(--text);
+    background: color-mix(in srgb, var(--c) 18%, transparent);
+    border-color: var(--c);
+  }
+  .sq { width: 8px; height: 8px; border-radius: 2px; background: var(--c); }
+  .n { font-weight: 500; }
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 200px;
+    min-width: 0; /* let the field shrink so it shares the chips' row */
+    max-width: 300px;
+    min-height: 44px;
+    padding: 0 14px;
+    background: var(--surface);
+    border: 1px solid var(--line2);
+    border-radius: 8px;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+  .search:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  .slash { font-family: var(--font-mono); color: var(--green); }
+  .search input {
+    flex: 1;
+    width: 0;
+    min-width: 0;
+    height: 44px;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 15px;
+  }
+  .search input::placeholder { color: var(--text3); opacity: 1; }
 
-  buttons.forEach((button) => {
-    button.addEventListener('click', () => {
-      activeFilter = button.dataset.filter ?? 'all';
-      setActive(button);
-      applyFilters();
+  /* ---------- list ---------- */
+  .list { max-width: 1120px; margin: 0 auto; padding: 40px 32px 0; }
+  .summary { margin: 0 0 24px; font-family: var(--font-mono); font-size: 14px; color: var(--text3); }
+  .group { margin-bottom: 48px; }
+  .group:last-of-type { margin-bottom: 0; }
+  h2 {
+    margin: 0 0 8px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--text2);
+    scroll-margin-top: calc(var(--header-h) + 90px);
+  }
+  .gcount { font-weight: 400; color: var(--text3); }
+  ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 28px;
+    padding: 16px 12px 24px;
+    border-bottom: 1px solid var(--line);
+    border-radius: 8px;
+    transition: background-color 160ms ease;
+  }
+  .row[hidden] { display: none; }
+  .row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+  .row time { flex: 0 0 64px; font-family: var(--font-mono); font-size: 14px; color: var(--text3); padding-top: 14px; }
+  .main { flex: 999 1 420px; min-width: 0; }
+  .postlink {
+    display: inline-block;
+    padding: 8px 0; /* 44px+ touch target */
+    font-family: var(--font-head);
+    font-size: 22px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    background-image: linear-gradient(var(--c), var(--c));
+    background-size: 0 2px;
+    background-position: 0 calc(100% - 6px);
+    background-repeat: no-repeat;
+    transition: background-size 250ms ease;
+  }
+  .postlink:hover { background-size: 100% 2px; }
+  .main p { margin: 0; color: var(--text2); max-width: 64ch; }
+  .meta { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; padding-top: 12px; }
+  .topic {
+    display: inline-flex;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--c);
+    border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+    padding: 2px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .mins { font-family: var(--font-mono); font-size: 13px; color: var(--text3); }
+  .draft { color: var(--yellow); }
+
+  .empty { padding: 48px; text-align: center; border: 1px dashed var(--line2); border-radius: 14px; }
+  .empty[hidden] { display: none; }
+  .empty-h { margin: 0 0 6px; font-family: var(--font-mono); color: var(--text2); }
+  .empty-p { margin: 0 0 18px; color: var(--text3); }
+
+  @media (max-width: 1000px) {
+    /* Keep the sticky bar to two short rows: chips scroll sideways. */
+    .filters-inner { gap: 10px; padding-block: 10px; }
+    .chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin: 0 -32px;
+      padding: 2px 32px;
+      scrollbar-width: none;
+      width: calc(100% + 64px);
+    }
+    .chips::-webkit-scrollbar { display: none; }
+    .search { flex: 1 1 100%; max-width: none; }
+  }
+  @media (max-width: 760px) {
+    .filters-inner { padding-inline: 16px; }
+    .chips { margin: 0 -16px; padding: 2px 16px; width: calc(100% + 32px); }
+    .list { padding: 28px 16px 0; }
+    .row { padding: 18px 4px 20px; gap: 0 16px; }
+    .row time { flex-basis: 100%; padding-top: 0; }
+    .meta { flex-direction: row; align-items: center; gap: 12px; padding-top: 6px; }
+    .postlink { font-size: 20px; padding: 9px 0; }
+    .empty { padding: 32px 20px; }
+  }
+</style>
+
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-filter-bar]');
+  const list = document.querySelector<HTMLElement>('[data-post-list]');
+  if (bar && list) {
+    const chips = [...bar.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+    const input = bar.querySelector<HTMLInputElement>('#blog-search-input')!;
+    const rows = [...list.querySelectorAll<HTMLElement>('.row[data-pillar]')];
+    const groups = [...list.querySelectorAll<HTMLElement>('[data-month-group]')];
+    const summary = list.querySelector<HTMLElement>('[data-result-count]')!;
+    const empty = list.querySelector<HTMLElement>('[data-empty-state]')!;
+    const total = rows.length;
+    const valid = new Set(chips.map((c) => c.dataset.filter));
+    const plural = (n: number) => `${n} ${n === 1 ? 'post' : 'posts'}`;
+
+    let topic = 'all';
+
+    const apply = () => {
+      const q = input.value.trim().toLowerCase();
+      let shown = 0;
+      for (const row of rows) {
+        const match =
+          (topic === 'all' || row.dataset.pillar === topic) && (!q || (row.dataset.title ?? '').includes(q));
+        row.hidden = !match;
+        if (match) shown++;
+      }
+      for (const group of groups) {
+        const n = group.querySelectorAll('.row:not([hidden])').length;
+        group.hidden = n === 0;
+        const count = group.querySelector('[data-group-count]');
+        if (count) count.textContent = plural(n);
+      }
+      chips.forEach((c) => c.setAttribute('aria-pressed', c.dataset.filter === topic ? 'true' : 'false'));
+      summary.textContent = shown === total ? plural(total) : `Showing ${shown} of ${plural(total)}`;
+      empty.hidden = shown !== 0;
+    };
+
+    // Keep ?topic= in the URL so a filtered view can be linked and reloaded.
+    const syncUrl = () => {
+      const url = new URL(window.location.href);
+      if (topic === 'all') url.searchParams.delete('topic');
+      else url.searchParams.set('topic', topic);
+      history.replaceState(null, '', url);
+    };
+
+    const setTopic = (next: string, updateUrl = true) => {
+      topic = valid.has(next) ? next : 'all';
+      apply();
+      if (updateUrl) syncUrl();
+      chips
+        .find((c) => c.dataset.filter === topic)
+        ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    };
+
+    chips.forEach((c) => c.addEventListener('click', () => setTopic(c.dataset.filter ?? 'all')));
+    input.addEventListener('input', apply);
+    empty.querySelector('[data-clear-filters]')?.addEventListener('click', () => {
+      input.value = '';
+      setTopic('all');
+      input.focus();
     });
-  });
 
-  searchInput?.addEventListener('input', () => {
-    searchQuery = searchInput.value;
-    applyFilters();
-  });
+    // "/" focuses the title filter, like the lab tools.
+    document.addEventListener('keydown', (e) => {
+      const el = document.activeElement;
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) {
+        e.preventDefault();
+        input.focus();
+      }
+    });
+
+    const initial = new URLSearchParams(window.location.search).get('topic');
+    if (initial) setTopic(initial, false);
+  }
 </script>

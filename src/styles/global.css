@@ -151,7 +151,10 @@
   --color-text-tertiary: var(--text3);
   --color-success: var(--green);
   --color-error: var(--red);
-  --header-h: 68px;
+  --header-h: 73px;
+}
+@media (max-width: 560px) {
+  :root { --header-h: 69px; }
 }
 
 html {
@@ -332,7 +335,10 @@ section[id],
 
 /* Breadcrumb link. Current segment takes --c (defaults to accent). */
 .crumb {
-  padding: 3px 6px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* touch target */
+  padding: 0 6px;
   border-radius: 6px;
   color: var(--text3);
   text-decoration: none;
@@ -380,6 +386,7 @@ section[id],
   align-items: center;
   gap: 8px;
   padding: 5px 12px;
+  position: relative;
   border-radius: 999px;
   font-size: 14px;
   font-weight: 600;
@@ -395,6 +402,9 @@ section[id],
   border-radius: 2px;
   background: var(--c);
 }
+/* 44px hit area for linked chips without a taller pill. */
+a.topic-chip::after,
+button.topic-chip::after { content: ""; position: absolute; inset: -6px 0; }
 a.topic-chip:hover,
 button.topic-chip:hover {
   background: color-mix(in srgb, var(--c) 22%, transparent);
@@ -456,20 +466,21 @@ button.topic-chip:hover {
   content: "";
 }
 
-/* Shiki (defaultColor: false) emits --shiki-dark on the <pre> and its
-   <span>s. Token colors come from that; the block surface follows the
-   active theme. Full palette-driven syntax colors land with the post
-   layout rebuild. */
+/* Code blocks. Shiki emits CSS variables per token type (see
+   astro.config.mjs); they are mapped to the active theme's palette here.
+   Every pairing is 4.5:1 or better on --surface2 in all six themes. */
 .astro-code {
-  color: var(--shiki-dark) !important;
-  background-color: var(--surface2) !important;
-  border: 1px solid var(--line);
-}
-.astro-code span {
-  color: var(--shiki-dark) !important;
-}
-/* github-dark's comment grey (#6A737D) is under 4.5:1 on every theme's code
-   surface. Comments take --text3, which passes in all six. */
-.astro-code span[style*="6A737D" i] {
-  color: var(--text3) !important;
+  --shiki-foreground: var(--text);
+  --shiki-background: var(--surface2);
+  --shiki-token-constant: var(--yellow);
+  --shiki-token-string: var(--green);
+  --shiki-token-string-expression: var(--green);
+  --shiki-token-comment: var(--text3);
+  --shiki-token-keyword: var(--magenta);
+  --shiki-token-parameter: var(--text);
+  --shiki-token-function: var(--blue);
+  --shiki-token-punctuation: var(--text2);
+  --shiki-token-link: var(--cyan);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
 }

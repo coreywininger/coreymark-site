@@ -1,0 +1,53 @@
+---
+// End-of-post author card. Badge, not the headshot (the photo lives on
+// /about/ only).
+---
+
+<aside class="author" aria-label="About the author" data-author-card>
+  <a class="badge-link" href="/about/" aria-label="About Corey Wininger" tabindex="-1">
+    <span class="keycap" aria-hidden="true"><span class="gt">&gt;</span>_</span>
+  </a>
+  <div class="who">
+    <a class="name" href="/about/">Corey Wininger</a>
+    <p>Director of Operations. I write about running IT, explaining it to the business, and where AI actually helps.</p>
+  </div>
+  <a class="btn-ghost more" href="/about/" data-author-more>More about me</a>
+</aside>
+
+<style>
+  .author {
+    margin-top: 32px;
+    padding: 28px;
+    border: 1px solid var(--line2);
+    border-radius: 16px;
+    background: linear-gradient(160deg, var(--surface), var(--surface2));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 24px;
+  }
+  .badge-link { flex: none; text-decoration: none; }
+  .keycap {
+    --badge: 84px;
+    border-radius: 20px;
+    background: var(--bg);
+    font-size: 30px;
+    box-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.7);
+  }
+  .author:hover .keycap { transform: rotate(-6deg); border-color: var(--accent); }
+  .who { flex: 1 1 300px; min-width: 0; }
+  .name {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+  .name:hover { color: var(--accent); }
+  p { margin: 0; color: var(--text2); font-size: 16px; line-height: 1.6; }
+  .more { flex: none; }
+</style>

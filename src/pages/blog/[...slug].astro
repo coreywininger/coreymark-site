@@ -1,8 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
-import Post from '../../layouts/Post.astro';
-import { PILLAR_META } from '../../content.config';
+import Post, { type RelatedPost } from '../../layouts/Post.astro';
 import { publishedOnly, sortByPubDateDesc } from '../../lib/content';
 import { readingTime } from '../../lib/readingTime';
 
@@ -10,23 +9,25 @@ export const getStaticPaths = (async () => {
   const posts = await getCollection('blog', publishedOnly);
   const sorted = sortByPubDateDesc(posts);
 
-  return sorted.map((post, idx) => {
-    const prev = sorted[idx + 1] ?? null;
-    const next = sorted[idx - 1] ?? null;
-    return {
-      params: { slug: post.id },
-      props: {
-        post,
-        prev: prev ? { slug: prev.id, title: prev.data.title } : null,
-        next: next ? { slug: next.id, title: next.data.title } : null,
-      },
-    };
+  return sorted.map((post) => {
+    // "Keep reading": two posts, same pillar first (newest first), then the
+    // newest from anywhere else.
+    const others = sorted.filter((p) => p.id !== post.id);
+    const same = others.filter((p) => p.data.pillar === post.data.pillar);
+    const rest = others.filter((p) => p.data.pillar !== post.data.pillar);
+    const related: RelatedPost[] = [...same, ...rest].slice(0, 2).map((p) => ({
+      slug: p.id,
+      title: p.data.title,
+      description: p.data.description,
+      pubDate: p.data.pubDate,
+      pillar: p.data.pillar,
+    }));
+    return { params: { slug: post.id }, props: { post, related } };
   });
 }) satisfies GetStaticPaths;
 
-const { post, prev, next } = Astro.props;
+const { post, related } = Astro.props;
 const { Content, headings } = await render(post);
-const pillarLabel = PILLAR_META[post.data.pillar].label;
 const minutes = readingTime(post.body ?? '');
 ---
 
@@ -35,13 +36,12 @@ const minutes = readingTime(post.body ?? '');
   description={post.data.description}
   pubDate={post.data.pubDate}
   updatedDate={post.data.updatedDate}
-  pillar={pillarLabel}
+  pillar={post.data.pillar}
   tags={post.data.tags}
   image={post.data.heroImage ?? `/og/${post.id}.png`}
   headings={headings}
   minutes={minutes}
-  prev={prev}
-  next={next}
+  related={related}
   project={post.data.project}
 >
   <Content />

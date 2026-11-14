@@ -12,21 +12,29 @@ const project = projects.find((entry) => entry.id === projectSlug);
 
 if (!project && import.meta.env.DEV) {
   console.warn(
-    `[PartOfProject] No project entry found for slug "${projectSlug}". Breadcrumb will not render.`,
+    `[PartOfProject] No project entry found for slug "${projectSlug}". Link will not render.`,
   );
 }
 ---
 
 {project && (
-  <div
-    data-part-of-project
-    class="mb-3 text-xs font-semibold uppercase tracking-wide"
-  >
-    <a
-      href={`/projects/${project.id}/`}
-      class="text-accent-primary hover:underline"
-    >
-      Part of the {project.data.title} project &rarr;
-    </a>
-  </div>
+  <span data-part-of-project class="pop">
+    <a href={`/projects/${project.id}/`}>Part of the {project.data.title} project <span aria-hidden="true">&rarr;</span></a>
+  </span>
 )}
+
+<style>
+  .pop { font-family: var(--font-mono); font-size: 13px; }
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    color: var(--text2);
+    text-decoration: underline;
+    text-decoration-color: var(--line2);
+    text-underline-offset: 4px;
+    transition: color 150ms ease, text-decoration-color 150ms ease;
+  }
+  a:hover { color: var(--text); text-decoration-color: currentColor; }
+</style>

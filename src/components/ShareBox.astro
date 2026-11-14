@@ -1,0 +1,85 @@
+---
+// End-of-post share box: LinkedIn + copy link (with a "Link copied" state).
+import SocialIcon from './SocialIcons.astro';
+import { Link2 } from '@lucide/astro';
+
+interface Props {
+  url: string;
+}
+
+const { url } = Astro.props;
+const linkedInHref = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+---
+
+<div class="sharebox" data-share-box>
+  <p>Found this useful? Pass it on.</p>
+  <div class="btns">
+    <a class="share" href={linkedInHref} target="_blank" rel="noopener noreferrer" data-share="linkedin">
+      <SocialIcon name="linkedin" size={16} />Share on LinkedIn
+    </a>
+    <button type="button" class="share" data-copy-url={url}>
+      <Link2 size={16} strokeWidth={2} aria-hidden="true" />
+      <span data-copy-label data-idle="Copy link" data-done="Link copied" aria-live="polite">Copy link</span>
+    </button>
+  </div>
+</div>
+
+<style>
+  .sharebox {
+    margin-top: 56px;
+    padding: 24px;
+    border: 1px solid var(--line2);
+    border-radius: 14px;
+    background: var(--surface2);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  p { margin: 0; font-weight: 600; color: var(--text); }
+  .btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .share {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--line2);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text2);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
+  }
+  .share:hover,
+  .share[data-state='copied'] {
+    border-color: var(--c, var(--accent));
+    color: var(--text);
+    background: color-mix(in srgb, var(--c, var(--accent)) 10%, transparent);
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-url]').forEach((btn) => {
+    const label = btn.querySelector<HTMLElement>('[data-copy-label]');
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copyUrl ?? '');
+      } catch {
+        return; // clipboard unavailable: leave the button as it is
+      }
+      if (!label) return;
+      label.textContent = label.dataset.done ?? '';
+      btn.dataset.state = 'copied';
+      setTimeout(() => {
+        label.textContent = label.dataset.idle ?? '';
+        delete btn.dataset.state;
+      }, 2000);
+    });
+  });
+</script>
