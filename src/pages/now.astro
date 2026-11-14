@@ -1,40 +1,111 @@
 ---
-import { getEntry, render } from 'astro:content';
+import { getEntry } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
 
 const entry = await getEntry('now', 'current');
 if (!entry) {
   throw new Error('Now entry missing at src/content/now/current.mdx');
 }
-const { Content } = await render(entry);
-const { updatedDate } = entry.data;
+const { updatedDate, sections } = entry.data;
 
+// Frontmatter dates are date-only (UTC midnight); format in UTC.
 const dateStr = updatedDate.toLocaleDateString('en-US', {
   year: 'numeric',
   month: 'long',
   day: 'numeric',
+  timeZone: 'UTC',
 });
+
+// Same data drives the homepage ~/now panel.
+const STYLE = {
+  progress: { color: 'yellow', dot: 'ring' },
+  running: { color: 'green', dot: 'solid' },
+  job: { color: 'cyan', dot: 'solid' },
+  next: { color: 'magenta', dot: 'ring' },
+} as const;
+const count = (n: number) => `${n} ${n === 1 ? 'item' : 'items'}`;
 ---
 
-<Base
-  title="Now"
-  description="What I'm focused on this month."
->
-  <article class="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-    <header class="mb-10">
-      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-primary">
-        Now
-      </p>
-      <h1 class="mb-4 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        What I'm focused on right now.
-      </h1>
-      <p class="text-sm text-text-tertiary">
-        Updated <time datetime={updatedDate.toISOString()}>{dateStr}</time>
-      </p>
-    </header>
+<Base title="Now" description="What I am focused on right now, updated when things change.">
+  <PageHero
+    title="Now"
+    color="yellow"
+    glow="cyan"
+    intro={'What I am focused on right now, updated when things change. Inspired by the "now page" idea from Derek Sivers.'}
+    crumbs={[{ label: 'now', href: '/now/', title: 'Now' }]}
+  >
+    <p class="updated rise d3">
+      <span class="dollar">$</span> last updated
+      <time datetime={updatedDate.toISOString().slice(0, 10)} data-now-updated>{dateStr}</time>
+    </p>
+  </PageHero>
 
-    <div class="prose prose-invert">
-      <Content />
-    </div>
-  </article>
+  <div class="blocks" data-now-sections>
+    {sections.map((s, i) => (
+      <section class="block" style={`--c: var(--${STYLE[s.status].color})`} aria-labelledby={`now-${i}`} data-now-section={s.status}>
+        <div class="block-head">
+          <h2 id={`now-${i}`}>{s.label}</h2>
+          <span class="n">{count(s.items.length)}</span>
+        </div>
+        <ul>
+          {s.items.map((item) => (
+            <li class="row" data-now-item>
+              <span class:list={['dot', STYLE[s.status].dot]} aria-hidden="true"></span>
+              <div>
+                <p class="t">{item.title}</p>
+                <p class="d">{item.note}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
 </Base>
+
+<style>
+  .updated { margin: 22px 0 0; font-family: var(--font-mono); font-size: 14px; color: var(--text3); }
+  .dollar { color: var(--green); }
+  .updated time { color: var(--text); }
+
+  .blocks {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 56px 32px 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+    gap: 20px;
+    align-items: start;
+  }
+  .block {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--line2);
+    background: var(--bg);
+    box-shadow: 0 24px 60px -40px var(--c);
+  }
+  .block-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  h2 { margin: 0; font-family: var(--font-mono); font-size: 15px; font-weight: 600; letter-spacing: 0; color: var(--c); }
+  .n { font-family: var(--font-mono); font-size: 13px; color: var(--text3); }
+  ul { list-style: none; margin: 0; padding: 6px 0; }
+  .row { display: flex; gap: 14px; padding: 14px 20px; transition: background-color 160ms ease; }
+  .row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+  .dot { flex: none; margin-top: 7px; width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; }
+  .dot.solid { background: var(--c); }
+  .dot.ring { border: 2px solid var(--c); }
+  .t { margin: 0; font-weight: 600; color: var(--text); }
+  .d { margin: 2px 0 0; font-size: 15px; color: var(--text3); }
+
+  @media (max-width: 560px) {
+    .blocks { padding: 32px 16px 0; }
+  }
+</style>

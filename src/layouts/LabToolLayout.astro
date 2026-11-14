@@ -40,7 +40,11 @@ for (const t of others) if (!picked.includes(t)) picked.push(t);
 const related = picked.slice(0, 3);
 ---
 
-<Base title={tool.title} description={description}>
+<Base
+  title={tool.title}
+  description={description}
+  search={{ kind: 'tool', sub: `${disciplineLabel(tool.discipline)} · ${tool.blurb}`, color }}
+>
   <div class="tool-page" style={`--c: var(--${color})`} data-lab-tool-page={slug} data-discipline={tool.discipline}>
     <PageHero
       title={tool.title}
@@ -80,7 +84,7 @@ const related = picked.slice(0, 3);
           </p>
         </section>
 
-        <aside class="others" aria-labelledby="rel-h" data-other-tools>
+        <aside class="others" aria-labelledby="rel-h" data-other-tools data-pagefind-ignore>
           <h2 id="rel-h">Other tools</h2>
           <div class="other-list">
             {related.map((t) => (

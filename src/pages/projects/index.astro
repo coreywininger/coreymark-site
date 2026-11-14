@@ -1,55 +1,119 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import ProjectCard from '../../components/ProjectCard.astro';
+import PageHero from '../../components/PageHero.astro';
+import StatusPill from '../../components/StatusPill.astro';
 
-const allProjects = await getCollection('projects');
-const projects = allProjects.sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-);
+const projects = (await getCollection('projects'))
+  .filter((p) => p.data.status !== 'archived')
+  .sort((a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
+
+// Card accent cycles through the palette so each project reads as its own system.
+const COLORS = ['blue', 'magenta', 'cyan', 'green', 'yellow'];
 ---
 
 <Base
   title="Projects"
-  description="A selection of things I've built — sometimes to learn, sometimes to scratch an itch."
+  description="Side projects I built and still keep running."
 >
-  <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-    <header class="mb-10">
-      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-primary">
-        Projects
-      </p>
-      <h1 class="mb-4 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        Things I've built.
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        Personal projects and weekend builds. Enterprise work stays at
-        work.
-      </p>
-    </header>
+  <PageHero
+    title="Projects"
+    color="yellow"
+    glow="magenta"
+    intro="Side projects I built and still keep running. Each one started as something I needed, and each one taught me something worth writing down."
+    crumbs={[{ label: 'projects', href: '/projects/', title: 'Projects' }]}
+  />
 
-    {projects.length === 0 ? (
-      <p class="text-text-secondary">
-        Nothing shipped here yet — the first project lands with launch.
-      </p>
-    ) : (
-      <div class="grid gap-5 md:grid-cols-2">
-        {projects.map((project) => <ProjectCard project={project} />)}
-        <article
-          aria-label="More projects coming soon"
-          data-empty-state
-          class="flex flex-col gap-3 rounded-lg border border-dashed border-border-subtle bg-bg-elevated/60 p-6 opacity-70"
-        >
-          <span class="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
-            Coming soon
-          </span>
-          <h3 class="text-xl font-semibold leading-tight tracking-tight text-text-secondary">
-            More builds in progress
-          </h3>
-          <p class="text-text-secondary">
-            New projects land here as they ship. Check back soon.
-          </p>
+  <div class="list" data-project-list data-pagefind-ignore>
+    {projects.map((p, i) => {
+      const d = p.data;
+      const chips = d.highlights ?? d.stack.slice(0, 4);
+      return (
+        <article class="pcard" style={`--c: var(--${COLORS[i % COLORS.length]})`} data-project={p.id}>
+          <div class="main">
+            <div class="top">
+              <h2><a href={`/projects/${p.id}/`}>{d.title}</a></h2>
+              <StatusPill status={d.status === 'live' ? 'running' : 'progress'} label={d.statusLabel} />
+            </div>
+            <p class="desc">{d.card ?? d.summary}</p>
+            {chips.length > 0 && (
+              <ul class="chips" aria-label="Built with">
+                {chips.map((s) => <li>{s}</li>)}
+              </ul>
+            )}
+            <div class="actions">
+              <a class="btn-ghost" href={`/projects/${p.id}/`} data-project-details>Project details</a>
+              {d.links.writeup && <a class="btn-ghost" href={d.links.writeup} data-project-writeup>Read the write-up</a>}
+            </div>
+          </div>
+          {d.readout && (
+            <div class="readout" aria-hidden="true">
+              <p class="r-label">{d.readout.label}</p>
+              {d.readout.lines.map((l) => <p class:list={['r-line', l.tone]}>{l.text}</p>)}
+            </div>
+          )}
         </article>
-      </div>
-    )}
-  </section>
+      );
+    })}
+  </div>
 </Base>
+
+<style>
+  .list { max-width: 1120px; margin: 0 auto; padding: 56px 32px 0; display: flex; flex-direction: column; gap: 24px; }
+  .pcard {
+    display: flex;
+    flex-wrap: wrap;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--bg);
+    border: 1px solid var(--line2);
+    transition: border-color 180ms ease, transform 180ms ease, box-shadow 200ms ease;
+  }
+  .pcard:hover {
+    border-color: var(--c);
+    transform: translateY(-3px);
+    box-shadow: 0 18px 36px -22px color-mix(in srgb, var(--c) 70%, transparent);
+  }
+  .main { flex: 1 1 520px; min-width: 0; padding: 28px; }
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-bottom: 8px; }
+  h2 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.015em; }
+  h2 a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--text);
+    text-decoration: none;
+    background-image: linear-gradient(var(--c), var(--c));
+    background-size: 0 2px;
+    background-position: 0 calc(100% - 6px);
+    background-repeat: no-repeat;
+    transition: background-size 250ms ease;
+  }
+  h2 a:hover { background-size: 100% 2px; }
+  .desc { margin: 0 0 18px; color: var(--text2); max-width: 62ch; }
+  .chips { list-style: none; margin: 0 0 22px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips li {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    color: var(--c);
+    border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+  }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .readout { flex: 1 1 280px; min-width: 0; padding: 28px; background: var(--surface2); border-left: 1px solid var(--line); }
+  .r-label { margin: 0 0 10px; font-family: var(--font-mono); font-size: 13px; color: var(--text3); }
+  .r-line { margin: 0; font-family: var(--font-mono); font-size: 14px; line-height: 1.8; color: var(--text); overflow-wrap: anywhere; }
+  .r-line.muted { color: var(--text3); }
+  .r-line.ok { color: var(--green); }
+  .r-line.info { color: var(--cyan); }
+
+  @media (max-width: 880px) {
+    .readout { border-left: 0; border-top: 1px solid var(--line); }
+  }
+  @media (max-width: 560px) {
+    .list { padding: 32px 16px 0; }
+    .main, .readout { padding: 20px; }
+    h2 { font-size: 24px; }
+  }
+</style>

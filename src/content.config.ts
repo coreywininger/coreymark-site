@@ -40,6 +40,26 @@ const projects = defineCollection({
     runsOn: z.string().default(''),
     featured: z.boolean().default(false),
     heroImage: z.string().optional(),
+    /** Projects index card: description and up to ~4 stack chips. */
+    card: z.string().optional(),
+    highlights: z.array(z.string()).optional(),
+    /** Projects index card: decorative terminal readout. */
+    readout: z
+      .object({
+        label: z.string(),
+        lines: z.array(
+          z.object({ text: z.string(), tone: z.enum(['muted', 'ok', 'info', 'plain']).default('plain') }),
+        ),
+      })
+      .optional(),
+    /** Detail page hero paragraph; falls back to card, then summary. */
+    lede: z.string().optional(),
+    /** Detail page "at a glance" tiles. */
+    facts: z.array(z.object({ label: z.string(), value: z.string() })).default([]),
+    /** Detail page "How it works" steps. */
+    steps: z.array(z.object({ title: z.string(), text: z.string() })).default([]),
+    /** Detail page "Why I built it" paragraphs. */
+    why: z.array(z.string()).default([]),
   }),
 });
 

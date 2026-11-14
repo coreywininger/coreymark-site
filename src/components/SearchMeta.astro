@@ -1,0 +1,22 @@
+---
+// Per-page metadata for the search overlay, read by Pagefind at index time:
+// which group a result belongs to, its one-line subtitle, and its dot color.
+interface Props {
+  kind: 'post' | 'tool' | 'project' | 'page';
+  /** Result title; without it Pagefind uses the page's first <h1>. */
+  title?: string;
+  sub?: string;
+  /** Palette token. */
+  color?: string;
+}
+const { kind, title, sub = '', color = 'accent' } = Astro.props;
+---
+
+<span
+  hidden
+  data-pagefind-meta={`kind[data-kind], sub[data-sub], color[data-color]${title ? ', title[data-title]' : ''}`}
+  data-kind={kind}
+  data-title={title}
+  data-sub={sub}
+  data-color={color}
+></span>

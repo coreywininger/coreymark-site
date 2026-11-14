@@ -61,7 +61,7 @@ const plural = (n: number) => `${n} ${n === 1 ? 'post' : 'posts'}`;
     </div>
   </div>
 
-  <div class="list" data-post-list data-total={posts.length}>
+  <div class="list" data-post-list data-total={posts.length} data-pagefind-ignore>
     <p class="summary" aria-live="polite" data-result-count>{plural(posts.length)}</p>
 
     {groups.map((g) => (
