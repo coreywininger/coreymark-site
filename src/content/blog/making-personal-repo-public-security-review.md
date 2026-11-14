@@ -1,5 +1,5 @@
 ---
-title: "Making a personal repo public: a 30-minute AI-assisted security review"
+title: "Making a repo public: a 30-minute AI security review"
 description: "What a handoff-driven review actually found on my DailyBriefing repo — and the day-one discipline that decided the outcome before the review started."
 pubDate: 2026-04-23
 pillar: ai
