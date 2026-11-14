@@ -1,177 +1,262 @@
 ---
-import { Menu, X, Search } from '@lucide/astro';
-import NetworkMotif from './NetworkMotif.astro';
-import ThemeToggle from './ThemeToggle.astro';
+import { Menu, Search } from '@lucide/astro';
+import ThemePicker from './ThemePicker.astro';
 
+// `color` is the palette token for the square marker in the mobile sheet.
 const navItems = [
-  { href: '/',         label: 'Home' },
-  { href: '/blog',     label: 'Blog' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/lab',      label: 'Lab' },
-  { href: '/about',    label: 'About' },
-  { href: '/now',      label: 'Now' },
-  { href: '/contact',  label: 'Contact' },
+  { href: '/blog/', label: 'Writing', color: 'cyan' },
+  { href: '/lab/', label: 'Lab', color: 'green' },
+  { href: '/projects/', label: 'Projects', color: 'yellow' },
+  { href: '/now/', label: 'Now', color: 'magenta' },
+  { href: '/about/', label: 'About', color: 'blue' },
+  { href: '/contact/', label: 'Contact', color: 'accent' },
 ];
 
 const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isActive = (href: string) => {
-  if (href === '/') return pathname === '/';
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const base = href.replace(/\/$/, '');
+  return pathname === base || pathname.startsWith(`${base}/`);
 };
 ---
 
-<header class="sticky top-0 z-40 border-b border-border-subtle bg-bg-primary/85 backdrop-blur-md" data-pagefind-ignore>
-  <div class="pointer-events-none absolute inset-0 overflow-hidden">
-    <NetworkMotif
-      class="absolute -right-10 -top-10 w-95 text-accent-primary"
-      opacity={0.06}
-    />
-  </div>
-  <div class="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-    <a
-      href="/"
-      class="transition-opacity hover:opacity-80"
-    >
-      <img src="/favicon.svg" alt="Corey Wininger — home" class="h-10 w-10 rounded-lg" />
+<header class="site-header" data-site-header data-pagefind-ignore>
+  <div class="bar">
+    <a href="/" class="brand" aria-label="Corey Wininger, home" data-brand>
+      <span class="keycap" aria-hidden="true"><span class="gt">&gt;</span>_</span>
+      <span class="brand-text">
+        <span class="brand-name">Corey Wininger<span class="cursor" aria-hidden="true"></span></span>
+        <span class="brand-sub slabel">ops · infra · ai</span>
+      </span>
     </a>
 
-    <div class="flex items-center gap-6">
-      <nav aria-label="Primary" class="hidden md:block">
-        <ul class="flex items-center gap-6 text-sm">
-          {navItems.slice(1).map((item) => (
-            <li>
-              <a
-                href={item.href}
-                aria-current={isActive(item.href) ? 'page' : undefined}
-                class:list={[
-                  'transition-colors',
-                  isActive(item.href)
-                    ? 'text-accent-primary'
-                    : 'text-text-secondary hover:text-text-primary',
-                ]}
-              >
-                {item.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+    <nav aria-label="Main" class="main-nav">
+      {navItems.map((item) => (
+        <a
+          class="navlink top"
+          href={item.href}
+          aria-current={isActive(item.href) ? 'page' : undefined}
+        >
+          {item.label}
+        </a>
+      ))}
 
-      <div class="flex items-center gap-3">
-        <button
-          type="button"
-          id="search-trigger"
-          aria-label="Search"
-          class="nav-search-btn"
-        >
-          <Search size={18} strokeWidth={1.75} />
-        </button>
-        <ThemeToggle />
-        <button
-          type="button"
-          class="md:hidden text-text-secondary hover:text-text-primary transition-colors"
-          aria-label="Open menu"
-          aria-controls="mobile-menu"
-          aria-expanded="false"
-          data-menu-toggle
-        >
-          <Menu size={24} strokeWidth={1.75} />
-        </button>
-      </div>
-    </div>
+      <details class="mnav" data-mobile-nav>
+        <summary aria-label="Open menu">
+          <Menu size={20} strokeWidth={2} aria-hidden="true" />
+        </summary>
+        <div class="sheet" id="mobile-menu">
+          {navItems.map((item) => (
+            <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+              <span class="sq" aria-hidden="true" style={`background: var(--${item.color})`}></span>
+              {item.label}
+            </a>
+          ))}
+        </div>
+      </details>
+
+      <button type="button" id="search-trigger" class="btn-ghost hbtn" aria-label="Search" aria-keyshortcuts="Meta+K Control+K">
+        <Search size={16} strokeWidth={2} aria-hidden="true" />
+        <span class="slabel">Search</span>
+        <kbd class="slabel kbd" data-search-shortcut aria-hidden="true">
+          <span class="k-mac">⌘K</span><span class="k-other">Ctrl K</span>
+        </kbd>
+      </button>
+
+      <ThemePicker />
+    </nav>
   </div>
 </header>
 
-{/*
-  Mobile menu lives OUTSIDE <header> because the header sets backdrop-filter
-  (`backdrop-blur-md`), which creates a containing block for position:fixed
-  descendants. Nested, the panel's `inset-0` anchored to the ~64px header box
-  instead of the viewport, collapsing the nav's `flex-1` child to 0 height.
-*/}
-<div
-  id="mobile-menu"
-  class="fixed inset-0 z-50 hidden flex-col bg-bg-primary md:hidden"
-  data-menu-panel
->
-  <div class="flex items-center justify-between border-b border-border-subtle px-4 py-4 sm:px-6">
-    <span class="font-semibold tracking-tight">Menu</span>
-    <div class="flex items-center gap-3">
-      <ThemeToggle />
-      <button
-        type="button"
-        class="text-text-secondary hover:text-text-primary transition-colors"
-        aria-label="Close menu"
-        data-menu-close
-      >
-        <X size={24} strokeWidth={1.75} />
-      </button>
-    </div>
-  </div>
-  <nav aria-label="Mobile" class="flex-1 overflow-y-auto">
-    <ul class="flex flex-col divide-y divide-border-subtle">
-      {navItems.map((item) => (
-        <li>
-          <a
-            href={item.href}
-            aria-current={isActive(item.href) ? 'page' : undefined}
-            class:list={[
-              'block px-6 py-5 text-lg transition-colors',
-              isActive(item.href)
-                ? 'text-accent-primary'
-                : 'text-text-primary hover:bg-bg-subtle',
-            ]}
-          >
-            {item.label}
-          </a>
-        </li>
-      ))}
-    </ul>
-  </nav>
-</div>
-
 <style>
-  .nav-search-btn {
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    border-bottom: 1px solid transparent;
+    background: color-mix(in srgb, var(--bg) 40%, transparent);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    transition: background-color 250ms ease, border-color 250ms ease;
+  }
+  .site-header[data-scrolled] {
+    border-bottom-color: var(--line2);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+  }
+  .bar {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px 32px;
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    background: transparent;
-    border: none;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 4px;
-    transition: color 0.15s;
+    justify-content: space-between;
+    gap: 16px;
   }
-  .nav-search-btn:hover {
-    color: var(--color-accent-primary);
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    min-height: 44px;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .brand:hover .keycap { transform: rotate(-8deg) scale(1.08); }
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    min-width: 0;
+  }
+  .brand-name {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+  .brand-sub {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    /* text2, not text3: the header is translucent and sits over hero glows. */
+    color: var(--text2);
+  }
+  .main-nav {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    font-size: 15px;
+    flex: none;
+  }
+  .hbtn {
+    min-height: 44px;
+    padding: 0 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .kbd {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text2); /* text3 drops under 4.5:1 over hero glows */
+    border: 1px solid var(--line2);
+    border-radius: 4px;
+    padding: 0 6px;
+  }
+  /* Shortcut label per platform; data-platform is set pre-paint in Base. */
+  .k-mac { display: none; }
+  :global(html[data-platform='mac']) .k-mac { display: inline; }
+  :global(html[data-platform='mac']) .k-other { display: none; }
+
+  /* Mobile menu: CSS-only <details> sheet. */
+  /* The sheet anchors to the header bar (not the ☰ button, which is not the
+     right-most control) so it never runs off the left edge on a phone. */
+  .mnav { display: none; }
+  .mnav > summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: 1px solid var(--line2);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .mnav > summary::-webkit-details-marker { display: none; }
+  .mnav[open] > summary {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .sheet {
+    position: absolute;
+    right: 32px;
+    top: calc(100% - 4px);
+    width: min(calc(100vw - 32px), 320px);
+    z-index: 45;
+    padding: 8px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line2);
+    box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.7);
+  }
+  .sheet a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 14px;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 17px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .sheet a:hover,
+  .sheet a[aria-current] {
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+  }
+  .sheet a[aria-current] {
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .sq { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+
+  @media (max-width: 920px) {
+    .navlink.top { display: none; }
+    .mnav { display: block; }
+    .site-header :global(.slabel) { display: none; }
+    .main-nav { gap: 10px; }
+    .hbtn { width: 44px; padding: 0; justify-content: center; }
+  }
+  @media (max-width: 560px) {
+    .bar { padding: 12px 16px; gap: 10px; }
+    .sheet { right: 16px; }
+    .main-nav { gap: 8px; }
+    .brand { gap: 10px; }
+    .brand-name { font-size: 17px; }
   }
 </style>
 
 <script>
-  const toggles = document.querySelectorAll<HTMLButtonElement>('[data-menu-toggle]');
-  const closers = document.querySelectorAll<HTMLButtonElement>('[data-menu-close]');
-  const panel = document.querySelector<HTMLElement>('[data-menu-panel]');
+  const header = document.querySelector<HTMLElement>('[data-site-header]');
+  const mnav = document.querySelector<HTMLDetailsElement>('[data-mobile-nav]');
 
-  const open = () => {
-    if (!panel) return;
-    panel.classList.remove('hidden');
-    panel.classList.add('flex');
-    document.body.style.overflow = 'hidden';
-    toggles.forEach((t) => t.setAttribute('aria-expanded', 'true'));
-    const firstLink = panel.querySelector<HTMLAnchorElement>('nav a');
-    firstLink?.focus();
-  };
-  const close = () => {
-    if (!panel) return;
-    panel.classList.add('hidden');
-    panel.classList.remove('flex');
-    document.body.style.overflow = '';
-    toggles.forEach((t) => t.setAttribute('aria-expanded', 'false'));
-  };
+  // Border + stronger frost once the page has scrolled.
+  if (header) {
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      header.toggleAttribute('data-scrolled', window.scrollY > 8);
+    };
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(update);
+        }
+      },
+      { passive: true },
+    );
+    update();
+  }
 
-  toggles.forEach((t) => t.addEventListener('click', open));
-  closers.forEach((c) => c.addEventListener('click', close));
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') close();
-  });
+  // The menu itself is CSS-only. These are conveniences on top: label state,
+  // Escape, and click-away.
+  if (mnav) {
+    const summary = mnav.querySelector('summary');
+    mnav.addEventListener('toggle', () => {
+      summary?.setAttribute('aria-label', mnav.open ? 'Close menu' : 'Open menu');
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && mnav.open) {
+        mnav.open = false;
+        summary?.focus();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (mnav.open && !mnav.contains(e.target as Node)) mnav.open = false;
+    });
+  }
 </script>

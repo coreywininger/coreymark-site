@@ -1,0 +1,165 @@
+---
+// ~/Things I run: project inventory from the projects collection. A table
+// from 640px up, stacked cards below that.
+import { getCollection } from 'astro:content';
+import StatusPill from '../StatusPill.astro';
+
+const projects = (await getCollection('projects'))
+  .filter((p) => p.data.status !== 'archived')
+  .sort((a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
+
+// "runs on" cycles through the palette so rows read as distinct systems.
+const RUN_COLORS = ['blue', 'magenta', 'cyan', 'green', 'yellow'];
+---
+
+<section id="projects" class="run" aria-labelledby="p-h" data-things-i-run data-pagefind-ignore>
+  <div class="inner">
+    <div class="head">
+      <h2 id="p-h"><span class="pre" aria-hidden="true">~/</span>Things I run</h2>
+      <a class="more" href="/projects/">All projects</a>
+    </div>
+    <p class="sub">Side projects I built and still keep alive.</p>
+
+    {/* Under 640px each project is a card; from 640px up it is a table.
+        Only one of the two is displayed, so nothing is announced twice. */}
+    <ul class="cards" data-project-cards>
+      {projects.map((p, i) => (
+        <li class="card" data-project-card={p.id}>
+          <div class="card-top">
+            <a class="postlink" href={`/projects/${p.id}/`}>{p.data.title}</a>
+            <StatusPill
+              status={p.data.status === 'live' ? 'running' : 'progress'}
+              label={p.data.statusLabel}
+            />
+          </div>
+          <p class="what">{p.data.tagline ?? p.data.summary}</p>
+          {p.data.runsOn && (
+            <p class="on" style={`color: var(--${RUN_COLORS[i % RUN_COLORS.length]})`}>
+              <span class="on-label">runs on</span> {p.data.runsOn}
+            </p>
+          )}
+        </li>
+      ))}
+    </ul>
+
+    <div class="scroll" data-project-table>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">project</th>
+            <th scope="col">what it does</th>
+            <th scope="col">runs on</th>
+            <th scope="col">status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {projects.map((p, i) => (
+            <tr class="row" data-project-row={p.id}>
+              <th scope="row"><a class="postlink" href={`/projects/${p.id}/`}>{p.data.title}</a></th>
+              <td class="what">{p.data.tagline ?? p.data.summary}</td>
+              <td class="on" style={`color: var(--${RUN_COLORS[i % RUN_COLORS.length]})`}>{p.data.runsOn}</td>
+              <td class="st">
+                <StatusPill
+                  status={p.data.status === 'live' ? 'running' : 'progress'}
+                  label={p.data.statusLabel}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<style>
+  .inner { max-width: 1200px; margin: 0 auto; padding: 88px 32px 0; }
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  h2 { margin: 0; font-size: 38px; font-weight: 700; letter-spacing: -0.02em; }
+  .pre { font-family: var(--font-mono); font-weight: 500; color: var(--yellow); }
+  .sub { margin: 0 0 32px; color: var(--text2); }
+  .more {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: underline transparent;
+    text-underline-offset: 5px;
+    text-decoration-thickness: 2px;
+    transition: text-decoration-color 200ms ease;
+  }
+  .more:hover { text-decoration-color: currentColor; }
+
+  .cards { display: none; list-style: none; margin: 0; padding: 0; }
+  .card {
+    padding: 14px 18px 18px;
+    border: 1px solid var(--line2);
+    border-radius: 14px;
+    background: var(--surface2);
+  }
+  .card + .card { margin-top: 12px; }
+  .card-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0 16px;
+  }
+  .card p { margin: 0; }
+  .card .what { min-width: 0; }
+  .card .on { margin-top: 10px; white-space: normal; }
+  .on-label { color: var(--text3); }
+  @media (max-width: 639.98px) {
+    .cards { display: block; }
+    .scroll { display: none; }
+  }
+
+  .scroll {
+    overflow-x: auto;
+    border: 1px solid var(--line2);
+    border-radius: 14px;
+    background: var(--surface2);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  thead tr { text-align: left; font-family: var(--font-mono); }
+  thead th {
+    padding: 14px 22px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text3);
+    border-bottom: 1px solid var(--line);
+  }
+  tbody th, tbody td { padding: 20px 22px; text-align: left; border-bottom: 1px solid var(--line); }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+  .row { transition: background-color 160ms ease; }
+  .row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+  .what { color: var(--text2); }
+  .on { white-space: nowrap; font-family: var(--font-mono); font-size: 14px; }
+  .st { white-space: nowrap; }
+  .postlink {
+    display: inline-block;
+    padding: 10px 0;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-size: 0 2px;
+    background-position: 0 calc(100% - 8px);
+    background-repeat: no-repeat;
+    transition: background-size 250ms ease;
+  }
+  .postlink:hover { background-size: 100% 2px; }
+
+  @media (max-width: 560px) {
+    .inner { padding: 56px 16px 0; }
+    h2 { font-size: 32px; }
+  }
+</style>

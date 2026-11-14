@@ -1,28 +1,28 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('lab index', () => {
-  test('renders Lab heading and Networking section with subnet card', async ({ page }) => {
+  test('renders one heading and the subnet card under Networking', async ({ page }) => {
     await page.goto('/lab/');
-    await expect(page.locator('main h1')).toContainText('Small tools');
-    await expect(page.locator('[data-lab-section="networking"]')).toBeVisible();
+    await expect(page.locator('main h1')).toHaveCount(1);
+    await expect(page.locator('[data-lab-list] [data-discipline="networking"]').first()).toBeVisible();
     await expect(page.locator('[data-lab-tool="subnet"]')).toBeVisible();
+    await expect(page.locator('[data-lab-tool="subnet"]')).toHaveAttribute('data-discipline', 'networking');
   });
 
-  test('subnet card has New badge and links to /lab/subnet/', async ({ page }) => {
+  test('subnet card links to /lab/subnet/', async ({ page }) => {
     await page.goto('/lab/');
     const card = page.locator('[data-lab-tool="subnet"]');
-    await expect(card.locator('[data-lab-new-badge]')).toBeVisible();
     await card.locator('a').first().click();
     await expect(page).toHaveURL(/\/lab\/subnet\/?$/);
   });
 
-  test('only disciplines with tools render — empty disciplines stay hidden', async ({ page }) => {
+  test('only disciplines with tools get a filter chip', async ({ page }) => {
     await page.goto('/lab/');
-    // Disciplines with at least one tool — render.
-    await expect(page.locator('[data-lab-section="networking"]')).toHaveCount(1);
-    // Empty disciplines — do not render.
-    await expect(page.locator('[data-lab-section="devops"]')).toHaveCount(1);
-    await expect(page.locator('[data-lab-section="cloud"]')).toHaveCount(0);
+    await expect(page.locator('[data-discipline-filters] [data-filter="networking"]')).toHaveCount(1);
+    await expect(page.locator('[data-discipline-filters] [data-filter="devops"]')).toHaveCount(1);
+    // No cloud tools yet, so no cloud chip.
+    await expect(page.locator('[data-discipline-filters] [data-filter="cloud"]')).toHaveCount(0);
+    await expect(page.locator('[data-lab-list] [data-discipline="cloud"]')).toHaveCount(0);
   });
 });
 
@@ -118,42 +118,34 @@ test.describe('subnet calculator', () => {
     await expect(page).toHaveTitle(/10\.0\.0\.0\/24 — Subnet calculator/);
   });
 
-  test('breadcrumb is present', async ({ page }) => {
+  test('breadcrumb links home, to the Lab, and marks this tool as current', async ({ page }) => {
     await page.goto('/lab/subnet/');
-    const crumb = page.locator('nav[aria-label="Breadcrumb"]');
-    await expect(crumb).toContainText('Home');
-    await expect(crumb).toContainText('Lab');
-    await expect(crumb).toContainText('Subnet calculator');
+    const crumbs = page.locator('nav[aria-label="Breadcrumb"] a');
+    await expect(crumbs).toHaveCount(3);
+    await expect(crumbs.nth(0)).toHaveAttribute('href', '/');
+    await expect(crumbs.nth(1)).toHaveAttribute('href', '/lab/');
+    await expect(crumbs.nth(2)).toHaveAttribute('href', '/lab/subnet/');
+    await expect(crumbs.nth(2)).toHaveAttribute('aria-current', 'page');
   });
 });
 
 test.describe('lab navigation', () => {
-  test('Lab link is in primary nav between Projects and About', async ({ page }) => {
+  test('Lab link is in the main nav', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
-    const labels = await page
-      .locator('nav[aria-label="Primary"] a')
-      .allTextContents();
-    const labIdx = labels.findIndex((l) => l.trim() === 'Lab');
-    const projectsIdx = labels.findIndex((l) => l.trim() === 'Projects');
-    const aboutIdx = labels.findIndex((l) => l.trim() === 'About');
-    expect(labIdx).toBeGreaterThan(-1);
-    expect(labIdx).toBeGreaterThan(projectsIdx);
-    expect(labIdx).toBeLessThan(aboutIdx);
+    await expect(page.locator('nav[aria-label="Main"] a.top[href="/lab/"]')).toBeVisible();
   });
 
   test('Lab nav item is active on /lab/subnet/', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/lab/subnet/');
-    const labLink = page.locator('nav[aria-label="Primary"] a', { hasText: 'Lab' });
+    const labLink = page.locator('nav[aria-label="Main"] a.top[href="/lab/"]');
     await expect(labLink).toHaveAttribute('aria-current', 'page');
   });
 
   test('mobile menu shows Lab item', async ({ page }) => {
     await page.goto('/');
-    await page.locator('[data-menu-toggle]').first().click();
-    await expect(
-      page.locator('[data-menu-panel] nav a', { hasText: 'Lab' })
-    ).toBeVisible();
+    await page.locator('[data-mobile-nav] > summary').click();
+    await expect(page.locator('#mobile-menu a[href="/lab/"]')).toBeVisible();
   });
 });

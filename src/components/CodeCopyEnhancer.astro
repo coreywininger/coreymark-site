@@ -4,9 +4,33 @@
 ---
 
 <style is:global>
+  /* The button is absolutely positioned inside a horizontally scrolling
+     <pre>. Space for it must be on the scroll-origin axis (padding-top), not
+     padding-right, or long lines scroll underneath it. */
   article .prose pre.has-copy-button {
-    padding-top: 2.75rem;
+    padding-top: 3.25rem;
   }
+  [data-code-copy] {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    min-width: 44px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid var(--line2);
+    background: var(--surface);
+    color: var(--text2);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 150ms ease, border-color 150ms ease;
+  }
+  /* 44px hit area without a taller button. */
+  [data-code-copy]::after { content: ""; position: absolute; inset: -4px 0; }
+  [data-code-copy]:hover { color: var(--text); border-color: var(--accent); }
+  [data-code-copy][data-state='copied'] { color: var(--green); border-color: var(--green); }
 </style>
 
 <script>
@@ -31,9 +55,6 @@
       btn.type = 'button';
       btn.setAttribute('aria-label', 'Copy code');
       btn.dataset.codeCopy = 'true';
-      btn.className =
-        'absolute right-2 top-2 rounded border border-border-subtle bg-bg-subtle px-2 py-1 text-xs font-medium text-text-secondary opacity-60 transition hover:opacity-100 focus-visible:opacity-100';
-
       const idleText = 'Copy';
       const doneText = 'Copied!';
       btn.textContent = idleText;

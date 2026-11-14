@@ -1,36 +1,35 @@
 version: 2
+
+# Keep Dependabot to a few open PRs: one grouped PR per ecosystem per week.
+# (Security updates are raised separately and are not part of the groups.)
+# Note: Dependabot PRs do not get an Azure staging environment (their runs
+# have no access to the deploy token), so this is about noise, not about
+# the staging-environment limit.
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
     commit-message:
       prefix: "ci"
       include: "scope"
+    groups:
+      actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "deps"
       include: "scope"
     groups:
-      astro:
+      npm:
         patterns:
-          - "astro"
-          - "@astrojs/*"
-      tailwind:
-        patterns:
-          - "tailwindcss"
-          - "@tailwindcss/*"
-      react:
-        patterns:
-          - "react"
-          - "react-dom"
-          - "@types/react"
-          - "@types/react-dom"
+          - "*"

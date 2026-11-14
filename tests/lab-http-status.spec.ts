@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('lab index — http-status tool', () => {
-  test('http-status card appears under DevOps section', async ({ page }) => {
+  test('http-status card is filed under DevOps', async ({ page }) => {
     await page.goto('/lab/');
-    await expect(page.locator('[data-lab-section="devops"]')).toBeVisible();
+    await expect(page.locator('[data-lab-list] [data-discipline="devops"]').first()).toBeVisible();
     await expect(page.locator('[data-lab-tool="http-status"]')).toBeVisible();
   });
 
@@ -93,18 +93,20 @@ test.describe('HTTP Status Reference', () => {
     expect(title).toContain('HTTP Status Reference');
   });
 
-  test('breadcrumb is present', async ({ page }) => {
+  test('breadcrumb links home, to the Lab, and marks this tool as current', async ({ page }) => {
     await page.goto('/lab/http-status/');
-    const crumb = page.locator('nav[aria-label="Breadcrumb"]');
-    await expect(crumb).toContainText('Home');
-    await expect(crumb).toContainText('Lab');
-    await expect(crumb).toContainText('HTTP Status Reference');
+    const crumbs = page.locator('nav[aria-label="Breadcrumb"] a');
+    await expect(crumbs).toHaveCount(3);
+    await expect(crumbs.nth(0)).toHaveAttribute('href', '/');
+    await expect(crumbs.nth(1)).toHaveAttribute('href', '/lab/');
+    await expect(crumbs.nth(2)).toHaveAttribute('href', '/lab/http-status/');
+    await expect(crumbs.nth(2)).toHaveAttribute('aria-current', 'page');
   });
 
   test('Lab nav item is active on /lab/http-status/', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/lab/http-status/');
-    const labLink = page.locator('nav[aria-label="Primary"] a', { hasText: 'Lab' });
+    const labLink = page.locator('nav[aria-label="Main"] a.top[href="/lab/"]');
     await expect(labLink).toHaveAttribute('aria-current', 'page');
   });
 });

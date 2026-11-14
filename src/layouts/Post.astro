@@ -1,28 +1,37 @@
 ---
 import type { MarkdownHeading } from 'astro';
 import Base from './Base.astro';
+import Crumbs from '../components/Crumbs.astro';
+import TopicChip from '../components/TopicChip.astro';
 import PostToc from '../components/PostToc.astro';
-import ReadingProgress from '../components/ReadingProgress.tsx';
-import AuthorFooter from '../components/AuthorFooter.astro';
-import BackToTop from '../components/BackToTop.astro';
+import ReadingProgress from '../components/ReadingProgress.astro';
+import ShareBox from '../components/ShareBox.astro';
+import AuthorCard from '../components/AuthorCard.astro';
 import CodeCopyEnhancer from '../components/CodeCopyEnhancer.astro';
 import PartOfProject from '../components/PartOfProject.astro';
-import ShareRow from '../components/ShareRow.astro';
-import NewsletterSignup from '../components/NewsletterSignup.astro';
-import Giscus from '../components/Giscus.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import type { Pillar } from '../content.config';
+import { topicFor, topicHref } from '../data/topics';
+
+export interface RelatedPost {
+  slug: string;
+  title: string;
+  description: string;
+  pubDate: Date;
+  pillar: Pillar;
+}
 
 interface Props {
   title: string;
   description: string;
   pubDate: Date;
   updatedDate?: Date;
-  pillar?: string;
+  pillar: Pillar;
   tags?: string[];
   image?: string;
   headings: MarkdownHeading[];
   minutes?: number;
-  prev?: { slug: string; title: string } | null;
-  next?: { slug: string; title: string } | null;
+  related?: RelatedPost[];
   project?: string;
 }
 
@@ -32,138 +41,319 @@ const {
   pubDate,
   updatedDate,
   pillar,
-  tags,
+  tags = [],
   image,
   headings,
   minutes,
-  prev,
-  next,
+  related = [],
   project,
 } = Astro.props;
 
-const formatDate = (d: Date) =>
-  d.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+const topic = topicFor(pillar);
+const topicUrl = topicHref(pillar);
+
+// Frontmatter dates are date-only (UTC midnight); format in UTC so the day
+// never slips with the build machine's timezone.
+const longDate = (d: Date) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+const shortDate = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+const isoDay = (d: Date) => d.toISOString().slice(0, 10);
+
 const canonicalUrl = new URL(Astro.url.pathname, 'https://coreymark.com').toString();
 ---
 
-<Base title={title} description={description} image={image} ogType="article">
+<Base
+  title={title}
+  description={description}
+  image={image}
+  ogType="article"
+  flushFooter
+  search={{ kind: 'post', sub: `${topic.label} · ${shortDate(pubDate)}`, color: topic.color }}
+>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     "headline": title,
     "description": description,
     "image": image ? new URL(image, "https://coreymark.com").toString() : "https://coreymark.com/og-default.png",
-    "datePublished": pubDate instanceof Date ? pubDate.toISOString() : pubDate,
-    "dateModified": updatedDate ? (updatedDate instanceof Date ? updatedDate.toISOString() : updatedDate) : (pubDate instanceof Date ? pubDate.toISOString() : pubDate),
+    "datePublished": pubDate.toISOString(),
+    "dateModified": (updatedDate ?? pubDate).toISOString(),
     "url": canonicalUrl,
     "author": { "@type": "Person", "name": "Corey Wininger", "url": "https://coreymark.com/about" },
     "publisher": { "@type": "Person", "name": "Corey Wininger", "url": "https://coreymark.com" }
   })} />
-  <ReadingProgress client:load />
+  <ReadingProgress color={topic.color} />
 
-  <article class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-12">
-    <div class="min-w-0">
-      <header class="mb-10">
-        {project && <PartOfProject projectSlug={project} />}
-        {pillar && (
-          <div class="mb-3 text-xs font-semibold uppercase tracking-wide text-accent-primary">
-            {pillar}
-          </div>
-        )}
-        <h1 class="mb-4 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-          {title}
-        </h1>
-        <p class="mb-5 text-lg text-text-secondary">{description}</p>
-        <div class="flex flex-wrap items-center gap-x-2 text-sm text-text-tertiary">
-          <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>
-          {minutes && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>{minutes} min read</span>
-            </>
-          )}
+  <div class="post" style={`--c: var(--${topic.color})`} data-post data-pillar={pillar}>
+    <header class="hero">
+      <div class="hero-bg" aria-hidden="true">
+        <div class="grid-bg"></div>
+        <div class="blob g1"></div>
+        <div class="blob b2 g2"></div>
+      </div>
+      <div class="hero-inner">
+        <div class="crumbs">
+          <Crumbs
+            color={topic.color}
+            items={[
+              { label: 'writing', href: '/blog/', title: 'All writing' },
+              { label: topic.slug, href: topicUrl, title: `All posts in ${topic.label}` },
+            ]}
+          />
+        </div>
+        <div class="chips">
+          <TopicChip label={topic.label} color={topic.color} href={topicUrl} title={`All posts in ${topic.label}`} />
+          {project && <PartOfProject projectSlug={project} />}
+        </div>
+        <h1 class="rise d1">{title}</h1>
+        <p class="desc rise d2">{description}</p>
+        <div class="byline rise d3">
+          <a class="by" href="/about/" title="About Corey" data-byline>
+            <span class="keycap" aria-hidden="true"><span class="gt">&gt;</span>_</span>
+            <span class="bname">Corey Wininger</span>
+          </a>
+          <time datetime={isoDay(pubDate)} data-pub-date>{longDate(pubDate)}</time>
+          {minutes && <span data-reading-time>{minutes} min read</span>}
           {updatedDate && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>
-                Updated{' '}
-                <time datetime={updatedDate.toISOString()}>
-                  {formatDate(updatedDate)}
-                </time>
-              </span>
-            </>
-          )}
-          {tags && tags.length > 0 && (
-            <>
-              <span aria-hidden="true">·</span>
-              <ul class="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <li class="text-text-tertiary">#{tag}</li>
-                ))}
-              </ul>
-            </>
+            <span>Updated <time datetime={isoDay(updatedDate)}>{longDate(updatedDate)}</time></span>
           )}
         </div>
-      </header>
-
-      <div class="prose">
-        <slot />
       </div>
+    </header>
 
-      <ShareRow title={title} url={canonicalUrl} />
+    <div class="body">
+      <article class="article">
+        <div class="prose post-prose">
+          <slot />
+        </div>
+        <ShareBox url={canonicalUrl} />
+        <AuthorCard />
+      </article>
 
-      <AuthorFooter />
-
-      <NewsletterSignup />
-
-      <Giscus />
-
-      {(prev || next) && (
-        <nav
-          aria-label="Adjacent posts"
-          class="mt-16 grid gap-4 border-t border-border-subtle pt-8 sm:grid-cols-2"
-        >
-          {prev ? (
-            <a
-              href={`/blog/${prev.slug}`}
-              class="group rounded-lg border border-border-subtle bg-bg-elevated p-4 transition-colors hover:border-accent-primary"
-            >
-              <div class="text-xs uppercase tracking-wide text-text-tertiary">
-                ← Previous
-              </div>
-              <div class="mt-1 text-text-primary group-hover:text-accent-primary">
-                {prev.title}
-              </div>
-            </a>
-          ) : <div />}
-          {next ? (
-            <a
-              href={`/blog/${next.slug}`}
-              class="group rounded-lg border border-border-subtle bg-bg-elevated p-4 text-right transition-colors hover:border-accent-primary"
-            >
-              <div class="text-xs uppercase tracking-wide text-text-tertiary">
-                Next →
-              </div>
-              <div class="mt-1 text-text-primary group-hover:text-accent-primary">
-                {next.title}
-              </div>
-            </a>
-          ) : <div />}
-        </nav>
-      )}
+      <aside class="side">
+        <PostToc headings={headings} />
+        {tags.length > 0 && (
+          <div class="tags" data-post-tags>
+            <p class="side-h" id="tags-h">tags</p>
+            <ul aria-labelledby="tags-h">
+              {tags.map((tag) => <li>#{tag}</li>)}
+            </ul>
+          </div>
+        )}
+      </aside>
     </div>
 
-    <aside class="hidden lg:block">
-      <div class="sticky top-24">
-        <PostToc headings={headings} />
-      </div>
-    </aside>
-  </article>
+    {related.length > 0 && (
+      <section class="next" aria-labelledby="next-h" data-keep-reading data-pagefind-ignore>
+        <div class="next-inner">
+          <SectionHeading id="next-h" title="Keep reading" />
+          <div class="cards">
+            {related.map((r) => {
+              const t = topicFor(r.pillar);
+              return (
+                <a class="card" href={`/blog/${r.slug}/`} style={`--c: var(--${t.color})`} data-related={r.slug} data-pillar={r.pillar}>
+                  <span class="card-top">
+                    <span class="card-topic">{t.label}</span>
+                    <time datetime={isoDay(r.pubDate)}>{shortDate(r.pubDate)}</time>
+                  </span>
+                  <span class="card-title">{r.title}</span>
+                  <span class="card-desc">{r.description}</span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )}
+  </div>
 
-  <BackToTop />
   <CodeCopyEnhancer />
 </Base>
+
+<style>
+  /* ---------- hero ---------- */
+  .hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+  .hero-bg { position: absolute; inset: 0; pointer-events: none; }
+  .hero-bg .grid-bg { position: absolute; inset: 0; }
+  .g1 { width: 480px; height: 480px; left: -160px; top: -200px; background: var(--c); }
+  .g2 { width: 380px; height: 380px; right: -60px; top: -40px; background: var(--magenta); }
+  .hero-inner { position: relative; max-width: 1120px; margin: 0 auto; padding: 72px 32px 64px; }
+  .crumbs { margin-bottom: 28px; }
+  .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 22px; }
+  h1 {
+    margin: 0 0 22px;
+    font-size: clamp(36px, 4.6vw, 58px);
+    line-height: 1.06;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    max-width: 20ch;
+    text-wrap: balance;
+  }
+  .desc { margin: 0 0 30px; font-size: 21px; color: var(--text2); max-width: 52ch; }
+  .byline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 24px;
+    font-size: 15px;
+    color: var(--text3);
+  }
+  .by {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    color: var(--text2);
+    text-decoration: none;
+  }
+  .by .keycap { --badge: 32px; border-radius: 8px; border-width: 1px; background: var(--surface); box-shadow: none; }
+  .by:hover .keycap { transform: rotate(-6deg); border-color: var(--accent); }
+  .bname { font-weight: 600; transition: color 150ms ease; }
+  .by:hover .bname { color: var(--accent); }
+
+  /* ---------- body ---------- */
+  .body {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 64px 32px 80px;
+    display: flex;
+    gap: 64px;
+    align-items: flex-start;
+  }
+  .article { flex: 0 1 700px; min-width: 0; }
+  .side { flex: 1 1 220px; min-width: 0; position: sticky; top: calc(var(--header-h) + 24px); max-height: calc(100vh - var(--header-h) - 48px); overflow-y: auto; }
+  .side-h { margin: 0 0 10px; font-family: var(--font-mono); font-size: 13px; color: var(--text3); }
+  .tags { margin-top: 28px; }
+  .tags ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .tags li {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line2);
+    color: var(--text2);
+  }
+
+  /* ---------- prose ---------- */
+  .post-prose {
+    max-width: none;
+    font-size: 19px;
+    line-height: 1.78;
+    --tw-prose-body: var(--text2);
+    --tw-prose-links: var(--c);
+    --tw-prose-quote-borders: var(--c);
+    --tw-prose-quotes: var(--text2);
+  }
+  .post-prose :global(p) { margin: 0 0 1.35em; }
+  .post-prose > :global(p:first-child) { font-size: 22px; line-height: 1.6; color: var(--text); }
+  .post-prose :global(em) { color: var(--text); }
+  .post-prose :global(strong) { color: var(--text); }
+  .post-prose :global(a) { text-decoration-color: color-mix(in srgb, var(--c) 45%, transparent); }
+  .post-prose :global(a:hover) { text-decoration-color: var(--c); }
+  .post-prose :global(li) { margin-block: 0.35em; }
+  /* Long inline code (module paths, URLs) wraps instead of widening the page. */
+  .post-prose :global(:not(pre) > code) { overflow-wrap: anywhere; font-weight: 500; font-size: 0.86em; }
+  .post-prose { overflow-wrap: break-word; }
+  .post-prose :global(h2) {
+    margin: 0 0 22px;
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--text);
+    scroll-margin-top: calc(var(--header-h) + 24px);
+  }
+  .post-prose :global(:not(hr) + h2) { margin-top: 56px; }
+  /* `##` marker in the pillar color. The empty alt text keeps it out of the
+     accessible name. */
+  .post-prose :global(h2)::before {
+    content: "##";
+    content: "##" / "";
+    margin-right: 10px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 22px;
+    color: var(--c);
+  }
+  .post-prose :global(h3) {
+    margin: 40px 0 14px;
+    font-size: 22px;
+    line-height: 1.3;
+    color: var(--text);
+    scroll-margin-top: calc(var(--header-h) + 24px);
+  }
+  /* Markdown `---`: three equal dots in the pillar color. */
+  .post-prose :global(hr) {
+    border: 0;
+    height: 6px;
+    width: 38px;
+    margin: 56px auto;
+    --dot: color-mix(in srgb, var(--c) 55%, transparent);
+    background:
+      radial-gradient(circle, var(--dot) 3px, transparent 3.5px) 0 50% / 6px 6px no-repeat,
+      radial-gradient(circle, var(--dot) 3px, transparent 3.5px) 50% 50% / 6px 6px no-repeat,
+      radial-gradient(circle, var(--dot) 3px, transparent 3.5px) 100% 50% / 6px 6px no-repeat;
+  }
+  .post-prose :global(blockquote) {
+    font-style: normal;
+    font-weight: 400;
+    border-left-width: 3px;
+    padding-left: 20px;
+  }
+  .post-prose :global(blockquote p:first-of-type)::before,
+  .post-prose :global(blockquote p:last-of-type)::after { content: none; }
+  .post-prose :global(pre) {
+    margin: 1.6em 0;
+    font-size: 14.5px;
+    line-height: 1.65;
+    padding: 18px 20px;
+  }
+  .post-prose :global(table) { font-size: 16px; }
+  .post-prose :global(img) { border-radius: 12px; border: 1px solid var(--line); }
+
+  /* ---------- keep reading ---------- */
+  .next { border-top: 1px solid var(--line); background: var(--surface2); }
+  .next-inner { max-width: 1120px; margin: 0 auto; padding: 72px 32px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 20px; }
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 24px;
+    border-radius: 14px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--line2);
+    text-decoration: none;
+    transition: border-color 180ms ease, transform 180ms ease, box-shadow 200ms ease;
+  }
+  .card:hover {
+    border-color: var(--c);
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--c) 60%, transparent);
+  }
+  .card-top { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--text3); }
+  .card-topic { color: var(--c); font-weight: 600; }
+  .card-title { font-family: var(--font-head); font-size: 22px; line-height: 1.25; font-weight: 700; }
+  .card-desc { color: var(--text2); }
+
+  @media (max-width: 960px) {
+    /* One column: the on-this-page list is dropped, tags move under the post. */
+    .body { flex-direction: column; gap: 40px; }
+    .article { flex: none; width: 100%; max-width: 700px; }
+    .side { position: static; max-height: none; flex: none; width: 100%; }
+    .side :global([data-toc]) { display: none; }
+    .tags { margin-top: 0; }
+  }
+  @media (max-width: 560px) {
+    .hero-inner { padding: 44px 16px 40px; }
+    .desc { font-size: 19px; }
+    .body { padding: 40px 16px 56px; }
+    .post-prose { font-size: 18px; line-height: 1.72; }
+    .post-prose > :global(p:first-child) { font-size: 20px; }
+    .post-prose :global(h2) { font-size: 26px; }
+    .post-prose :global(h2)::before { font-size: 19px; margin-right: 8px; }
+    .next-inner { padding: 48px 16px; }
+  }
+</style>

@@ -1,33 +1,14 @@
 ---
-import Base from '../../layouts/Base.astro';
+import LabToolLayout from '../../layouts/LabToolLayout.astro';
 import { Share2 } from '@lucide/astro';
 
-const title = 'Subnet calculator';
 const description =
   'IPv4 and IPv6 CIDR calculator with hosts-needed inverse, reverse DNS zones, Cisco ACL syntax, and subnet splitting. All client-side, free.';
 ---
 
-<Base title={title} description={description}>
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
-      <ol class="flex flex-wrap items-center gap-2">
-        <li><a href="/" class="hover:text-text-primary">Home</a></li>
-        <li aria-hidden="true">›</li>
-        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
-        <li aria-hidden="true">›</li>
-        <li class="text-text-secondary">Subnet calculator</li>
-      </ol>
-    </nav>
-
-    <header class="mb-8">
-      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        Subnet calculator
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        IPv4 and IPv6 CIDR analysis. Paste a CIDR or pick a preset, see network
-        details, split into smaller subnets, or work backwards from a host count.
-      </p>
-    </header>
+<LabToolLayout slug="subnet" description={description} note="IPv4 and IPv6">
+  <Fragment slot="intro">IPv4 and IPv6 CIDR analysis. Paste a CIDR or pick a preset, see network
+        details, split into smaller subnets, or work backwards from a host count.</Fragment>
 
     <h2 class="sr-only">
       Professional IPv4 and IPv6 subnet calculator with hosts-needed inverse
@@ -138,11 +119,7 @@ const description =
       </div>
     </div>
 
-    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
-      <summary class="cursor-pointer text-base font-semibold text-text-primary">
-        About this tool
-      </summary>
-      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+    <div slot="reference" class="prose max-w-none" data-tool-about>
         <p><strong>What it does.</strong> Parses IPv4 and IPv6 CIDR notation,
           computes network/broadcast addresses, usable host ranges, subnet and
           wildcard masks, IP class, reverse-DNS arpa zones, host-count inverse
@@ -162,14 +139,8 @@ const description =
           (classless in-addr.arpa delegation).</p>
         <p><strong>Privacy note:</strong> all computation is client-side. No IP
           addresses or CIDR values you enter are sent to any server.</p>
-      </div>
-    </details>
-
-    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
-      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Networking</span>
-      <span>Added 2026-05-09</span>
     </div>
-  </section>
+
 
 <style is:global>
   .subnet-widget .subnet-chip {
@@ -327,7 +298,11 @@ const description =
   }
 </style>
 
-<script is:inline>
+<script>
+// Address math lives in src/lib/subnet.ts and is shared with the homepage
+// Lab widget.
+import { bigToIpv4, bigToIpv6, fmtAddr, fmtBigCount, parseCidr } from '../../lib/subnet';
+
 (function () {
   var ICONS = {
     copy: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
@@ -454,157 +429,6 @@ const description =
       renderHistory();
     });
     recentRow.appendChild(clearBtn);
-  }
-
-  function ipv4ToBig(ip) {
-    var parts = ip.split('.');
-    if (parts.length !== 4) return null;
-    var n = 0n;
-    for (var i = 0; i < 4; i++) {
-      var p = parseInt(parts[i], 10);
-      if (isNaN(p) || p < 0 || p > 255 || String(p) !== parts[i].replace(/^0+(?=\d)/, '')) return null;
-      n = (n << 8n) | BigInt(p);
-    }
-    return n;
-  }
-  function bigToIpv4(n) {
-    return [
-      Number((n >> 24n) & 0xffn),
-      Number((n >> 16n) & 0xffn),
-      Number((n >> 8n) & 0xffn),
-      Number(n & 0xffn)
-    ].join('.');
-  }
-  function ipv6ToBig(addr) {
-    if (!/^[0-9a-fA-F:]+$/.test(addr) || (addr.match(/::/g) || []).length > 1) return null;
-    var parts;
-    if (addr.indexOf('::') !== -1) {
-      var halves = addr.split('::');
-      var left = halves[0] === '' ? [] : halves[0].split(':');
-      var right = halves[1] === '' ? [] : halves[1].split(':');
-      var missing = 8 - left.length - right.length;
-      if (missing < 0) return null;
-      var middle = [];
-      for (var i = 0; i < missing; i++) middle.push('0');
-      parts = left.concat(middle).concat(right);
-    } else {
-      parts = addr.split(':');
-    }
-    if (parts.length !== 8) return null;
-    var n = 0n;
-    for (var j = 0; j < 8; j++) {
-      if (!/^[0-9a-fA-F]{1,4}$/.test(parts[j])) return null;
-      n = (n << 16n) | BigInt(parseInt(parts[j], 16));
-    }
-    return n;
-  }
-  function bigToIpv6(n) {
-    var groups = [];
-    for (var i = 7; i >= 0; i--) {
-      groups.push(((n >> BigInt(i * 16)) & 0xffffn).toString(16));
-    }
-    var bestStart = -1, bestLen = 0;
-    var curStart = -1, curLen = 0;
-    for (var k = 0; k < 8; k++) {
-      if (groups[k] === '0') {
-        if (curStart === -1) { curStart = k; curLen = 1; } else { curLen++; }
-        if (curLen > bestLen) { bestStart = curStart; bestLen = curLen; }
-      } else {
-        curStart = -1; curLen = 0;
-      }
-    }
-    if (bestLen >= 2) {
-      var before = groups.slice(0, bestStart).join(':');
-      var after = groups.slice(bestStart + bestLen).join(':');
-      return (before || '') + '::' + (after || '');
-    }
-    return groups.join(':');
-  }
-
-  function arpaV4(network, prefix) {
-    var n = network;
-    var octets = [
-      Number((n >> 24n) & 0xffn),
-      Number((n >> 16n) & 0xffn),
-      Number((n >> 8n) & 0xffn),
-      Number(n & 0xffn)
-    ];
-    var alignedOctets = Math.floor(prefix / 8);
-    if (alignedOctets === 0) return { zone: 'in-addr.arpa', exact: prefix === 0 };
-    var rev = octets.slice(0, alignedOctets).reverse();
-    return { zone: rev.join('.') + '.in-addr.arpa', exact: prefix % 8 === 0 };
-  }
-  function arpaV6(network, prefix) {
-    var nibbles = [];
-    for (var i = 31; i >= 0; i--) {
-      nibbles.push(((network >> BigInt(i * 4)) & 0xfn).toString(16));
-    }
-    var alignedNibbles = Math.floor(prefix / 4);
-    if (alignedNibbles === 0) return { zone: 'ip6.arpa', exact: prefix === 0 };
-    var rev = nibbles.slice(0, alignedNibbles).reverse();
-    return { zone: rev.join('.') + '.ip6.arpa', exact: prefix % 4 === 0 };
-  }
-
-  function parseCidr(text) {
-    var t = text.trim();
-    var slash = t.lastIndexOf('/');
-    if (slash === -1) return { error: 'Missing prefix (e.g. /24 or /64)' };
-    var addrPart = t.slice(0, slash);
-    var prefixPart = t.slice(slash + 1);
-    var prefix = parseInt(prefixPart, 10);
-    if (isNaN(prefix)) return { error: 'Prefix must be a number' };
-
-    var family, total, addr;
-    if (addrPart.indexOf(':') !== -1) {
-      family = 6; total = 128;
-      addr = ipv6ToBig(addrPart);
-      if (addr === null) return { error: 'Invalid IPv6 address' };
-    } else {
-      family = 4; total = 32;
-      addr = ipv4ToBig(addrPart);
-      if (addr === null) return { error: 'Invalid IPv4 address' };
-    }
-    if (prefix < 0 || prefix > total) return { error: 'Prefix must be 0–' + total + ' for IPv' + family };
-
-    var hostBits = total - prefix;
-    var allOnes = (1n << BigInt(total)) - 1n;
-    var mask = prefix === 0 ? 0n : ((allOnes >> BigInt(hostBits)) << BigInt(hostBits));
-    var network = addr & mask;
-    var lastAddr = network | ((1n << BigInt(hostBits)) - 1n);
-    var totalAddrs = 1n << BigInt(hostBits);
-
-    var result = {
-      family: family, total: total, prefix: prefix, hostBits: hostBits,
-      network: network, lastAddr: lastAddr, totalAddrs: totalAddrs, mask: mask
-    };
-
-    if (family === 4) {
-      result.wildcard = (~mask) & allOnes;
-      var firstOctet = Number((addr >> 24n) & 0xffn);
-      result.ipClass = firstOctet < 128 ? 'A' : firstOctet < 192 ? 'B' : firstOctet < 224 ? 'C' : firstOctet < 240 ? 'D' : 'E';
-      if (prefix === 32) { result.firstUsable = network; result.lastUsable = network; result.usableHosts = 1n; }
-      else if (prefix === 31) { result.firstUsable = network; result.lastUsable = lastAddr; result.usableHosts = 2n; }
-      else { result.firstUsable = network + 1n; result.lastUsable = lastAddr - 1n; result.usableHosts = totalAddrs - 2n; }
-      result.arpa = arpaV4(network, prefix);
-      result.canonical = bigToIpv4(network) + '/' + prefix;
-    } else {
-      result.usableHosts = totalAddrs;
-      result.firstUsable = network;
-      result.lastUsable = lastAddr;
-      result.arpa = arpaV6(network, prefix);
-      result.canonical = bigToIpv6(network) + '/' + prefix;
-    }
-    return result;
-  }
-
-  function fmtAddr(n, family) { return family === 6 ? bigToIpv6(n) : bigToIpv4(n); }
-
-  function fmtBigCount(n) {
-    if (n <= 1000000n) return n.toLocaleString();
-    var s = n.toString();
-    var exp = s.length - 1;
-    var mantissa = (Number(s.slice(0, 4)) / 1000).toFixed(2);
-    return mantissa + ' × 10^' + exp + ' (' + s.length + ' digits)';
   }
 
   function flashCopied(el) {
@@ -902,4 +726,4 @@ const description =
   render();
 })();
 </script>
-</Base>
+</LabToolLayout>

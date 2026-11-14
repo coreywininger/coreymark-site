@@ -1,33 +1,14 @@
 ---
-import Base from '../../layouts/Base.astro';
+import LabToolLayout from '../../layouts/LabToolLayout.astro';
 
-const title = 'JWT decoder';
 const description =
   'Decode a JWT — see header, payload, claims with friendly tooltips, and signature. Verifies HS256/384/512 in the browser. 100% client-side, free.';
 ---
 
-<Base title={title} description={description}>
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
-      <ol class="flex flex-wrap items-center gap-2">
-        <li><a href="/" class="hover:text-text-primary">Home</a></li>
-        <li aria-hidden="true">›</li>
-        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
-        <li aria-hidden="true">›</li>
-        <li class="text-text-secondary">JWT decoder</li>
-      </ol>
-    </nav>
-
-    <header class="mb-8">
-      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        JWT decoder
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        Paste a JSON Web Token — see exactly what's inside, what every claim
+<LabToolLayout slug="jwt" description={description} note="decode and verify">
+  <Fragment slot="intro">Paste a JSON Web Token — see exactly what's inside, what every claim
         means, and whether it's valid right now. 100% client-side: nothing
-        you paste leaves your browser.
-      </p>
-    </header>
+        you paste leaves your browser.</Fragment>
 
     <h2 class="sr-only">
       JWT decoder with header, payload, signature panes; claims explained
@@ -122,11 +103,7 @@ const description =
 
     </div>
 
-    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
-      <summary class="cursor-pointer text-base font-semibold text-text-primary">
-        About this tool
-      </summary>
-      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+    <div slot="reference" class="prose max-w-none" data-tool-about>
         <p><strong>What it does.</strong> Decodes any JWT (JSON Web Token)
           into its three parts: header, payload, signature. Pretty-prints
           header and payload as JSON with syntax highlighting. Renders a
@@ -180,14 +157,8 @@ const description =
           signature verification happen entirely in your browser. The token,
           the secret you paste to verify, and any decoded content never
           leave the page.</p>
-      </div>
-    </details>
-
-    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
-      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Security</span>
-      <span>Added 2026-05-10</span>
     </div>
-  </section>
+
 
 <style is:global>
   /* JWT decoder widget — scoped under .jwt-widget so styles don't leak.
@@ -203,9 +174,9 @@ const description =
     --jwt-color-border: var(--color-border-subtle);
     --jwt-color-accent: var(--color-accent-primary);
     --jwt-color-accent-2: var(--color-accent-secondary);
-    --jwt-header: #fb015b;
-    --jwt-payload: #d63aff;
-    --jwt-signature: #00b9f1;
+    --jwt-header: var(--red);
+    --jwt-payload: var(--magenta);
+    --jwt-signature: var(--cyan);
     --jwt-radius: 10px;
     --jwt-mono: var(--font-mono);
   }
@@ -943,8 +914,8 @@ const description =
         scp: 'User.Read profile openid email',
         sub: 'AAAAAA-bbbbbbb-CCCCCC',
         tid: '99999999-aaaa-bbbb-cccc-dddddddddddd',
-        unique_name: 'corey@stratumitservices.com',
-        upn: 'corey@stratumitservices.com',
+        unique_name: 'corey@example.com',
+        upn: 'corey@example.com',
         ver: '1.0'
       }
     ),
@@ -967,7 +938,7 @@ const description =
       {
         ver: 1,
         jti: 'AT.7gK2pL9mNqR4sT6vWxYzA1bC3dE5fG7h',
-        iss: 'https://stratum.okta.com/oauth2/default',
+        iss: 'https://example.okta.com/oauth2/default',
         aud: 'api://default',
         iat: nowSec(),
         exp: nowSec() + 3600,
@@ -975,7 +946,7 @@ const description =
         uid: '00u8x2k4lmNqR4sT6vWx',
         scp: ['openid', 'profile', 'email'],
         auth_time: nowSec() - 120,
-        sub: 'corey@stratumitservices.com'
+        sub: 'corey@example.com'
       }
     ),
 
@@ -1092,4 +1063,4 @@ const description =
   refreshColored();
 })();
 </script>
-</Base>
+</LabToolLayout>

@@ -4,7 +4,26 @@ import { defineConfig, fontProviders } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
-import react from '@astrojs/react';
+import { createCssVariablesTheme } from 'shiki/core';
+
+const SANS = ['system-ui', '-apple-system', 'Segoe UI', 'sans-serif'];
+const MONO = ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'];
+
+/**
+ * @param {string} name
+ * @param {`--${string}`} cssVariable
+ * @param {[string, ...string[]]} weights
+ * @param {string[]} fallbacks
+ */
+const font = (name, cssVariable, weights, fallbacks) => ({
+  name,
+  cssVariable,
+  provider: fontProviders.google(),
+  weights,
+  styles: /** @type {['normal']} */ (['normal']),
+  subsets: /** @type {['latin']} */ (['latin']),
+  fallbacks,
+});
 
 // https://astro.build/config
 export default defineConfig({
@@ -19,15 +38,15 @@ export default defineConfig({
 
   markdown: {
     shikiConfig: {
-      themes: {
-        light: 'github-light',
-        dark: 'github-dark',
-      },
-      // defaultColor: false emits per-theme CSS variables (--shiki-light,
-      // --shiki-dark, etc.) on <pre> and <span>, with no default applied.
-      // The selector pair in global.css picks the right one based on
-      // [data-theme] on <html>.
-      defaultColor: false,
+      // Tokens are emitted as CSS variables (--shiki-token-keyword etc.)
+      // instead of fixed colors. global.css maps them to the active theme's
+      // palette, so code blocks follow all six themes.
+      theme: createCssVariablesTheme({
+        name: 'css-variables',
+        variablePrefix: '--shiki-',
+        variableDefaults: {},
+        fontStyle: true,
+      }),
     },
   },
 
@@ -35,26 +54,21 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
 
-  integrations: [mdx(), sitemap(), react()],
+  integrations: [mdx(), sitemap()],
 
+  // Five reader-selectable font sets (see [data-font] in global.css). Every
+  // family is self-hosted by the fonts API. Only the Red Hat set is preloaded
+  // (Base.astro); the others are @font-face declarations only, so the browser
+  // fetches them only once a reader picks that set.
   fonts: [
-    {
-      name: 'Inter',
-      cssVariable: '--font-sans',
-      provider: fontProviders.google(),
-      weights: ['400', '500', '600', '700'],
-      styles: ['normal'],
-      subsets: ['latin'],
-      fallbacks: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-    },
-    {
-      name: 'JetBrains Mono',
-      cssVariable: '--font-mono',
-      provider: fontProviders.google(),
-      weights: ['400', '500'],
-      styles: ['normal'],
-      subsets: ['latin'],
-      fallbacks: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
-    },
+    font('Red Hat Display', '--af-redhat-display', ['500 800'], SANS),
+    font('Red Hat Text', '--af-redhat-text', ['400 600'], SANS),
+    font('Red Hat Mono', '--af-redhat-mono', ['400 500'], MONO),
+    font('IBM Plex Sans', '--af-plex-sans', ['400 700'], SANS),
+    font('IBM Plex Mono', '--af-plex-mono', ['400', '500'], MONO),
+    font('Geist', '--af-geist', ['400 700'], SANS),
+    font('Geist Mono', '--af-geist-mono', ['400 500'], MONO),
+    font('Martian Mono', '--af-martian-mono', ['400 600'], MONO),
+    font('JetBrains Mono', '--af-jetbrains-mono', ['400 700'], MONO),
   ],
 });

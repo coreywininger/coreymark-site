@@ -1,31 +1,12 @@
 ---
-import Base from '../../layouts/Base.astro';
-const title = 'HTTP Status Reference · Corey Wininger';
+import LabToolLayout from '../../layouts/LabToolLayout.astro';
 const description =
   'Searchable HTTP status code reference — every standard 1xx–5xx code with plain-English descriptions, common causes, and curl test commands. Nothing leaves your browser.';
 ---
 
-<Base title={title} description={description}>
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
-      <ol class="flex flex-wrap items-center gap-2">
-        <li><a href="/" class="hover:text-text-primary">Home</a></li>
-        <li aria-hidden="true">›</li>
-        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
-        <li aria-hidden="true">›</li>
-        <li class="text-text-secondary">HTTP Status Reference</li>
-      </ol>
-    </nav>
-
-    <header class="mb-8">
-      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        HTTP Status Reference
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        Every standard HTTP status code — searchable by number, name, or keyword.
-        Plain-English descriptions and curl test commands. Nothing leaves your browser.
-      </p>
-    </header>
+<LabToolLayout slug="http-status" description={description} note="1xx to 5xx">
+  <Fragment slot="intro">Every standard HTTP status code — searchable by number, name, or keyword.
+        Plain-English descriptions and curl test commands. Nothing leaves your browser.</Fragment>
 
     <h2 class="sr-only">
       Searchable HTTP status code reference covering 1xx through 5xx. Filter by
@@ -63,11 +44,7 @@ const description =
       <div class="hs-results" id="results"></div>
     </div>
 
-    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
-      <summary class="cursor-pointer text-base font-semibold text-text-primary">
-        About this tool
-      </summary>
-      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+    <div slot="reference" class="prose max-w-none" data-tool-about>
         <p>
           Covers all standard HTTP status codes defined in RFC 9110 (HTTP Semantics) plus
           common extensions. "Common" codes are those a practicing engineer encounters
@@ -79,29 +56,17 @@ const description =
           balancer responses. No requests leave your browser, and nothing is sent to
           coreymark.com servers.
         </p>
-      </div>
-    </details>
-
-    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
-      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">DevOps</span>
-      <span>Added 2026-05-18</span>
     </div>
-  </section>
+
 
 <style is:global>
 .hs-widget {
-  --hs-c1xx: var(--color-accent-secondary, #60a5fa);
-  --hs-c2xx: var(--color-accent-primary);
-  --hs-c3xx: #fbbf24;
-  --hs-c4xx: #f97316;
-  --hs-c5xx: #f87171;
-  --hs-success: var(--color-success, #34d399);
-}
-[data-theme="light"] .hs-widget {
-  --hs-c1xx: #2563eb;
-  --hs-c3xx: #d97706;
-  --hs-c4xx: #ea580c;
-  --hs-c5xx: #dc2626;
+  --hs-c1xx: var(--cyan);
+  --hs-c2xx: var(--green);
+  --hs-c3xx: var(--blue);
+  --hs-c4xx: var(--yellow);
+  --hs-c5xx: var(--red);
+  --hs-success: var(--green);
 }
 
 .hs-controls { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
@@ -137,7 +102,7 @@ const description =
   user-select: none;
 }
 .hs-chip:hover { border-color: var(--color-accent-primary); color: var(--color-text-primary); }
-.hs-chip.active { background: var(--color-accent-primary); border-color: var(--color-accent-primary); color: #111318; }
+.hs-chip.active { background: var(--color-accent-primary); border-color: var(--color-accent-primary); color: var(--bg); }
 .hs-chip.flash { background: var(--color-text-primary) !important; color: var(--color-bg-primary) !important; }
 .hs-chip[data-cat="1"].active { background: var(--hs-c1xx); border-color: var(--hs-c1xx); }
 .hs-chip[data-cat="2"].active { background: var(--hs-c2xx); border-color: var(--hs-c2xx); }
@@ -556,4 +521,4 @@ document.getElementById('search-input').addEventListener('input', function(e) {
 scheduleRender();
 })();
 </script>
-</Base>
+</LabToolLayout>

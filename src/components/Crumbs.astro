@@ -1,0 +1,44 @@
+---
+// Breadcrumb in the `~ / section / page` style. The last item is the current
+// page and takes `color` (palette token). Each part is a link with a hover
+// background and a title tooltip.
+interface Crumb {
+  label: string;
+  href: string;
+  title?: string;
+}
+interface Props {
+  items: Crumb[];
+  color?: string;
+}
+const { items, color = 'accent' } = Astro.props;
+---
+
+<nav aria-label="Breadcrumb" class="crumbs" style={`--c: var(--${color})`}>
+  <a class="crumb" href="/" title="Home">~</a>
+  {items.map((item, i) => (
+    <>
+      <span aria-hidden="true">/</span>
+      <a
+        class="crumb"
+        href={item.href}
+        title={item.title ?? item.label}
+        aria-current={i === items.length - 1 ? 'page' : undefined}
+      >
+        {item.label}
+      </a>
+    </>
+  ))}
+</nav>
+
+<style>
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 2px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text3);
+  }
+</style>

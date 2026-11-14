@@ -1,0 +1,15 @@
+---
+// Topic chip in a palette color. Renders a link when `href` is given.
+interface Props {
+  label: string;
+  color?: string;
+  href?: string;
+  title?: string;
+}
+const { label, color = 'accent', href, title } = Astro.props;
+const Tag = href ? 'a' : 'span';
+---
+
+<Tag class="topic-chip" href={href} title={title} style={`--c: var(--${color})`} data-topic-chip>
+  <span class="sq" aria-hidden="true"></span>{label}
+</Tag>

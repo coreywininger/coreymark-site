@@ -1,18 +1,17 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('lab index — second tool', () => {
-  test('renders both Networking and Systems sections, each with one card', async ({ page }) => {
+  test('shows Networking and Systems tools', async ({ page }) => {
     await page.goto('/lab/');
-    await expect(page.locator('[data-lab-section="networking"]')).toBeVisible();
-    await expect(page.locator('[data-lab-section="systems"]')).toBeVisible();
+    await expect(page.locator('[data-lab-list] [data-discipline="networking"]').first()).toBeVisible();
+    await expect(page.locator('[data-lab-list] [data-discipline="systems"]').first()).toBeVisible();
     await expect(page.locator('[data-lab-tool="subnet"]')).toBeVisible();
     await expect(page.locator('[data-lab-tool="cron"]')).toBeVisible();
   });
 
-  test('cron card has New badge and links to /lab/cron/', async ({ page }) => {
+  test('cron card links to /lab/cron/', async ({ page }) => {
     await page.goto('/lab/');
     const card = page.locator('[data-lab-tool="cron"]');
-    await expect(card.locator('[data-lab-new-badge]')).toBeVisible();
     await card.locator('a').first().click();
     await expect(page).toHaveURL(/\/lab\/cron\/?$/);
   });
@@ -165,18 +164,20 @@ test.describe('cron decoder', () => {
     await expect(page.locator('#recent-row')).toBeVisible();
   });
 
-  test('breadcrumb is present', async ({ page }) => {
+  test('breadcrumb links home, to the Lab, and marks this tool as current', async ({ page }) => {
     await page.goto('/lab/cron/');
-    const crumb = page.locator('nav[aria-label="Breadcrumb"]');
-    await expect(crumb).toContainText('Home');
-    await expect(crumb).toContainText('Lab');
-    await expect(crumb).toContainText('Cron decoder');
+    const crumbs = page.locator('nav[aria-label="Breadcrumb"] a');
+    await expect(crumbs).toHaveCount(3);
+    await expect(crumbs.nth(0)).toHaveAttribute('href', '/');
+    await expect(crumbs.nth(1)).toHaveAttribute('href', '/lab/');
+    await expect(crumbs.nth(2)).toHaveAttribute('href', '/lab/cron/');
+    await expect(crumbs.nth(2)).toHaveAttribute('aria-current', 'page');
   });
 
   test('Lab nav item is active on /lab/cron/', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/lab/cron/');
-    const labLink = page.locator('nav[aria-label="Primary"] a', { hasText: 'Lab' });
+    const labLink = page.locator('nav[aria-label="Main"] a.top[href="/lab/"]');
     await expect(labLink).toHaveAttribute('aria-current', 'page');
   });
 });

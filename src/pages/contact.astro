@@ -1,154 +1,152 @@
 ---
 import Base from '../layouts/Base.astro';
-import SocialIcon from '../components/SocialIcons.astro';
-import { Mail, Rss } from '@lucide/astro';
+import PageHero from '../components/PageHero.astro';
+
+const EMAIL = 'corey.wininger@gmail.com';
+const ways = [
+  { id: 'email', hint: 'best for anything real', cmd: `mail ${EMAIL}`, desc: 'Questions about a post, a tool, or something you are working on.', cta: 'Send an email', href: `mailto:${EMAIL}`, color: 'cyan', copy: EMAIL, external: false },
+  { id: 'linkedin', hint: 'introductions', cmd: 'open linkedin.com/in/coreywininger', desc: 'Good for connecting and quick hellos. I share every new post there.', cta: 'Open LinkedIn', href: 'https://www.linkedin.com/in/coreywininger/', color: 'blue', copy: null, external: true },
+  { id: 'github', hint: 'code', cmd: 'git clone github.com/coreywininger', desc: 'DailyBriefing, this site, and the Lab tools live here.', cta: 'Open GitHub', href: 'https://github.com/coreywininger', color: 'magenta', copy: null, external: true },
+];
 ---
 
-<Base
-  title="Contact"
-  description="Email, LinkedIn, GitHub — the three places to reach me."
->
-  <section class="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-    <header class="mb-10">
-      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-primary">
-        Contact
-      </p>
-      <h1 class="mb-4 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        Three places that reach me.
-      </h1>
-      <p class="text-lg text-text-secondary">
-        Email is best for anything substantive. LinkedIn is fine for
-        introductions. GitHub is where the code lives.
-      </p>
-    </header>
+<Base title="Contact" description="Email, LinkedIn, GitHub: the three places to reach me.">
+  <PageHero
+    title="Contact"
+    color="cyan"
+    glow="magenta"
+    intro="Three places that reach me. Email is best for anything substantive. LinkedIn is fine for introductions. GitHub is where the code lives."
+    crumbs={[{ label: 'contact', href: '/contact/', title: 'Contact' }]}
+  />
 
-    <ul class="grid gap-4 sm:grid-cols-2">
-      <li>
-        <a
-          href="mailto:corey.wininger@gmail.com"
-          class="group flex items-center gap-4 rounded-lg border border-border-subtle bg-bg-elevated p-5 transition-colors hover:border-accent-primary"
-        >
-          <Mail
-            size={22}
-            strokeWidth={1.75}
-            class="text-text-secondary group-hover:text-accent-primary"
-          />
-          <div>
-            <div class="text-xs uppercase tracking-wide text-text-tertiary">
-              Email
-            </div>
-            <div class="text-text-primary group-hover:text-accent-primary">
-              corey.wininger@gmail.com
+  <div class="wrap">
+    <ul class="ways" data-contact-ways>
+      {ways.map((w) => (
+        <li class="way" style={`--c: var(--${w.color})`} data-contact={w.id}>
+          <div class="strip">
+            <h2>{w.id}</h2>
+            <span class="hint">{w.hint}</span>
+          </div>
+          <div class="body">
+            <p class="cmd"><span class="dollar" aria-hidden="true">$</span> {w.cmd}</p>
+            <p class="desc">{w.desc}</p>
+            <div class="actions">
+              <a
+                class="btn-primary"
+                href={w.href}
+                rel={w.external ? 'me noopener' : undefined}
+                target={w.external ? '_blank' : undefined}
+                data-contact-cta
+              >
+                {w.cta}
+              </a>
+              {w.copy && (
+                <button type="button" class="btn-ghost" data-copy-value={w.copy}>
+                  <span data-copy-label data-idle="Copy address" data-done="Copied" aria-live="polite">Copy address</span>
+                </button>
+              )}
             </div>
           </div>
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="https://www.linkedin.com/in/coreywininger/"
-          target="_blank"
-          rel="me noopener"
-          class="group flex items-center gap-4 rounded-lg border border-border-subtle bg-bg-elevated p-5 transition-colors hover:border-accent-primary"
-        >
-          <SocialIcon
-            name="linkedin"
-            size={22}
-            class="text-text-secondary group-hover:text-accent-primary"
-          />
-          <div>
-            <div class="text-xs uppercase tracking-wide text-text-tertiary">
-              LinkedIn
-            </div>
-            <div class="text-text-primary group-hover:text-accent-primary">
-              in/coreywininger
-            </div>
-          </div>
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="https://github.com/coreywininger"
-          target="_blank"
-          rel="me noopener"
-          class="group flex items-center gap-4 rounded-lg border border-border-subtle bg-bg-elevated p-5 transition-colors hover:border-accent-primary"
-        >
-          <SocialIcon
-            name="github"
-            size={22}
-            class="text-text-secondary group-hover:text-accent-primary"
-          />
-          <div>
-            <div class="text-xs uppercase tracking-wide text-text-tertiary">
-              GitHub
-            </div>
-            <div class="text-text-primary group-hover:text-accent-primary">
-              @coreywininger
-            </div>
-          </div>
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="/rss.xml"
-          class="group flex items-center gap-4 rounded-lg border border-border-subtle bg-bg-elevated p-5 transition-colors hover:border-accent-primary"
-        >
-          <Rss
-            size={22}
-            strokeWidth={1.75}
-            class="text-text-secondary group-hover:text-accent-primary"
-          />
-          <div>
-            <div class="text-xs uppercase tracking-wide text-text-tertiary">
-              Subscribe
-            </div>
-            <div class="text-text-primary group-hover:text-accent-primary">
-              RSS feed
-            </div>
-          </div>
-        </a>
-      </li>
+        </li>
+      ))}
     </ul>
 
-    <div class="mt-10 rounded-lg border border-border-subtle bg-bg-elevated p-6">
-      <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-accent-primary">
-        Newsletter
-      </p>
-      <h2 class="mb-2 text-base font-semibold text-text-primary">
-        New posts, straight to your inbox.
-      </h2>
-      <p class="mb-5 text-sm text-text-secondary">
-        No schedule commitment. Unsubscribe any time.
-      </p>
-      <form
-        action="https://buttondown.com/api/emails/embed-subscribe/coreymark"
-        method="post"
-        target="popupwindow"
-        onsubmit="window.open('https://buttondown.com/coreymark', 'popupwindow')"
-        class="flex flex-col gap-3 sm:flex-row"
-      >
-        <input
-          type="email"
-          name="email"
-          id="bd-email-contact"
-          placeholder="your@email.com"
-          required
-          class="flex-1 rounded-md border border-border-subtle bg-transparent px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
-        />
-        <button
-          type="submit"
-          class="rounded-md bg-accent-primary px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        >
-          Subscribe
-        </button>
-      </form>
-    </div>
-
-    <p class="mt-6 text-sm text-text-tertiary">
-      Based in Bedford, IN. Open to on-site Indianapolis, hybrid, or
-      remote.
+    <p class="rss">
+      <span class="rss-tag">rss</span> Want new posts without social media?
+      <a href="/rss.xml" data-rss-link>Subscribe with RSS</a>
     </p>
-  </section>
+  </div>
 </Base>
+
+<style>
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 56px 32px 0; }
+  .ways {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: 20px;
+  }
+  .way {
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--bg);
+    border: 1px solid var(--line2);
+    transition: border-color 180ms ease, transform 180ms ease, box-shadow 200ms ease;
+  }
+  .way:hover {
+    border-color: var(--c);
+    transform: translateY(-3px);
+    box-shadow: 0 18px 36px -22px color-mix(in srgb, var(--c) 70%, transparent);
+  }
+  .strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  h2 { margin: 0; font-family: var(--font-mono); font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--c); }
+  .hint { font-family: var(--font-mono); font-size: 13px; color: var(--text3); }
+  .body { display: flex; flex-direction: column; gap: 12px; padding: 22px 18px 20px; flex: 1; }
+  .cmd { margin: 0; font-family: var(--font-mono); font-size: 14px; color: var(--text); overflow-wrap: anywhere; }
+  .dollar { color: var(--green); }
+  .desc { margin: 0; color: var(--text2); }
+  .actions { margin-top: auto; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .way .btn-primary { background: var(--c); }
+  .way .btn-primary:hover {
+    box-shadow: 0 10px 26px -12px var(--c), 0 0 0 3px color-mix(in srgb, var(--c) 14%, transparent);
+  }
+  .btn-ghost[data-state='copied'] { border-color: var(--green); color: var(--green); }
+
+  .rss { margin: 36px 0 0; color: var(--text2); }
+  .rss-tag {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--yellow);
+    border: 1px solid color-mix(in srgb, var(--yellow) 45%, transparent);
+    border-radius: 6px;
+    padding: 1px 8px;
+    margin-right: 8px;
+  }
+  .rss a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    text-underline-offset: 4px;
+  }
+  .rss a:hover { text-decoration-color: currentColor; }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 32px 16px 0; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-value]').forEach((btn) => {
+    const label = btn.querySelector<HTMLElement>('[data-copy-label]');
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copyValue ?? '');
+      } catch {
+        return; // clipboard unavailable: leave the button as it is
+      }
+      if (!label) return;
+      label.textContent = label.dataset.done ?? '';
+      btn.dataset.state = 'copied';
+      setTimeout(() => {
+        label.textContent = label.dataset.idle ?? '';
+        delete btn.dataset.state;
+      }, 2000);
+    });
+  });
+</script>

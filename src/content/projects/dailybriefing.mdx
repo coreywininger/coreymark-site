@@ -14,7 +14,34 @@ links:
   repo: https://github.com/coreywininger/dailybriefing
   writeup: /blog/shipping-a-site-with-ai-field-report
 status: live
+tagline: Emails me weather, calendar and tasks every weekday at 7 AM.
+runsOn: github actions · claude
 featured: true
+card: A weekday morning email with my weather, calendar and tasks, plus a short greeting written by Claude. Runs on a schedule with no server to look after.
+highlights: [GitHub Actions, Python, Claude Haiku, Gist]
+readout:
+  label: "cron: 0 12 * * 1-5"
+  lines:
+    - { text: "$ run briefing", tone: muted }
+    - { text: "✓ weather", tone: ok }
+    - { text: "✓ calendar", tone: ok }
+    - { text: "✓ tasks", tone: ok }
+    - { text: "→ sent 7:00 AM", tone: info }
+lede: A weekday morning email that pulls my weather, calendar and tasks into one place, with a short greeting written by Claude.
+facts:
+  - { label: schedule, value: "Weekdays, 7 AM ET" }
+  - { label: runs on, value: GitHub Actions }
+  - { label: sign-ins to renew, value: None (no OAuth) }
+  - { label: AI model, value: Claude Haiku }
+steps:
+  - { title: Schedule fires, text: GitHub Actions starts the job at 7 AM on weekdays. }
+  - { title: Gather, text: "Weather, calendars and my task list are pulled in." }
+  - { title: Write, text: Claude Haiku writes a short greeting for the day. }
+  - { title: Assemble, text: Everything is formatted into one readable email. }
+  - { title: Deliver, text: The email lands before I sit down. }
+why:
+  - I wanted one short email each morning instead of opening four apps. It also became a small, real test bed for scheduled automation with AI in the loop.
+  - Version 2 dropped Google sign-in entirely. The tokens kept expiring, and a personal tool should not need babysitting.
 ---
 
 ## What it is
@@ -35,13 +62,6 @@ The briefing aggregates five data sources into a single email:
 The email uses a dark-themed, card-based layout with color-coded
 sections, conditional weather alerts, and calendar badges distinguishing
 personal from family events.
-
-## Why
-
-This was a practical build: managing a job search, a consulting business
-launch, and family commitments was surfacing the same friction every
-morning — checking weather, calendar, email, and task lists across four
-apps before the coffee was done. Automatable.
 
 ## Architecture
 

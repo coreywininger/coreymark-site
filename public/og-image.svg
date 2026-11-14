@@ -1,13 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="Inter, ui-sans-serif, system-ui, -apple-system, sans-serif">
-  <rect width="1200" height="630" fill="#12151C"/>
-  <g transform="translate(110, 0)">
-    <text id="name" y="280" fill="#F0F2F5" font-size="96" font-weight="700" letter-spacing="-1.5">Corey Wininger</text>
-    <!-- x is computed at build time by scripts/build-og-image.mjs so the bar stays centered under the full name -->
-    <rect id="accent-bar" y="308" width="160" height="4" fill="#2DD4BF"/>
-    <g fill="#9CA3AF" font-size="36" font-weight="400">
-      <text x="0" y="380">Writing about IT operations, translating tech to the</text>
-      <text x="0" y="432">business, AI for the people who actually run it, hybrid</text>
-      <text x="0" y="484">cloud economics — and sometimes a weekend project.</text>
-    </g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#243243" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="fade" cx="0.5" cy="0" r="0.95">
+      <stop offset="0.25" stop-color="#fff" stop-opacity="0.75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="gridmask"><rect width="1200" height="630" fill="url(#fade)"/></mask>
+    <radialGradient id="ga" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#76CCBF" stop-opacity="0.22"/><stop offset="1" stop-color="#76CCBF" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gb" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#B99DD6" stop-opacity="0.16"/><stop offset="1" stop-color="#B99DD6" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#101822"/>
+  <rect width="1200" height="630" fill="url(#grid)" mask="url(#gridmask)"/>
+  <circle cx="60" cy="-20" r="460" fill="url(#ga)"/>
+  <circle cx="1180" cy="170" r="420" fill="url(#gb)"/>
+  
+  <g transform="translate(88 80) scale(1.125)">
+  <defs>
+    <linearGradient id="b-tile" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#16212C"/><stop offset="1" stop-color="#121C26"/>
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="url(#b-tile)" stroke="#2F3F51" stroke-width="3"/>
+  <polyline points="15,21 28,32 15,43" fill="none" stroke="#7FCCA5" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="34" y1="45" x2="50" y2="45" stroke="#DCE4EB" stroke-width="6.5" stroke-linecap="round"/></g>
+  <text x="184" y="116" dominant-baseline="central" font-family="'Red Hat Display', sans-serif" font-weight="700" font-size="37.44" letter-spacing="-0.4" fill="#DCE4EB">Corey Wininger</text>
+  <g font-family="'Red Hat Display', sans-serif" font-weight="800" font-size="78" letter-spacing="-2.4" fill="#DCE4EB">
+    <text x="88" y="318">I run IT operations.</text>
+    <text x="88" y="408">This is where I write</text>
+    <text x="88" y="498">down what works.</text>
   </g>
+  <text x="88" y="566" font-family="'Red Hat Mono', monospace" font-weight="500" font-size="24" fill="#8B9DAE"><tspan fill="#7FCCA5">$</tspan> coreymark.com</text>
 </svg>

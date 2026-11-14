@@ -1,0 +1,40 @@
+---
+// Green "runs in your browser" pill used on the Lab index and tool pages.
+// Pass text for a tool whose behaviour differs (e.g. one that makes a request).
+import { Lock, Globe } from '@lucide/astro';
+
+interface Props {
+  text?: string;
+  /** 'local' = nothing leaves the browser; 'network' = the tool makes a request. */
+  kind?: 'local' | 'network';
+}
+const { text = 'Runs in your browser. Nothing you type is sent anywhere.', kind = 'local' } = Astro.props;
+const Icon = kind === 'local' ? Lock : Globe;
+---
+
+<p class:list={['privacy', kind]} data-privacy-badge={kind}>
+  <Icon size={16} strokeWidth={2} aria-hidden="true" />{text}
+</p>
+
+<style>
+  .privacy {
+    --c: var(--green);
+    margin: 22px 0 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--c) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c) 35%, transparent);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .privacy :global(svg) { flex: none; color: var(--c); }
+  .network { --c: var(--yellow); }
+  @media (max-width: 560px) {
+    .privacy { border-radius: 14px; align-items: flex-start; }
+    .privacy :global(svg) { margin-top: 3px; }
+  }
+</style>

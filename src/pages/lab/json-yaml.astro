@@ -1,31 +1,12 @@
 ---
-import Base from '../../layouts/Base.astro';
+import LabToolLayout from '../../layouts/LabToolLayout.astro';
 
-const title = 'JSON ↔ YAML converter · Corey Wininger';
 const description =
   'Convert between JSON and YAML instantly. Auto-detects input format, handles K8s manifests, Ansible configs, and GitHub Actions workflows. Offline — nothing leaves your browser.';
 ---
 
-<Base title={title} description={description}>
-  <section class="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
-      <ol class="flex flex-wrap items-center gap-2">
-        <li><a href="/" class="hover:text-text-primary">Home</a></li>
-        <li aria-hidden="true">›</li>
-        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
-        <li aria-hidden="true">›</li>
-        <li class="text-text-secondary">JSON ↔ YAML converter</li>
-      </ol>
-    </nav>
-
-    <header class="mb-8">
-      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        JSON ↔ YAML converter
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        Paste JSON or YAML — auto-detects which one you gave it and outputs the other. Handles K8s manifests, Ansible playbooks, and GitHub Actions workflows. 100% client-side: nothing leaves your browser.
-      </p>
-    </header>
+<LabToolLayout slug="json-yaml" description={description} note="auto-detects input">
+  <Fragment slot="intro">Paste JSON or YAML — auto-detects which one you gave it and outputs the other. Handles K8s manifests, Ansible playbooks, and GitHub Actions workflows. 100% client-side: nothing leaves your browser.</Fragment>
 
     <div class="lab-tool jy-widget py-4">
 
@@ -176,24 +157,14 @@ const description =
 
     </div>
 
-    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
-      <summary class="cursor-pointer text-base font-semibold text-text-primary">
-        About this tool
-      </summary>
-      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+    <div slot="reference" class="prose max-w-none" data-tool-about>
         <p><strong>What it does.</strong> Converts between JSON and YAML instantly. Paste either format — the tool detects which one you gave it and outputs the other. Auto-detect works by checking whether the input starts with <code>{'{'}</code> or <code>[</code> (JSON) or begins with YAML structure. Override detection with the explicit direction controls if needed.</p>
         <p>Handles real-world DevOps content: K8s manifests, Helm values, Ansible playbooks, GitHub Actions workflows, Terraform variable files.</p>
         <p><strong>Schema control.</strong> JSON_SCHEMA mode avoids YAML 1.1's boolean gotcha where <code>yes</code>, <code>no</code>, <code>on</code>, <code>off</code> all parse as booleans. DEFAULT_SCHEMA is permissive (matches what most YAML parsers do in the wild). Indent, flow style, and output formatting options included. Download the result as a properly-named <code>.json</code> or <code>.yaml</code> file.</p>
         <p><strong>What's not included.</strong> No YAML anchors/aliases editor — parsed and serialized correctly, but no visual alias management. No JSON Schema validation — conversion only. No multi-document YAML (the <code>---</code> separator for multiple documents in one file).</p>
         <p><strong>Privacy note:</strong> all conversion happens entirely in your browser via the inlined js-yaml 4.1.0 library. Nothing you paste ever leaves the page.</p>
-      </div>
-    </details>
-
-    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
-      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">DevOps</span>
-      <span>Added 2026-05-12</span>
     </div>
-  </section>
+
 
 <style is:global>
   .jy-widget {
@@ -227,7 +198,7 @@ const description =
     cursor: pointer; transition: background 0.12s, color 0.12s; min-height: 30px;
   }
   .jy-widget .mode-seg button:last-child { border-right: none; }
-  .jy-widget .mode-seg button.active { background: var(--jy-accent); color: #fff; font-weight: 600; }
+  .jy-widget .mode-seg button.active { background: var(--jy-accent); color: var(--bg); font-weight: 600; }
   .jy-widget .mode-seg button:hover:not(.active) { background: var(--jy-bg-tertiary); color: var(--color-text-primary); }
   .jy-widget .mode-seg button:focus-visible { outline: 2px solid var(--jy-accent); outline-offset: 2px; }
 
@@ -254,7 +225,7 @@ const description =
   .jy-widget .chip:hover { border-color: var(--jy-accent); color: var(--color-text-primary); }
   .jy-widget .chip:focus-visible { outline: 2px solid var(--jy-accent); outline-offset: 2px; }
   @keyframes chipFlash {
-    0%   { background: var(--jy-accent); color: #fff; border-color: var(--jy-accent); }
+    0%   { background: var(--jy-accent); color: var(--bg); border-color: var(--jy-accent); }
     100% { background: var(--jy-bg-secondary); }
   }
   .jy-widget .chip.chip-flash { animation: chipFlash 140ms ease-out forwards; }
@@ -320,10 +291,10 @@ const description =
     width: 40px; height: 40px; font: inherit; font-size: 15px;
     cursor: pointer; transition: background 0.1s, border-color 0.1s;
   }
-  .jy-widget .center-btn:hover { background: var(--jy-accent); border-color: var(--jy-accent); color: #fff; }
+  .jy-widget .center-btn:hover { background: var(--jy-accent); border-color: var(--jy-accent); color: var(--bg); }
   .jy-widget .center-btn:focus-visible { outline: 2px solid var(--jy-accent); outline-offset: 2px; }
   .jy-widget .center-btn.primary {
-    background: var(--jy-accent); border-color: var(--jy-accent); color: #fff;
+    background: var(--jy-accent); border-color: var(--jy-accent); color: var(--bg);
     width: 40px; height: 44px; font-size: 13px; font-weight: 600;
   }
   .jy-widget .center-btn.primary:hover { opacity: 0.88; }
@@ -349,7 +320,7 @@ const description =
     cursor: pointer; transition: background 0.1s, color 0.1s; min-height: 28px;
   }
   .jy-widget .opt-seg button:last-child { border-right: none; }
-  .jy-widget .opt-seg button.active { background: var(--jy-accent); color: #fff; font-weight: 600; }
+  .jy-widget .opt-seg button.active { background: var(--jy-accent); color: var(--bg); font-weight: 600; }
   .jy-widget .opt-seg button:hover:not(.active) { background: var(--jy-bg-tertiary); color: var(--color-text-primary); }
   .jy-widget .opt-seg button:focus-visible { outline: 2px solid var(--jy-accent); outline-offset: 2px; }
 
@@ -825,4 +796,4 @@ function loadSample(key) {
 loadFromUrl();
 if (document.getElementById('inputArea').value) triggerRender();
 </script>
-</Base>
+</LabToolLayout>
