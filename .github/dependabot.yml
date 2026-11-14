@@ -1,9 +1,10 @@
 version: 2
 
-# Every open PR against main gets an Azure Static Web Apps staging
-# environment, and the app has a small fixed number of those. Dependabot is
-# therefore kept to a few open PRs: one grouped PR per ecosystem per week.
+# Keep Dependabot to a few open PRs: one grouped PR per ecosystem per week.
 # (Security updates are raised separately and are not part of the groups.)
+# Note: Dependabot PRs do not get an Azure staging environment (their runs
+# have no access to the deploy token), so this is about noise, not about
+# the staging-environment limit.
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
