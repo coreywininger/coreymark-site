@@ -50,9 +50,15 @@ jobs:
           action: upload
           app_location: "dist"
           skip_app_build: true
+          # Dependabot runs get no secrets, so there is no token to deploy
+          # with. Skip the upload for them (the build above is still the check)
+          # instead of failing. Anyone else with a missing token still fails,
+          # so a lost secret can't silently skip a production deploy.
+          skip_deploy_on_missing_secrets: ${{ github.actor == 'dependabot[bot]' }}
 
   close_pull_request:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    # Dependabot's own runs have no token and its PRs never get a preview.
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     name: Close preview environment
     steps:
