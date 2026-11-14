@@ -40,4 +40,13 @@ test.describe('deploy workflow', () => {
     expect(upload[0].if).toContain("!= 'closed'");
     expect(close[0].if).toContain("== 'closed'");
   });
+
+  test('only Dependabot may skip the upload when the token is missing', () => {
+    const upload = Object.values(workflow.jobs)
+      .flatMap(swaSteps)
+      .find((s) => s.with?.action === 'upload');
+    expect(String(upload?.with?.skip_deploy_on_missing_secrets)).toBe(
+      "${{ github.actor == 'dependabot[bot]' }}",
+    );
+  });
 });
