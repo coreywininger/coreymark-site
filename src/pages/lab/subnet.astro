@@ -1,33 +1,14 @@
 ---
-import Base from '../../layouts/Base.astro';
+import LabToolLayout from '../../layouts/LabToolLayout.astro';
 import { Share2 } from '@lucide/astro';
 
-const title = 'Subnet calculator';
 const description =
   'IPv4 and IPv6 CIDR calculator with hosts-needed inverse, reverse DNS zones, Cisco ACL syntax, and subnet splitting. All client-side, free.';
 ---
 
-<Base title={title} description={description}>
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
-      <ol class="flex flex-wrap items-center gap-2">
-        <li><a href="/" class="hover:text-text-primary">Home</a></li>
-        <li aria-hidden="true">›</li>
-        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
-        <li aria-hidden="true">›</li>
-        <li class="text-text-secondary">Subnet calculator</li>
-      </ol>
-    </nav>
-
-    <header class="mb-8">
-      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        Subnet calculator
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        IPv4 and IPv6 CIDR analysis. Paste a CIDR or pick a preset, see network
-        details, split into smaller subnets, or work backwards from a host count.
-      </p>
-    </header>
+<LabToolLayout slug="subnet" description={description} note="IPv4 and IPv6">
+  <Fragment slot="intro">IPv4 and IPv6 CIDR analysis. Paste a CIDR or pick a preset, see network
+        details, split into smaller subnets, or work backwards from a host count.</Fragment>
 
     <h2 class="sr-only">
       Professional IPv4 and IPv6 subnet calculator with hosts-needed inverse
@@ -138,11 +119,7 @@ const description =
       </div>
     </div>
 
-    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
-      <summary class="cursor-pointer text-base font-semibold text-text-primary">
-        About this tool
-      </summary>
-      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+    <div slot="reference" class="prose max-w-none" data-tool-about>
         <p><strong>What it does.</strong> Parses IPv4 and IPv6 CIDR notation,
           computes network/broadcast addresses, usable host ranges, subnet and
           wildcard masks, IP class, reverse-DNS arpa zones, host-count inverse
@@ -162,14 +139,8 @@ const description =
           (classless in-addr.arpa delegation).</p>
         <p><strong>Privacy note:</strong> all computation is client-side. No IP
           addresses or CIDR values you enter are sent to any server.</p>
-      </div>
-    </details>
-
-    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
-      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Networking</span>
-      <span>Added 2026-05-09</span>
     </div>
-  </section>
+
 
 <style is:global>
   .subnet-widget .subnet-chip {
@@ -755,4 +726,4 @@ import { bigToIpv4, bigToIpv6, fmtAddr, fmtBigCount, parseCidr } from '../../lib
   render();
 })();
 </script>
-</Base>
+</LabToolLayout>

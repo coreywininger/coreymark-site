@@ -1,32 +1,13 @@
 ---
-import Base from '../../layouts/Base.astro';
+import LabToolLayout from '../../layouts/LabToolLayout.astro';
 
-const title = "What's my IP?";
 const description =
   "Reflects back what the edge knows about your HTTP request — IP, geo, ASN, User-Agent. Powered by a tiny Cloudflare Worker at ip.coreymark.com. Designed for curl. 100% open source.";
 ---
 
-<Base title={title} description={description}>
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
-      <ol class="flex flex-wrap items-center gap-2">
-        <li><a href="/" class="hover:text-text-primary">Home</a></li>
-        <li aria-hidden="true">›</li>
-        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
-        <li aria-hidden="true">›</li>
-        <li class="text-text-secondary">What's my IP?</li>
-      </ol>
-    </nav>
-
-    <header class="mb-8">
-      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        What's my IP?
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        A small Cloudflare Worker that reflects back what the edge knows
-        about your HTTP request.
-      </p>
-    </header>
+<LabToolLayout slug="whatsmyip" description={description} note="ip.coreymark.com" privacy={{ kind: 'network', text: 'This tool makes one request to ip.coreymark.com to see your connection from the outside.' }}>
+  <Fragment slot="intro">A small Cloudflare Worker that reflects back what the edge knows
+        about your HTTP request.</Fragment>
 
     <h2 class="sr-only">
       What's my IP — live snapshot of client IP (v4 and v6) with decimal
@@ -134,11 +115,7 @@ const description =
 
     </div>
 
-    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
-      <summary class="cursor-pointer text-base font-semibold text-text-primary">
-        About this tool
-      </summary>
-      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+    <div slot="reference" class="prose max-w-none" data-tool-about>
         <p><strong>What it does.</strong> Shows what the server saw when your
           browser (or shell, or script) made the request to this page — the
           client IP via Cloudflare's <code>CF-Connecting-IP</code> header, geo
@@ -174,14 +151,8 @@ const description =
           <a href="https://github.com/coreywininger/coreymark-ip-worker" target="_blank" rel="noopener">coreywininger/coreymark-ip-worker</a>.
           This page:
           <a href="https://github.com/coreywininger/coreymark-site" target="_blank" rel="noopener">coreywininger/coreymark-site</a>.</p>
-      </div>
-    </details>
-
-    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
-      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Networking</span>
-      <span>Added 2026-05-11</span>
     </div>
-  </section>
+
 
 <style is:global>
   /* What's my IP widget — scoped under .whatsmyip-widget so styles don't leak.
@@ -556,4 +527,4 @@ const description =
 })();
 </script>
 
-</Base>
+</LabToolLayout>

@@ -1,32 +1,13 @@
 ---
-import Base from '../../layouts/Base.astro';
+import LabToolLayout from '../../layouts/LabToolLayout.astro';
 
-const title = 'Regex tester';
 const description =
   'Test regular expressions live — match highlighting, capture groups, global/case/multiline flags, replace mode, backtracking warnings, presets, and history. 100% client-side.';
 ---
 
-<Base title={title} description={description}>
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
-      <ol class="flex flex-wrap items-center gap-2">
-        <li><a href="/" class="hover:text-text-primary">Home</a></li>
-        <li aria-hidden="true">›</li>
-        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
-        <li aria-hidden="true">›</li>
-        <li class="text-text-secondary">Regex tester</li>
-      </ol>
-    </nav>
-
-    <header class="mb-8">
-      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        Regex tester
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        Live pattern matching, capture group highlighting, and replace preview —
-        works offline, nothing leaves your browser.
-      </p>
-    </header>
+<LabToolLayout slug="regex" description={description} note="JavaScript flavor">
+  <Fragment slot="intro">Live pattern matching, capture group highlighting, and replace preview —
+        works offline, nothing leaves your browser.</Fragment>
 
     <h2 class="sr-only">
       Regex tester with live match highlighting, capture groups, global/case-insensitive/multiline/dotAll/unicode
@@ -187,11 +168,7 @@ const description =
 
     </div><!-- /.regex-widget -->
 
-    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
-      <summary class="cursor-pointer text-base font-semibold text-text-primary">
-        About this tool
-      </summary>
-      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+    <div slot="reference" class="prose max-w-none" data-tool-about>
         <p><strong>What it does.</strong> Tests JavaScript regular expressions in real time with color-coded match highlighting, capture group display, and a collapsible match detail list showing each match value, index range, and group captures.</p>
         <p><strong>Replace mode.</strong> Preview the result of <code>str.replace(rx, template)</code> with full backreference support: <code>$&amp;</code>, <code>$1</code>/<code>$2</code>, <code>$&lt;name&gt;</code> (named groups).</p>
         <p><strong>Safety.</strong> A 500 ms wall-clock budget stops the match loop if it exceeds that threshold — catching catastrophic backtracking before it locks up your tab.</p>
@@ -199,14 +176,8 @@ const description =
         <p><strong>History.</strong> The last five patterns are stored in <code>localStorage</code> (key <code>lab-regex-history</code>) as recall chips. Test strings are not saved.</p>
         <p><strong>URL state.</strong> Pattern, active flags, and up to 500 chars of test string are reflected in the URL via <code>replaceState</code> for easy sharing.</p>
         <p><strong>Privacy.</strong> All processing is local — nothing leaves your browser.</p>
-      </div>
-    </details>
-
-    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
-      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">DevOps</span>
-      <span>Added 2026-05-12</span>
     </div>
-  </section>
+
 
 <style is:global>
   /* Regex tester — scoped to .regex-widget. Token aliases map prototype var names to site tokens. */
@@ -223,18 +194,18 @@ const description =
     --color-accent-2: var(--color-accent-secondary);
     --radius: 10px;
     --mono: var(--font-mono, ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace);
-    --hl0: rgba(20,184,166,0.30);
-    --hl1: rgba(245,158,11,0.30);
-    --hl2: rgba(139,92,246,0.30);
-    --hl3: rgba(236,72,153,0.30);
-    --hl4: rgba(59,130,246,0.30);
-    --hl5: rgba(34,197,94,0.30);
-    --hl0-border: #14b8a6;
-    --hl1-border: #f59e0b;
-    --hl2-border: #8b5cf6;
-    --hl3-border: #ec4899;
-    --hl4-border: #3b82f6;
-    --hl5-border: #22c55e;
+    --hl0: color-mix(in srgb, var(--cyan) 30%, transparent);
+    --hl1: color-mix(in srgb, var(--yellow) 30%, transparent);
+    --hl2: color-mix(in srgb, var(--magenta) 30%, transparent);
+    --hl3: color-mix(in srgb, var(--red) 30%, transparent);
+    --hl4: color-mix(in srgb, var(--blue) 30%, transparent);
+    --hl5: color-mix(in srgb, var(--green) 30%, transparent);
+    --hl0-border: var(--cyan);
+    --hl1-border: var(--yellow);
+    --hl2-border: var(--magenta);
+    --hl3-border: var(--red);
+    --hl4-border: var(--blue);
+    --hl5-border: var(--green);
   }
   .regex-widget [hidden] { display: none !important; }
   .regex-widget *, .regex-widget *::before, .regex-widget *::after { box-sizing: border-box; }
@@ -1180,4 +1151,4 @@ const description =
   render();
 }());
 </script>
-</Base>
+</LabToolLayout>

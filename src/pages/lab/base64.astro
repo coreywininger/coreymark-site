@@ -1,32 +1,13 @@
 ---
-import Base from '../../layouts/Base.astro';
-const title = 'Base64 encoder / decoder · Corey Wininger';
+import LabToolLayout from '../../layouts/LabToolLayout.astro';
 const description =
   'Encode or decode Base64 in your browser — text and files. Auto-detect, URL-safe variant, data URI builder, MIME detection from magic bytes, line wrapping. Nothing leaves your browser.';
 ---
 
-<Base title={title} description={description}>
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
-      <ol class="flex flex-wrap items-center gap-2">
-        <li><a href="/" class="hover:text-text-primary">Home</a></li>
-        <li aria-hidden="true">›</li>
-        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
-        <li aria-hidden="true">›</li>
-        <li class="text-text-secondary">Base64 encoder / decoder</li>
-      </ol>
-    </nav>
-
-    <header class="mb-8">
-      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        Base64 encoder / decoder
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        Encode and decode Base64 strings entirely in your browser — text, files,
+<LabToolLayout slug="base64" description={description} note="text, files, data URIs">
+  <Fragment slot="intro">Encode and decode Base64 strings entirely in your browser — text, files,
         and data URIs. Auto-detect mode, URL-safe variant, MIME detection. No
-        data leaves your machine.
-      </p>
-    </header>
+        data leaves your machine.</Fragment>
 
     <h2 class="sr-only">
       Base64 encoder and decoder with text and file modes. Auto-detects whether
@@ -219,11 +200,7 @@ const description =
 
     </div><!-- /.b64-widget -->
 
-    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
-      <summary class="cursor-pointer text-base font-semibold text-text-primary">
-        About this tool
-      </summary>
-      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+    <div slot="reference" class="prose max-w-none" data-tool-about>
         <p><strong>What it does.</strong> Encodes and decodes Base64 in your browser across two modes.
           <strong>Text mode</strong> converts between plain text and Base64 strings with auto-detection,
           configurable variant (standard or URL-safe), padding control (with <code>=</code>, without, or auto),
@@ -243,14 +220,8 @@ const description =
           query strings and <code>/</code> breaks path parsing.</p>
         <p><strong>Privacy note:</strong> all encoding, decoding, and file processing happens entirely in
           your browser via the Web APIs. No text, file content, or binary data is transmitted anywhere.</p>
-      </div>
-    </details>
-
-    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
-      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">DevOps</span>
-      <span>Added 2026-05-12</span>
     </div>
-  </section>
+
 
 <style is:global>
 .b64-widget {
@@ -319,7 +290,7 @@ const description =
 }
 .b64-widget .seg button:last-child { border-right: none; }
 .b64-widget .seg button:hover { background: var(--b64-bg-tertiary); color: var(--color-text-primary); }
-.b64-widget .seg button.active { background: var(--b64-accent); color: #fff; font-weight: 600; }
+.b64-widget .seg button.active { background: var(--b64-accent); color: var(--bg); font-weight: 600; }
 .b64-widget .seg button:focus-visible { outline: 2px solid var(--b64-accent); outline-offset: -2px; }
 
 .b64-widget .tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
@@ -448,7 +419,7 @@ const description =
   cursor: pointer; transition: opacity .1s, background .1s;
 }
 .b64-widget .btn:focus-visible { outline: 2px solid var(--b64-accent); outline-offset: 2px; }
-.b64-widget .btn-primary { background: var(--b64-accent); color: #fff; }
+.b64-widget .btn-primary { background: var(--b64-accent); color: var(--bg); }
 .b64-widget .btn-primary:hover { opacity: .85; }
 .b64-widget .btn-ghost {
   background: var(--b64-bg-tertiary);
@@ -469,7 +440,7 @@ const description =
   border: 1px solid var(--b64-border); border-radius: 6px;
   background: transparent; color: var(--color-text-secondary); cursor: pointer;
 }
-.b64-widget .file-sub-btn.active { background: var(--b64-accent); color: #fff; border-color: var(--b64-accent); }
+.b64-widget .file-sub-btn.active { background: var(--b64-accent); color: var(--bg); border-color: var(--b64-accent); }
 .b64-widget .file-sub-btn:focus-visible { outline: 2px solid var(--b64-accent); outline-offset: 2px; }
 
 .b64-widget .drop-zone {
@@ -970,4 +941,4 @@ function b64Init() {
 document.addEventListener('DOMContentLoaded', b64Init);
 })();
 </script>
-</Base>
+</LabToolLayout>

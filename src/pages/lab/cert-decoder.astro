@@ -1,33 +1,14 @@
 ---
-import Base from '../../layouts/Base.astro';
+import LabToolLayout from '../../layouts/LabToolLayout.astro';
 
-const title = 'X.509 certificate decoder';
 const description =
   'Decode X.509 certificates from PEM — subject, issuer, validity, key type and size, SANs, CA flag, and signature algorithm. 100% client-side, free.';
 ---
 
-<Base title={title} description={description}>
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-text-tertiary">
-      <ol class="flex flex-wrap items-center gap-2">
-        <li><a href="/" class="hover:text-text-primary">Home</a></li>
-        <li aria-hidden="true">›</li>
-        <li><a href="/lab/" class="hover:text-text-primary">Lab</a></li>
-        <li aria-hidden="true">›</li>
-        <li class="text-text-secondary">X.509 certificate decoder</li>
-      </ol>
-    </nav>
-
-    <header class="mb-8">
-      <h1 class="mb-3 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-        X.509 certificate decoder
-      </h1>
-      <p class="max-w-2xl text-lg text-text-secondary">
-        Paste a PEM certificate — see subject, issuer, validity window, key
+<LabToolLayout slug="cert-decoder" description={description} note="PEM, X.509">
+  <Fragment slot="intro">Paste a PEM certificate — see subject, issuer, validity window, key
         type and size, Subject Alternative Names, CA flag, and signature
-        algorithm. 100% client-side: nothing you paste leaves your browser.
-      </p>
-    </header>
+        algorithm. 100% client-side: nothing you paste leaves your browser.</Fragment>
 
     <h2 class="sr-only">
       X.509 certificate decoder: paste PEM to see subject DN, issuer DN,
@@ -71,11 +52,7 @@ const description =
 
     </div>
 
-    <details class="mt-12 rounded-lg border border-border-subtle bg-bg-elevated p-5">
-      <summary class="cursor-pointer text-base font-semibold text-text-primary">
-        About this tool
-      </summary>
-      <div class="prose prose-sm mt-4 max-w-none text-text-secondary">
+    <div slot="reference" class="prose max-w-none" data-tool-about>
         <p><strong>What it does.</strong> Decodes X.509 v1/v2/v3 certificates
           in PEM format (Base64-encoded DER wrapped in
           <code>-----BEGIN CERTIFICATE-----</code> headers). Surfaces: subject
@@ -103,14 +80,8 @@ const description =
           time).</p>
         <p><strong>Privacy note:</strong> all parsing happens entirely in
           your browser. The certificate you paste never leaves the page.</p>
-      </div>
-    </details>
-
-    <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-6 text-xs text-text-tertiary">
-      <span class="rounded border border-border-subtle bg-bg-subtle px-2 py-0.5">Security</span>
-      <span>Added 2026-05-17</span>
     </div>
-  </section>
+
 
 <style is:global>
   /* X.509 cert decoder widget — scoped under .cert-widget */
@@ -919,4 +890,4 @@ rUCGwbCUDI0mxadJ3Bz4WxR6fyNpBK2yAinWEsikxqEt
   });
 })();
 </script>
-</Base>
+</LabToolLayout>

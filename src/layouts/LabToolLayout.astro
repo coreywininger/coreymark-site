@@ -1,0 +1,206 @@
+---
+// Shared shell for every /lab/<slug>/ page: hero (breadcrumb, `$ ` title,
+// privacy badge), the tool inside a terminal panel, a reference section, and
+// an "Other tools" list. Each tool keeps its own markup, styles and script
+// in the default slot.
+//
+// Slots: default = the tool; `intro` = hero paragraph; `reference` = content
+// for the reference column; `reference-extra` = extra blocks above it.
+import Base from './Base.astro';
+import PageHero from '../components/PageHero.astro';
+import PrivacyBadge from '../components/PrivacyBadge.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import { tools, disciplineColor, disciplineLabel } from '../data/lab-tools';
+
+interface Props {
+  slug: string;
+  /** Meta description. */
+  description: string;
+  /** Short note on the right of the panel strip, e.g. "5-field standard cron". */
+  note?: string;
+  /** Heading for the reference column. */
+  referenceTitle?: string;
+  /** Overrides the default privacy badge (for a tool that makes a request). */
+  privacy?: { text: string; kind: 'local' | 'network' };
+}
+
+const { slug, description, note, referenceTitle = 'About this tool', privacy } = Astro.props;
+
+const tool = tools.find((t) => t.slug === slug);
+if (!tool) throw new Error(`LabToolLayout: no tool with slug "${slug}" in src/data/lab-tools.ts`);
+const color = disciplineColor[tool.discipline];
+
+// Other tools: one from each other discipline first, then fill, three in all.
+const others = tools.filter((t) => t.slug !== slug);
+const picked: typeof others = [];
+for (const t of others) {
+  if (t.discipline !== tool.discipline && !picked.some((p) => p.discipline === t.discipline)) picked.push(t);
+}
+for (const t of others) if (!picked.includes(t)) picked.push(t);
+const related = picked.slice(0, 3);
+---
+
+<Base title={tool.title} description={description}>
+  <div class="tool-page" style={`--c: var(--${color})`} data-lab-tool-page={slug} data-discipline={tool.discipline}>
+    <PageHero
+      title={tool.title}
+      prefix="$ "
+      color={color}
+      glow="cyan"
+      crumbs={[
+        { label: 'lab', href: '/lab/', title: 'The Lab' },
+        { label: slug, href: `/lab/${slug}/`, title: tool.title },
+      ]}
+    >
+      <p class="intro rise d2"><slot name="intro" /></p>
+      <div class="rise d3">
+        <PrivacyBadge {...(privacy ?? {})} />
+      </div>
+    </PageHero>
+
+    <div class="wrap">
+      <section class="panel" aria-labelledby="tool-h" data-tool-panel>
+        <div class="strip">
+          <h2 id="tool-h">~/lab/{slug}</h2>
+          <span class="note">{note ?? disciplineLabel(tool.discipline).toLowerCase()}</span>
+        </div>
+        <div class="panel-body">
+          <slot />
+        </div>
+      </section>
+
+      <div class="below">
+        <section class="ref" aria-labelledby="ref-h" data-tool-reference>
+          <slot name="reference-extra" />
+          <SectionHeading id="ref-h" title={referenceTitle} prefix="##" color={color} />
+          <slot name="reference" />
+          <p class="meta">
+            <span class="tag">{disciplineLabel(tool.discipline)}</span>
+            <span>{tool.updated ? `Updated ${tool.updated}` : `Added ${tool.added}`}</span>
+          </p>
+        </section>
+
+        <aside class="others" aria-labelledby="rel-h" data-other-tools>
+          <h2 id="rel-h">Other tools</h2>
+          <div class="other-list">
+            {related.map((t) => (
+              <a class="other" href={`/lab/${t.slug}/`} style={`--c: var(--${disciplineColor[t.discipline]})`} data-other-tool={t.slug}>
+                <span>
+                  <span class="o-name">{t.title}</span>
+                  <span class="o-area">{disciplineLabel(t.discipline)}</span>
+                </span>
+                <span class="o-path">~/lab/{t.slug}</span>
+              </a>
+            ))}
+            <a class="all" href="/lab/" data-all-tools>All {tools.length} tools</a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .intro { margin: 0; font-size: 19px; color: var(--text2); max-width: 60ch; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 48px 32px 0; }
+
+  .panel {
+    border: 1px solid var(--line2);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--bg);
+    box-shadow: 0 30px 80px -40px color-mix(in srgb, var(--c) 50%, transparent);
+  }
+  .strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .strip h2 { margin: 0; font-family: var(--font-mono); font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--c); }
+  .note { font-family: var(--font-mono); font-size: 13px; color: var(--text3); text-align: right; }
+  .panel-body { padding: 12px 28px 20px; }
+
+  .below { display: flex; flex-wrap: wrap; gap: 48px; margin-top: 64px; }
+  .ref { flex: 3 1 480px; min-width: 0; }
+  .ref :global(.sh) { font-size: 28px; margin-bottom: 18px; }
+  .ref :global(.prose) { max-width: 68ch; font-size: 16px; --tw-prose-body: var(--text2); }
+  .meta {
+    margin: 28px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text3);
+  }
+  .tag {
+    padding: 1px 8px;
+    border-radius: 999px;
+    color: var(--c);
+    border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+    font-weight: 600;
+  }
+
+  .others { flex: 2 1 300px; min-width: 0; }
+  .others h2 { margin: 0 0 18px; font-size: 28px; font-weight: 700; letter-spacing: -0.015em; }
+  .other-list { display: flex; flex-direction: column; gap: 12px; }
+  .other {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--line2);
+    text-decoration: none;
+    transition: border-color 180ms ease, transform 180ms ease, box-shadow 200ms ease;
+  }
+  .other:hover {
+    border-color: var(--c);
+    transform: translateY(-3px);
+    box-shadow: 0 18px 36px -22px color-mix(in srgb, var(--c) 70%, transparent);
+  }
+  .o-name { display: block; font-weight: 700; }
+  .o-area { font-size: 14px; color: var(--text3); }
+  .o-path { font-family: var(--font-mono); font-size: 14px; color: var(--text3); transition: color 150ms ease; white-space: nowrap; }
+  .other:hover .o-path { color: var(--c); }
+  .all {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: 2px;
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: underline transparent;
+    text-underline-offset: 5px;
+    text-decoration-thickness: 2px;
+    transition: text-decoration-color 200ms ease;
+  }
+  .all:hover { text-decoration-color: currentColor; }
+
+  /* Touch devices: every control inside a tool is at least 44px. The tools
+     keep their denser layout for mouse and keyboard. */
+  @media (pointer: coarse) {
+    .panel-body :global(:is(button, select, summary, [role='tab'], input:not([type='checkbox'], [type='radio'], [type='range']), textarea)) {
+      min-height: 44px;
+    }
+    .panel-body :global(:is(button, [role='tab'])) { min-width: 44px; }
+    .panel-body :global(:is(input[type='checkbox'], input[type='radio'])) { min-width: 24px; min-height: 24px; }
+  }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 28px 16px 0; }
+    .strip { padding: 10px 14px; }
+    .panel-body { padding: 4px 14px 14px; }
+    .below { gap: 40px; margin-top: 44px; }
+    .o-path { display: none; }
+  }
+</style>

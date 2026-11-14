@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('lab index', () => {
-  test('renders Lab heading and Networking section with subnet card', async ({ page }) => {
+  test('renders one heading and the subnet card under Networking', async ({ page }) => {
     await page.goto('/lab/');
-    await expect(page.locator('main h1')).toContainText('Small tools');
-    await expect(page.locator('[data-lab-section="networking"]')).toBeVisible();
+    await expect(page.locator('main h1')).toHaveCount(1);
+    await expect(page.locator('[data-lab-list] [data-discipline="networking"]').first()).toBeVisible();
     await expect(page.locator('[data-lab-tool="subnet"]')).toBeVisible();
+    await expect(page.locator('[data-lab-tool="subnet"]')).toHaveAttribute('data-discipline', 'networking');
   });
 
   test('subnet card links to /lab/subnet/', async ({ page }) => {
@@ -15,13 +16,13 @@ test.describe('lab index', () => {
     await expect(page).toHaveURL(/\/lab\/subnet\/?$/);
   });
 
-  test('only disciplines with tools render — empty disciplines stay hidden', async ({ page }) => {
+  test('only disciplines with tools get a filter chip', async ({ page }) => {
     await page.goto('/lab/');
-    // Disciplines with at least one tool — render.
-    await expect(page.locator('[data-lab-section="networking"]')).toHaveCount(1);
-    // Empty disciplines — do not render.
-    await expect(page.locator('[data-lab-section="devops"]')).toHaveCount(1);
-    await expect(page.locator('[data-lab-section="cloud"]')).toHaveCount(0);
+    await expect(page.locator('[data-discipline-filters] [data-filter="networking"]')).toHaveCount(1);
+    await expect(page.locator('[data-discipline-filters] [data-filter="devops"]')).toHaveCount(1);
+    // No cloud tools yet, so no cloud chip.
+    await expect(page.locator('[data-discipline-filters] [data-filter="cloud"]')).toHaveCount(0);
+    await expect(page.locator('[data-lab-list] [data-discipline="cloud"]')).toHaveCount(0);
   });
 });
 
@@ -117,12 +118,14 @@ test.describe('subnet calculator', () => {
     await expect(page).toHaveTitle(/10\.0\.0\.0\/24 — Subnet calculator/);
   });
 
-  test('breadcrumb is present', async ({ page }) => {
+  test('breadcrumb links home, to the Lab, and marks this tool as current', async ({ page }) => {
     await page.goto('/lab/subnet/');
-    const crumb = page.locator('nav[aria-label="Breadcrumb"]');
-    await expect(crumb).toContainText('Home');
-    await expect(crumb).toContainText('Lab');
-    await expect(crumb).toContainText('Subnet calculator');
+    const crumbs = page.locator('nav[aria-label="Breadcrumb"] a');
+    await expect(crumbs).toHaveCount(3);
+    await expect(crumbs.nth(0)).toHaveAttribute('href', '/');
+    await expect(crumbs.nth(1)).toHaveAttribute('href', '/lab/');
+    await expect(crumbs.nth(2)).toHaveAttribute('href', '/lab/subnet/');
+    await expect(crumbs.nth(2)).toHaveAttribute('aria-current', 'page');
   });
 });
 
