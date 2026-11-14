@@ -18,7 +18,7 @@ interface Props {
 
 const SITE_NAME = 'Corey Wininger';
 const DEFAULT_DESCRIPTION =
-  "Corey Wininger — IT infrastructure leader. I write about running operations, putting AI to work in the enterprise, and keeping hybrid cloud honest.";
+  "Corey Wininger writes about running IT operations, explaining IT to the business, and where AI actually helps.";
 
 const {
   title,
@@ -38,7 +38,7 @@ const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
 // saved theme + font set (no flash; a saved value that is no longer in
 // appearance.ts is removed from localStorage), keeps <meta name="theme-color"> in step,
 // and flags Apple platforms so the search shortcut label reads ⌘K vs Ctrl K.
-const prePaint = `(function(){var d=document.documentElement,T=${JSON.stringify(THEME_BG)},F=${JSON.stringify(FONTS.map((f) => f.id))};try{var t=localStorage.getItem('theme');if(t!==null){if(typeof T[t]==='string'&&T.hasOwnProperty(t)){d.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',T[t]);}else{localStorage.removeItem('theme');}}var f=localStorage.getItem('font');if(f!==null){if(F.indexOf(f)>-1){d.setAttribute('data-font',f);}else{localStorage.removeItem('font');}}}catch(e){}try{var p=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||'';if(/mac|iphone|ipad|ipod/i.test(p))d.setAttribute('data-platform','mac');}catch(e){}})();`;
+const prePaint = `(function(){var d=document.documentElement;d.setAttribute('data-js','');var T=${JSON.stringify(THEME_BG)},F=${JSON.stringify(FONTS.map((f) => f.id))};try{var t=localStorage.getItem('theme');if(t!==null){if(typeof T[t]==='string'&&T.hasOwnProperty(t)){d.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',T[t]);}else{localStorage.removeItem('theme');}}var f=localStorage.getItem('font');if(f!==null){if(F.indexOf(f)>-1){d.setAttribute('data-font',f);}else{localStorage.removeItem('font');}}}catch(e){}try{var p=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||'';if(/mac|iphone|ipad|ipod/i.test(p))d.setAttribute('data-platform','mac');}catch(e){}})();`;
 ---
 
 <!doctype html>

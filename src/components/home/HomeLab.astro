@@ -1,0 +1,281 @@
+---
+// ~/Lab: a live subnet calculator plus a tile for each of the other tools.
+// The calculator uses the same parser as /lab/subnet/ (src/lib/subnet.ts).
+import { tools, disciplineColor, disciplineLabel } from '../../data/lab-tools';
+
+const LIVE = 'subnet';
+const tiles = tools.filter((t) => t.slug !== LIVE);
+const DEFAULT_CIDR = '10.0.0.0/22';
+---
+
+<section id="lab" class="lab" aria-labelledby="lab-h" data-home-lab>
+  <div class="blob b2 glow" aria-hidden="true"></div>
+  <div class="inner">
+    <div class="head">
+      <h2 id="lab-h"><span class="pre" aria-hidden="true">~/</span>Lab</h2>
+      <a class="more" href="/lab/" data-all-tools>All {tools.length} tools</a>
+    </div>
+    <p class="sub">
+      Small tools I kept reaching for. They run in your browser, and nothing you type leaves it.
+      Try one right here.
+    </p>
+
+    <div class="layout">
+      <section class="calc" aria-labelledby="subnet-h" data-home-subnet>
+        <div class="calc-head">
+          <h3 id="subnet-h"><a href="/lab/subnet/">subnet</a></h3>
+          <span class="live">live</span>
+        </div>
+        <div class="calc-body">
+          <label for="home-cidr">Type a CIDR block, like 10.0.0.0/22 or 2001:db8::/48</label>
+          <div class="field">
+            <span class="dollar" aria-hidden="true">$</span>
+            <input
+              id="home-cidr"
+              type="text"
+              value={DEFAULT_CIDR}
+              spellcheck="false"
+              autocomplete="off"
+              autocapitalize="off"
+              inputmode="url"
+              aria-describedby="home-cidr-error"
+              data-cidr-input
+            />
+          </div>
+          <dl data-cidr-result>
+            <dt>network</dt><dd class="c-blue" data-out="network">10.0.0.0/22</dd>
+            <dt>range</dt><dd data-out="range">10.0.0.1 – 10.0.3.254</dd>
+            <dt>broadcast</dt><dd class="c-magenta" data-out="broadcast">10.0.3.255</dd>
+            <dt>mask</dt><dd class="c-yellow" data-out="mask">255.255.252.0</dd>
+            <dt>hosts</dt><dd class="c-green hosts" data-out="hosts">1,022</dd>
+          </dl>
+          <p id="home-cidr-error" class="error" role="alert" hidden data-cidr-error>
+            That isn't a valid block. Use an IPv4 or IPv6 address and a prefix, like 10.0.0.0/24
+            or 2001:db8::/48.
+          </p>
+        </div>
+      </section>
+
+      <ul class="tiles">
+        {tiles.map((t) => (
+          <li>
+            <a
+              class="tile"
+              href={`/lab/${t.slug}/`}
+              style={`--c: var(--${disciplineColor[t.discipline]})`}
+              data-lab-tile={t.slug}
+              data-discipline={t.discipline}
+            >
+              <span class="tile-top">
+                <span class="name">{t.title}</span>
+                <span class="tag">{disciplineLabel(t.discipline)}</span>
+              </span>
+              {t.sampleInput && <span class="in">{t.sampleInput}</span>}
+              {t.sampleOutput && <span class="out">→ {t.sampleOutput}</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .lab {
+    position: relative;
+    overflow: hidden;
+    background: var(--surface2);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .glow { width: 420px; height: 420px; right: -140px; bottom: -160px; background: var(--green); opacity: 0.07; }
+  .inner { position: relative; max-width: 1200px; margin: 0 auto; padding: 88px 32px; }
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  h2 { margin: 0; font-size: 38px; font-weight: 700; letter-spacing: -0.02em; }
+  .pre { font-family: var(--font-mono); font-weight: 500; color: var(--green); }
+  .sub { margin: 0 0 40px; color: var(--text2); max-width: 60ch; }
+  .more {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: underline transparent;
+    text-underline-offset: 5px;
+    text-decoration-thickness: 2px;
+    transition: text-decoration-color 200ms ease;
+  }
+  .more:hover { text-decoration-color: currentColor; }
+
+  .layout { display: flex; flex-wrap: wrap; gap: 32px; align-items: stretch; }
+
+  .calc {
+    flex: 1 1 380px;
+    min-width: 0;
+    background: var(--bg);
+    border: 1px solid var(--line2);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px -30px color-mix(in srgb, var(--cyan) 60%, transparent);
+  }
+  .calc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  h3 { margin: 0; font-size: 15px; font-weight: 600; font-family: var(--font-mono); letter-spacing: 0; }
+  h3 a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--cyan);
+    text-decoration: none;
+  }
+  h3 a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .live { font-family: var(--font-mono); font-size: 13px; color: var(--text3); }
+  .calc-body { padding: 22px; }
+  label { display: block; font-size: 14px; color: var(--text2); margin-bottom: 8px; }
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    min-height: 52px;
+    background: var(--surface);
+    border: 1px solid var(--line2);
+    border-radius: 8px;
+    transition: border-color 160ms ease;
+  }
+  /* Focus is shown on the whole field, not the bare input. */
+  .field:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .field[data-invalid] { border-color: var(--red); }
+  .dollar { font-family: var(--font-mono); color: var(--green); }
+  input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 18px;
+    padding: 12px 0;
+    outline: none;
+  }
+  dl {
+    margin: 20px 0 0;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 10px 24px;
+    font-size: 15px;
+    font-family: var(--font-mono);
+  }
+  dt { color: var(--text3); }
+  dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+  .c-blue { color: var(--blue); }
+  .c-magenta { color: var(--magenta); }
+  .c-yellow { color: var(--yellow); }
+  .c-green { color: var(--green); }
+  .hosts { font-weight: 600; font-size: 18px; }
+  .error { margin: 16px 0 0; color: var(--red); font-size: 15px; }
+
+  .tiles {
+    flex: 2 1 520px;
+    min-width: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .tiles li { display: flex; }
+  .tile {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px;
+    border-radius: 12px;
+    background: var(--bg);
+    border: 1px solid var(--line2);
+    text-decoration: none;
+    transition: border-color 180ms ease, transform 180ms ease, box-shadow 200ms ease, background-color 180ms ease;
+  }
+  .tile:hover {
+    border-color: var(--c);
+    transform: translateY(-3px);
+    background: var(--surface);
+    box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--c) 60%, transparent);
+  }
+  .tile-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+  .name { font-weight: 700; color: var(--text); }
+  .tag {
+    flex: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--c);
+    /* Outline, not a tint: tinting the pill drops red and magenta under
+       4.5:1 in Dracula and Gruvbox. */
+    border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+  }
+  .in {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text3);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .out { font-family: var(--font-mono); font-size: 13px; color: var(--c); line-height: 1.5; }
+
+  @media (max-width: 560px) {
+    .inner { padding: 56px 16px; }
+    h2 { font-size: 32px; }
+    .calc-body { padding: 18px; }
+  }
+</style>
+
+<script>
+  import { bigToIpv4, fmtAddr, fmtBigCount, parseCidr } from '../../lib/subnet';
+
+  const root = document.querySelector<HTMLElement>('[data-home-subnet]');
+  if (root) {
+    const input = root.querySelector<HTMLInputElement>('[data-cidr-input]')!;
+    const field = input.parentElement!;
+    const result = root.querySelector<HTMLElement>('[data-cidr-result]')!;
+    const error = root.querySelector<HTMLElement>('[data-cidr-error]')!;
+    const out = (key: string) => root.querySelector<HTMLElement>(`[data-out="${key}"]`)!;
+
+    const render = () => {
+      const r = parseCidr(input.value);
+      const bad = r.error !== undefined;
+      result.hidden = bad;
+      error.hidden = !bad;
+      field.toggleAttribute('data-invalid', bad);
+      input.setAttribute('aria-invalid', bad ? 'true' : 'false');
+      if (r.error !== undefined) return;
+
+      const v4 = r.family === 4;
+      out('network').textContent = r.canonical;
+      out('range').textContent = `${fmtAddr(r.firstUsable, r.family)} – ${fmtAddr(r.lastUsable, r.family)}`;
+      out('broadcast').textContent = v4 && r.prefix < 31 ? bigToIpv4(r.lastAddr) : 'n/a';
+      out('mask').textContent = v4 ? bigToIpv4(r.mask) : `/${r.prefix}`;
+      out('hosts').textContent = fmtBigCount(r.usableHosts);
+    };
+
+    input.addEventListener('input', render);
+    render();
+  }
+</script>

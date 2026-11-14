@@ -1,0 +1,190 @@
+---
+// Homepage hero: grid + three drifting glows, typed `whoami`, then the
+// headline / intro / buttons / status panel rise in sequence once on load.
+// The ~/now panel reads the same structured data as the /now/ page.
+import { getEntry } from 'astro:content';
+import StatusPill from '../StatusPill.astro';
+
+const now = await getEntry('now', 'current');
+const sections = now?.data.sections ?? [];
+const pick = (status: 'progress' | 'running') =>
+  sections
+    .filter((s) => s.status === status)
+    .flatMap((s) => s.items)
+    .slice(0, 2)
+    .map((item) => ({ ...item, status }));
+const rows = [...pick('progress'), ...pick('running')];
+
+const updated = now?.data.updatedDate;
+const updatedLabel = updated
+  ?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+  .toLowerCase();
+---
+
+<section class="hero" data-home-hero>
+  <div class="hero-bg" aria-hidden="true">
+    <div class="grid-bg"></div>
+    <div class="blob g1"></div>
+    <div class="blob b2 g2"></div>
+    <div class="blob b3 g3"></div>
+  </div>
+
+  <div class="hero-inner">
+    <div class="lead">
+      <p class="prompt">
+        <span class="user">corey@coreymark</span>:<span class="path">~</span>$ <span class="typed">whoami</span><span class="cursor" aria-hidden="true"></span>
+      </p>
+      <h1 class="rise d1">I run IT operations. This is where I write down what works.</h1>
+      <p class="intro rise d2">
+        Director of Operations. Twelve years running infrastructure, service desks, and the
+        processes that keep them honest. Written for peers, and for anyone curious how IT
+        actually gets done.
+      </p>
+      <div class="actions rise d3">
+        <a href="#writing" class="btn-primary big" data-hero-cta="writing">Read the writing</a>
+        <a href="/about/" class="btn-ghost big" data-hero-cta="about">About me</a>
+      </div>
+    </div>
+
+    {rows.length > 0 && (
+      <section class="panel rise d4" aria-labelledby="now-h" data-now-panel>
+        <div class="panel-head">
+          <h2 id="now-h"><a href="/now/" class="now-link">~/now</a> <span class="muted">status</span></h2>
+          {updated && (
+            <time class="updated" datetime={updated.toISOString().slice(0, 10)}>updated {updatedLabel}</time>
+          )}
+        </div>
+        <ul>
+          {rows.map((row) => (
+            <li class="row" data-now-row={row.status}>
+              <StatusPill status={row.status} />
+              <div>
+                <div class="row-title">{row.title}</div>
+                <div class="row-note">{row.note}</div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
+</section>
+
+<style>
+  .hero { position: relative; overflow: hidden; }
+  .hero-bg { position: absolute; inset: 0; pointer-events: none; }
+  .hero-bg .grid-bg { position: absolute; inset: 0; }
+  .g1 { width: 520px; height: 520px; left: -120px; top: -160px; background: var(--accent); }
+  .g2 { width: 460px; height: 460px; right: -80px; top: 40px; background: var(--magenta); }
+  .g3 { width: 380px; height: 380px; left: 38%; top: 320px; background: var(--blue); }
+
+  .hero-inner {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 96px 32px 112px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 64px;
+    align-items: center;
+  }
+  .lead { flex: 1 1 460px; min-width: 0; }
+  .prompt {
+    margin: 0 0 22px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--text3);
+  }
+  .user { color: var(--green); }
+  .path { color: var(--blue); }
+  .typed {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    vertical-align: bottom;
+    width: 0;
+    color: var(--text);
+    animation: type 900ms steps(6) 500ms forwards;
+  }
+  @keyframes type { to { width: 6ch; } }
+
+  h1 {
+    margin: 0 0 26px;
+    font-size: clamp(40px, 5.2vw, 64px);
+    line-height: 1.04;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    max-width: 14ch;
+  }
+  .intro { margin: 0 0 36px; color: var(--text2); font-size: 19px; max-width: 38ch; }
+  .actions { display: flex; flex-wrap: wrap; gap: 14px; }
+  .big { min-height: 48px; padding: 0 22px; }
+  .btn-ghost.big { font-weight: 500; }
+
+  /* The load sequence waits for the typed line on this page. */
+  .rise.d1 { animation-delay: 1300ms; }
+  .rise.d2 { animation-delay: 1450ms; }
+  .rise.d3 { animation-delay: 1600ms; }
+  .rise.d4 { animation-delay: 1750ms; }
+
+  .panel {
+    flex: 1 1 500px;
+    min-width: 0;
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--line2);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.55);
+  }
+  .panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 20px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface2);
+  }
+  .panel-head h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    letter-spacing: 0;
+  }
+  .now-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .now-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .muted { color: var(--text3); font-weight: 400; }
+  .updated { color: var(--text3); font-size: 13px; font-family: var(--font-mono); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  .row {
+    display: grid;
+    grid-template-columns: 124px minmax(0, 1fr);
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+    transition: background-color 160ms ease;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+  .row :global(.status-pill) { align-self: start; min-height: 27px; }
+  .row-title { font-weight: 600; }
+  .row-note { color: var(--text3); font-size: 15px; }
+
+  @media (max-width: 560px) {
+    .hero-inner { padding: 56px 16px 64px; gap: 40px; }
+    .row { grid-template-columns: 1fr; gap: 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .typed { width: 6ch; }
+  }
+</style>

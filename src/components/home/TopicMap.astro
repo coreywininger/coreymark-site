@@ -1,0 +1,367 @@
+---
+// ~/Writing: the topic map. Six nodes (five pillars + Lab) around a six-unit
+// server rack; picking a node lights its rack unit and shows its list.
+// Everything is rendered at build time from the blog collection and the lab
+// tool list. Without JS the map is replaced by a plain list of topic links.
+import { getCollection } from 'astro:content';
+import { publishedOnly, sortByPubDateDesc } from '../../lib/content';
+import { TOPICS, topicHref } from '../../data/topics';
+import { tools, disciplineLabel } from '../../data/lab-tools';
+
+const MAX_ITEMS = 5;
+const W = 560;
+const H = 440;
+
+const posts = sortByPubDateDesc(await getCollection('blog', publishedOnly));
+const shortDate = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+const topics = TOPICS.map((t) => {
+  const all =
+    t.id === 'lab'
+      ? tools.map((tool) => ({
+          href: `/lab/${tool.slug}/`,
+          title: tool.title,
+          meta: disciplineLabel(tool.discipline).toLowerCase(),
+        }))
+      : posts
+          .filter((p) => p.data.pillar === t.id)
+          .map((p) => ({
+            href: `/blog/${p.id}/`,
+            title: p.data.title,
+            meta: shortDate(p.data.pubDate),
+          }));
+  return { ...t, count: all.length, items: all.slice(0, MAX_ITEMS), href: topicHref(t.id) };
+});
+
+const initial = topics[0].id;
+---
+
+<section id="writing" class="writing" aria-labelledby="w-h" data-topic-map-section>
+  <div class="inner">
+    <div class="head">
+      <h2 id="w-h"><span class="pre" aria-hidden="true">~/</span>Writing</h2>
+      <a class="more" href="/blog/" data-all-posts>All {posts.length} posts</a>
+    </div>
+    <p class="sub js-only">Pick a topic on the map to see what I've written about it.</p>
+
+    {/* No-JS fallback: plain list of topics. Hidden once data-js is set. */}
+    <ul class="fallback" data-topic-fallback>
+      {topics.map((t) => (
+        <li style={`--c: var(--${t.color})`}>
+          <a href={t.href}><span class="sq" aria-hidden="true"></span>{t.label} <span class="n">{t.count}</span></a>
+          <span class="fb-blurb">{t.blurb}</span>
+        </li>
+      ))}
+    </ul>
+
+    <div class="layout js-only" data-topic-map data-selected={initial}>
+      <div class="map-col">
+        <div class="map" role="group" aria-label="Topics">
+          <svg aria-hidden="true" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+            <g fill="none">
+              {topics.map((t) => (
+                <line
+                  class="wire"
+                  x1={W / 2}
+                  y1={H / 2}
+                  x2={t.x}
+                  y2={t.y}
+                  vector-effect="non-scaling-stroke"
+                  data-wire={t.id}
+                  data-on={t.id === initial ? '' : undefined}
+                  style={`--c: var(--${t.color})`}
+                />
+              ))}
+            </g>
+          </svg>
+
+          <div class="rack" aria-hidden="true">
+            {topics.map((t, i) => (
+              <div
+                class="unit"
+                data-unit={t.id}
+                data-on={t.id === initial ? '' : undefined}
+                style={`--c: var(--${t.color})`}
+              >
+                <span class="vent"></span>
+                <span class="led" style={`animation-delay: ${-i * 0.37}s; animation-duration: ${1.6 + i * 0.35}s`}></span>
+              </div>
+            ))}
+          </div>
+
+          {topics.map((t) => (
+            <div class="pos" style={`left: ${(t.x / W) * 100}%; top: ${(t.y / H) * 100}%`}>
+              <button
+                type="button"
+                class="node"
+                aria-pressed={t.id === initial ? 'true' : 'false'}
+                aria-controls="topic-list"
+                data-topic={t.id}
+                style={`--c: var(--${t.color})`}
+              >
+                {t.label} <span class="n">{t.count}</span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <section id="topic-list" class="list" aria-live="polite" aria-label="Selected topic" data-topic-list>
+        {topics.map((t) => (
+          <div data-topic-panel={t.id} hidden={t.id !== initial} style={`--c: var(--${t.color})`}>
+            <p class="t-head"><span class="chip" aria-hidden="true"></span><span class="t-label">{t.label}</span></p>
+            <p class="t-blurb">{t.blurb}</p>
+            <ol>
+              {t.items.map((it) => (
+                <li class="row">
+                  <span class="meta">{it.meta}</span>
+                  <a class="postlink" href={it.href}>{it.title}</a>
+                </li>
+              ))}
+            </ol>
+            {t.count > t.items.length && (
+              <a class="more all" href={t.href} data-topic-all>
+                All {t.count} {t.id === 'lab' ? 'tools' : `in ${t.label}`}
+              </a>
+            )}
+          </div>
+        ))}
+      </section>
+    </div>
+  </div>
+</section>
+
+<style>
+  .writing { border-top: 1px solid var(--line); }
+  .inner { max-width: 1200px; margin: 0 auto; padding: 88px 32px; }
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  h2 { margin: 0; font-size: 38px; font-weight: 700; letter-spacing: -0.02em; }
+  .pre { font-family: var(--font-mono); font-weight: 500; color: var(--accent); }
+  .sub { margin: 0 0 36px; color: var(--text2); }
+
+  .more {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: underline transparent;
+    text-underline-offset: 5px;
+    text-decoration-thickness: 2px;
+    transition: text-decoration-color 200ms ease;
+  }
+  .more:hover { text-decoration-color: currentColor; }
+
+  /* Progressive enhancement switch (data-js is set pre-paint in Base). */
+  :global(html:not([data-js])) .js-only { display: none; }
+  :global(html[data-js]) .fallback { display: none; }
+
+  .fallback { list-style: none; margin: 26px 0 0; padding: 0; border-top: 1px solid var(--line); }
+  .fallback li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 20px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .fallback a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    color: var(--c);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .fallback a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .fb-blurb { color: var(--text2); }
+  .sq { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
+  .n { opacity: 0.75; font-weight: 500; }
+
+  .layout { display: flex; flex-wrap: wrap; gap: 44px; align-items: flex-start; }
+  .map-col { flex: 1 1 520px; min-width: 0; container-type: inline-size; }
+  .map {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    aspect-ratio: 560 / 440;
+    background:
+      radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+      radial-gradient(var(--line) 1px, transparent 1px) 0 0 / 22px 22px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .wire {
+    stroke: var(--line2);
+    stroke-width: 1.5;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    animation: draw 1.4s ease forwards;
+    transition: stroke 250ms ease, stroke-width 250ms ease;
+  }
+  .wire[data-on] { stroke: var(--c); stroke-width: 2.5; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  .rack {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 104px;
+    box-sizing: border-box;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border: 2px solid var(--line2);
+    border-radius: 10px;
+    background: var(--bg);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 6%, transparent),
+      0 0 30px color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  .unit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 11px;
+    padding: 0 6px;
+    border-radius: 3px;
+    border: 1.5px solid var(--line2);
+    background: var(--surface);
+    transition: border-color 250ms ease, background-color 250ms ease;
+  }
+  .vent { width: 30px; height: 2px; border-radius: 2px; background: var(--line2); transition: background-color 250ms ease; }
+  .led {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--c) 45%, transparent);
+    animation: led 2.4s steps(1) infinite;
+  }
+  .unit[data-on] { border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
+  .unit[data-on] .vent { background: var(--c); }
+  .unit[data-on] .led { background: var(--c); box-shadow: 0 0 6px var(--c); }
+  @keyframes led {
+    0%, 70% { opacity: 1; }
+    71%, 85% { opacity: 0.25; }
+    86% { opacity: 1; }
+  }
+
+  .pos { position: absolute; transform: translate(-50%, -50%); }
+  .node {
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    background: var(--surface);
+    color: var(--c);
+    border: 1.5px solid color-mix(in srgb, var(--c) 55%, transparent);
+    transition: transform 180ms ease, box-shadow 200ms ease, background-color 200ms ease, color 200ms ease;
+  }
+  .node:hover { transform: translateY(-2px) scale(1.03); }
+  .node[aria-pressed='true'] {
+    background: var(--c);
+    color: var(--bg);
+    border-color: var(--c);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 14%, transparent),
+      0 0 16px color-mix(in srgb, var(--c) 26%, transparent);
+  }
+  .node:focus-visible { outline-color: var(--c); }
+
+  /* Narrow map: smaller labels and rack, a little more height. */
+  @container (max-width: 470px) {
+    .map { aspect-ratio: 560 / 520; }
+    .node { font-size: 13px; padding: 8px 10px; }
+    .rack { width: 76px; padding: 6px; gap: 3px; }
+    .unit { height: 9px; padding: 0 4px; }
+    .vent { width: 20px; }
+  }
+
+  .list { flex: 1 1 340px; min-width: 0; }
+  .t-head { margin: 0 0 6px; display: flex; align-items: center; gap: 10px; }
+  .chip {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    background: var(--c);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--c) 35%, transparent);
+  }
+  .t-label { font-family: var(--font-head); font-size: 24px; font-weight: 700; }
+  .t-blurb { margin: 0 0 18px; color: var(--text2); }
+  ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 20px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--line);
+    border-radius: 6px;
+    transition: background-color 160ms ease;
+  }
+  .row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+  .meta {
+    flex: 0 0 84px;
+    color: var(--text3);
+    font-size: 14px;
+    font-family: var(--font-mono);
+    padding-top: 13px;
+  }
+  .postlink {
+    flex: 999 1 220px;
+    align-self: flex-start;
+    padding: 10px 0; /* 44px+ touch target */
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+    background-image: linear-gradient(var(--c), var(--c));
+    background-size: 0 2px;
+    background-position: 0 calc(100% - 8px);
+    background-repeat: no-repeat;
+    transition: background-size 250ms ease;
+  }
+  .postlink:hover { background-size: 100% 2px; }
+  .all { margin-top: 6px; color: var(--c); }
+
+  @media (max-width: 560px) {
+    .inner { padding: 56px 16px; }
+    h2 { font-size: 32px; }
+    .layout { gap: 28px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wire { stroke-dashoffset: 0; }
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-topic-map]');
+  if (root) {
+    const nodes = root.querySelectorAll<HTMLButtonElement>('[data-topic]');
+    const select = (id: string) => {
+      root.dataset.selected = id;
+      nodes.forEach((n) => n.setAttribute('aria-pressed', n.dataset.topic === id ? 'true' : 'false'));
+      root
+        .querySelectorAll<HTMLElement>('[data-wire], [data-unit]')
+        .forEach((el) => el.toggleAttribute('data-on', (el.dataset.wire ?? el.dataset.unit) === id));
+      root
+        .querySelectorAll<HTMLElement>('[data-topic-panel]')
+        .forEach((p) => (p.hidden = p.dataset.topicPanel !== id));
+    };
+    nodes.forEach((n) => n.addEventListener('click', () => select(n.dataset.topic!)));
+  }
+</script>
