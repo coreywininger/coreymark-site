@@ -4,6 +4,7 @@ import { defineConfig, fontProviders } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import { createCssVariablesTheme } from 'shiki/core';
 
 const SANS = ['system-ui', '-apple-system', 'Segoe UI', 'sans-serif'];
 const MONO = ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'];
@@ -37,11 +38,15 @@ export default defineConfig({
 
   markdown: {
     shikiConfig: {
-      // Single dark theme. defaultColor: false emits --shiki-dark /
-      // --shiki-dark-bg variables instead of inline colors; global.css applies
-      // them and swaps the block background for the active theme's surface.
-      themes: { dark: 'github-dark' },
-      defaultColor: false,
+      // Tokens are emitted as CSS variables (--shiki-token-keyword etc.)
+      // instead of fixed colors. global.css maps them to the active theme's
+      // palette, so code blocks follow all six themes.
+      theme: createCssVariablesTheme({
+        name: 'css-variables',
+        variablePrefix: '--shiki-',
+        variableDefaults: {},
+        fontStyle: true,
+      }),
     },
   },
 

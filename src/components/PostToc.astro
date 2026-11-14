@@ -1,70 +1,80 @@
 ---
+// "on this page" list with scroll-spy. The active item takes the post's
+// pillar color (--c is set by the post layout).
 import type { MarkdownHeading } from 'astro';
 
 interface Props {
   headings: MarkdownHeading[];
-  class?: string;
 }
 
-const { headings, class: className } = Astro.props;
+const { headings } = Astro.props;
 const items = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
 ---
 
 {items.length > 0 && (
-  <nav aria-label="Table of contents" class={className} data-toc>
-    <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
-      On this page
-    </h2>
-    <ul class="space-y-2 text-sm">
+  <nav aria-label="On this page" class="toc" data-toc>
+    <p class="toc-h" aria-hidden="true">on this page</p>
+    <ol>
       {items.map((h) => (
-        <li class={h.depth === 3 ? 'pl-4' : ''}>
-          <a
-            href={`#${h.slug}`}
-            data-toc-link
-            data-target={h.slug}
-            class="block border-l border-transparent pl-3 py-0.5 text-text-secondary transition-colors hover:text-accent-primary"
-          >
+        <li>
+          <a href={`#${h.slug}`} class:list={['tocl', h.depth === 3 && 'sub']} data-toc-link data-target={h.slug}>
             {h.text}
           </a>
         </li>
       ))}
-    </ul>
+    </ol>
   </nav>
 )}
 
+<style>
+  .toc-h { margin: 0 0 12px; font-family: var(--font-mono); font-size: 13px; color: var(--text3); }
+  ol { list-style: none; margin: 0; padding: 0; }
+  .tocl {
+    display: block;
+    padding: 12px 0 12px 14px; /* 44px rows */
+    border-left: 2px solid var(--line);
+    color: var(--text3);
+    font-size: 14px;
+    line-height: 1.4;
+    text-decoration: none;
+    transition: color 160ms ease, border-color 160ms ease;
+  }
+  .tocl.sub { padding-left: 26px; }
+  .tocl:hover { color: var(--text); }
+  .tocl[aria-current] {
+    color: var(--text);
+    border-left-color: var(--c, var(--accent));
+    font-weight: 600;
+  }
+</style>
+
 <script>
-  const links = document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]');
-  if (links.length > 0) {
-    const headings = Array.from(links)
-      .map((link) => {
-        const id = link.dataset.target;
-        if (!id) return null;
-        const el = document.getElementById(id);
-        return el ? { link, el } : null;
-      })
-      .filter((v): v is { link: HTMLAnchorElement; el: HTMLElement } => v !== null);
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')];
+  const pairs = links
+    .map((link) => ({ link, el: document.getElementById(link.dataset.target ?? '') }))
+    .filter((p): p is { link: HTMLAnchorElement; el: HTMLElement } => p.el !== null);
 
-    const setActive = (active: HTMLAnchorElement | null) => {
-      links.forEach((link) => {
-        const on = link === active;
-        link.classList.toggle('text-accent-primary', on);
-        link.classList.toggle('border-accent-primary', on);
-        link.classList.toggle('text-text-secondary', !on);
-      });
+  if (pairs.length > 0) {
+    // The active heading is the last one that has scrolled into the top
+    // third of the viewport.
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const LINE = Math.max(160, window.innerHeight * 0.35);
+      let active = pairs[0];
+      for (const p of pairs) {
+        if (p.el.getBoundingClientRect().top < LINE) active = p;
+      }
+      for (const p of pairs) {
+        if (p === active) p.link.setAttribute('aria-current', 'location');
+        else p.link.removeAttribute('aria-current');
+      }
     };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (!visible) return;
-        const match = headings.find((h) => h.el === visible.target);
-        setActive(match?.link ?? null);
-      },
-      { rootMargin: '-80px 0px -70% 0px', threshold: 0 },
-    );
-
-    headings.forEach((h) => observer.observe(h.el));
+    const queue = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    window.addEventListener('scroll', queue, { passive: true });
+    window.addEventListener('resize', queue);
+    update();
   }
 </script>

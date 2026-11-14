@@ -14,6 +14,8 @@ interface Props {
   canonical?: string;
   ogType?: 'website' | 'article';
   noindex?: boolean;
+  /** Last section runs to the footer with no gap (posts, landing pages). */
+  flushFooter?: boolean;
 }
 
 const SITE_NAME = 'Corey Wininger';
@@ -27,6 +29,7 @@ const {
   canonical,
   ogType = 'website',
   noindex = false,
+  flushFooter = false,
 } = Astro.props;
 
 const origin = Astro.site?.href ?? Astro.url.origin;
@@ -107,7 +110,7 @@ const prePaint = `(function(){var d=document.documentElement;d.setAttribute('dat
     <main id="main" class="flex-1" data-pagefind-body>
       <slot />
     </main>
-    <Footer />
+    <Footer flush={flushFooter} />
     <BackToTop />
     <SearchOverlay />
   </body>
