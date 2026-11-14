@@ -80,7 +80,7 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://coreymark.com').toStri
     "datePublished": pubDate.toISOString(),
     "dateModified": (updatedDate ?? pubDate).toISOString(),
     "url": canonicalUrl,
-    "author": { "@type": "Person", "name": "Corey Wininger", "url": "https://coreymark.com/about" },
+    "author": { "@type": "Person", "name": "Corey Wininger", "url": "https://coreymark.com/about/" },
     "publisher": { "@type": "Person", "name": "Corey Wininger", "url": "https://coreymark.com" }
   })} />
   <ReadingProgress color={topic.color} />
