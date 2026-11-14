@@ -51,7 +51,7 @@ const description =
         id="error-row"
         role="alert"
         class="mb-5 hidden rounded-md px-3 py-2.5 text-[13px]"
-        style="background: color-mix(in srgb, var(--color-error) 12%, transparent); color: var(--color-error);"
+        style="background: color-mix(in srgb, var(--red) 10%, transparent); border: 1px solid color-mix(in srgb, var(--red) 35%, transparent); color: var(--text);"
       ></div>
 
       <div
@@ -60,7 +60,7 @@ const description =
         style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));"
       ></div>
 
-      <div class="mb-6">
+      <div class="mb-6" data-subnet-result>
         <div class="mb-2 flex items-baseline justify-between">
           <p class="m-0 text-[13px] text-text-secondary">Address space</p>
           <p id="gauge-summary" class="m-0 font-mono text-[13px] text-text-secondary"></p>
@@ -88,7 +88,7 @@ const description =
         class="mb-7 hidden flex-wrap items-center gap-3 rounded-md border border-border-subtle bg-bg-subtle px-3.5 py-3"
       ></div>
 
-      <div class="border-t border-border-subtle pt-5">
+      <div class="border-t border-border-subtle pt-5" data-subnet-result>
         <p class="mb-2.5 m-0 text-[13px] text-text-secondary">Split into smaller subnets</p>
         <div class="mb-3 flex flex-wrap items-center gap-3">
           <label for="split-prefix" class="text-sm">New prefix /</label>
@@ -221,6 +221,12 @@ const description =
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
+  }
+  .subnet-widget .history-remove {
+    padding: 5px;
+    min-width: 24px;
+    min-height: 24px;
+    justify-content: center;
   }
   .subnet-widget .copy-btn:hover {
     color: var(--color-accent-primary);
@@ -414,10 +420,9 @@ import { bigToIpv4, bigToIpv6, fmtAddr, fmtBigCount, parseCidr } from '../../lib
       var rm = document.createElement('button');
       rm.type = 'button';
       rm.setAttribute('aria-label', 'Remove ' + v + ' from history');
-      rm.className = 'copy-btn';
-      rm.style.padding = '5px';
-      rm.style.minWidth = '24px';
-      rm.style.minHeight = '24px';
+      // Size lives in CSS (.history-remove), not inline styles, so the
+      // 44px touch-target rule in LabToolLayout can override it.
+      rm.className = 'copy-btn history-remove';
       rm.innerHTML = ICONS.x;
       rm.addEventListener('click', function (e) { e.stopPropagation(); removeHistory(v); });
       wrap.appendChild(c);
@@ -609,6 +614,12 @@ import { bigToIpv4, bigToIpv6, fmtAddr, fmtBigCount, parseCidr } from '../../lib
     splitCount.textContent = '';
   }
 
+  // While an error is showing there is nothing to chart or split: hide the
+  // address-space bar and the split table instead of leaving them empty.
+  function setResultSectionsHidden(hide) {
+    document.querySelectorAll('[data-subnet-result]').forEach(function (el) { el.hidden = hide; });
+  }
+
   function setBusyState(busy) {
     parseBtn.disabled = busy;
     parseBtn.style.opacity = busy ? '0.55' : '';
@@ -651,11 +662,13 @@ import { bigToIpv4, bigToIpv6, fmtAddr, fmtBigCount, parseCidr } from '../../lib
       errorRow.classList.add('block');
       errorRow.textContent = result.error;
       clearAll();
+      setResultSectionsHidden(true);
       document.title = DEFAULT_TITLE;
       return;
     }
     errorRow.classList.add('hidden');
     errorRow.classList.remove('block');
+    setResultSectionsHidden(false);
     statsGrid.innerHTML = '';
     var fam = result.family;
     statsGrid.appendChild(statCard('Network address', fmtAddr(result.network, fam) + '/' + result.prefix, true));

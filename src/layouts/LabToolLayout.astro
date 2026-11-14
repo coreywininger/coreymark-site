@@ -190,14 +190,29 @@ const related = picked.slice(0, 3);
   }
   .all:hover { text-decoration-color: currentColor; }
 
-  /* Touch devices: every control inside a tool is at least 44px. The tools
-     keep their denser layout for mouse and keyboard. */
+  /* Touch devices: every control inside a tool has a hit area of at least
+     44 x 44px. The tools keep their denser layout for mouse and keyboard. */
   @media (pointer: coarse) {
     .panel-body :global(:is(button, select, summary, [role='tab'], input:not([type='checkbox'], [type='radio'], [type='range']), textarea)) {
       min-height: 44px;
     }
     .panel-body :global(:is(button, [role='tab'])) { min-width: 44px; }
+    /* Links that are controls or stand alone in a data row (not prose). */
+    .panel-body :global(a:not(.prose a, p a)) {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+    /* Checkboxes and radios: the label is the hit area. */
     .panel-body :global(:is(input[type='checkbox'], input[type='radio'])) { min-width: 24px; min-height: 24px; }
+    .panel-body :global(label:has(> input[type='checkbox'], > input[type='radio'])),
+    .panel-body :global(:is(input[type='checkbox'], input[type='radio']) + label) {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      min-width: 44px;
+    }
   }
 
   @media (max-width: 560px) {

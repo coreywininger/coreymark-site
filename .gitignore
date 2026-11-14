@@ -9,6 +9,9 @@ dist/
 /blob-report/
 /playwright/.cache/
 
+# output of `npm run audit:lab`
+lab-audit/
+
 # dependencies
 node_modules/
 

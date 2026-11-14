@@ -23,6 +23,7 @@ Requires Node 22 or newer.
 - `src/` — Astro pages, layouts, components, and content collections (blog + projects).
 - `public/` — static assets served as-is (favicon, manifest, images).
 - `scripts/` — build-time helpers (e.g., OG image generation).
+- `npm run audit:lab` — with `npm run build && npm run preview` running, checks every Lab tool's output states for contrast (six themes) and 44px touch targets; writes `lab-audit/audit.json`.
 - `tests/` — Playwright end-to-end tests.
 - `terraform/` — IaC for Azure Static Web Apps and custom-domain bindings.
 - `.github/workflows/` — Azure Static Web Apps deploy workflow plus issue templates.
