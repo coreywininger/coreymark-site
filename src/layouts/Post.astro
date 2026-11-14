@@ -63,7 +63,14 @@ const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 const canonicalUrl = new URL(Astro.url.pathname, 'https://coreymark.com').toString();
 ---
 
-<Base title={title} description={description} image={image} ogType="article" flushFooter>
+<Base
+  title={title}
+  description={description}
+  image={image}
+  ogType="article"
+  flushFooter
+  search={{ kind: 'post', sub: `${topic.label} · ${shortDate(pubDate)}`, color: topic.color }}
+>
   <script slot="head" type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -138,7 +145,7 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://coreymark.com').toStri
     </div>
 
     {related.length > 0 && (
-      <section class="next" aria-labelledby="next-h" data-keep-reading>
+      <section class="next" aria-labelledby="next-h" data-keep-reading data-pagefind-ignore>
         <div class="next-inner">
           <SectionHeading id="next-h" title="Keep reading" />
           <div class="cards">

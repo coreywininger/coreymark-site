@@ -31,7 +31,7 @@ const { title, prefix = '~/', intro, crumbs, color = 'accent', glow = 'magenta' 
     <div class="hero-row">
       <div class="hero-main">
         <h1 class="rise d1">
-          {prefix && <span class="pre" aria-hidden="true">{prefix}</span>}{title}
+          {prefix && <span class="pre" aria-hidden="true" data-pagefind-ignore>{prefix}</span>}{title}
         </h1>
         {intro && <p class="intro rise d2">{intro}</p>}
         <slot />

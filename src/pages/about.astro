@@ -1,14 +1,35 @@
 ---
 import Base from '../layouts/Base.astro';
 import { Image } from 'astro:assets';
+import Crumbs from '../components/Crumbs.astro';
+import SectionHeading from '../components/SectionHeading.astro';
 import headshot from '../assets/headshot.jpg';
 
-const yearsExperience = 12;
+const roles = [
+  { when: '2026 – now', title: 'Director of Operations', org: 'GridSecurity', text: 'Leading operations: service desk, systems and network teams, and the processes and reporting that hold them together.', color: 'green', current: true },
+  { when: '2024 – 2025', title: 'IT Operations Manager', org: 'Heritage / Arcwood Environmental', text: 'Governed a $20.5M IT budget, a 2,500-user environment, and 25+ MSP and vendor partners.', color: 'cyan', current: false },
+  { when: '2019 – 2024', title: 'Systems Manager', org: 'The Heritage Group', text: 'Led five senior engineers, built the CI/CD and infrastructure-as-code platform, and took deployments from quarterly to every two weeks.', color: 'blue', current: false },
+  { when: 'Earlier', title: 'Solutions Architect · Linux Administrator · Systems Administrator', org: 'The Heritage Group and before', text: 'HR and plant systems, VDI, and large patch compliance programs.', color: 'magenta', current: false },
+];
+
+const stats = [
+  { value: '12+', label: 'years in IT operations and infrastructure', color: 'cyan' },
+  { value: '$20.5M', label: 'IT budget governed in a past role', color: 'green' },
+  { value: '25+', label: 'vendor and MSP partners managed', color: 'yellow' },
+  { value: 'Quarterly → 2 wk', label: 'deployment cadence after the CI/CD rebuild', color: 'magenta' },
+];
+
+const stack = [
+  { label: 'Infrastructure', color: 'cyan', items: ['Linux (RHEL, AIX, Solaris)', 'Windows Server', 'Active Directory', 'VMware', 'Hyper-V', 'Citrix VDI'] },
+  { label: 'Cloud', color: 'blue', items: ['Azure', 'AWS', 'GCP', 'Cloudflare'] },
+  { label: 'Automation', color: 'magenta', items: ['Terraform', 'Ansible', 'PowerShell', 'Python', 'Bash', 'CI/CD', 'Containers'] },
+  { label: 'Operations', color: 'yellow', items: ['ITIL Foundation (certified)', 'Incident and change', 'DR / BCP', 'Vendor and MSP management', 'Budgets', 'Executive reporting'] },
+];
 ---
 
 <Base
   title="About"
-  description="Corey Wininger — IT infrastructure leader with 12+ years running hybrid enterprise environments. Currently between roles and writing about what I've learned."
+  description="Corey Wininger runs IT operations: twelve years from Linux administrator to solutions architect to leading operations teams."
 >
   <script slot="head" type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
@@ -16,117 +37,216 @@ const yearsExperience = 12;
     "name": "Corey Wininger",
     "url": "https://coreymark.com",
     "image": "https://coreymark.com/og-default.png",
-    "jobTitle": "IT Infrastructure Leader",
-    "description": "IT infrastructure leader writing about IT operations, AI for the enterprise, and hybrid cloud economics.",
+    "jobTitle": "Director of Operations",
+    "description": "Director of Operations writing about running IT, explaining it to the business, and where AI actually helps.",
     "sameAs": [
       "https://www.linkedin.com/in/coreywininger/",
       "https://github.com/coreywininger"
     ]
   })} />
-  <article class="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-    <header class="mb-12">
-      <div class="flex flex-col items-center md:flex-row md:items-center md:gap-10">
-        <Image
-          src={headshot}
-          alt="Corey Wininger"
-          width={240}
-          height={240}
-          loading="eager"
-          class="w-40 h-40 md:w-60 md:h-60 rounded-full border border-border-subtle mb-8 md:mb-0 md:order-last flex-shrink-0"
-        />
-        <div>
-          <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-primary">
-            About
+
+  <section class="hero" data-about-hero>
+    <div class="hero-bg" aria-hidden="true">
+      <div class="grid-bg"></div>
+      <div class="blob g1"></div>
+      <div class="blob b2 g2"></div>
+    </div>
+    <div class="hero-inner">
+      <div class="crumbs"><Crumbs color="blue" items={[{ label: 'about', href: '/about/', title: 'About' }]} /></div>
+      <div class="hero-row">
+        <div class="photo rise d1">
+          <Image src={headshot} alt="Corey Wininger" width={520} height={600} loading="eager" class="headshot" data-headshot />
+          <span class="place" aria-hidden="true"><span class="place-dot"></span>Bedford, Indiana</span>
+        </div>
+        <div class="intro">
+          <p class="cmd"><span class="dollar">$</span> cat about.md</p>
+          <h1 class="rise d2">Hi, I'm Corey.</h1>
+          <p class="lead rise d3">
+            I run IT operations. Twelve years in, I've gone from Linux administrator to solutions
+            architect to leading operations teams, and I'm currently Director of Operations at
+            GridSecurity.
           </p>
-          <h1 class="mb-6 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
-            Hi, I'm Corey.
-          </h1>
-          <p class="text-lg text-text-secondary">
-            I'm an IT infrastructure leader with {yearsExperience}+ years of
-            progressive experience — advancing from Linux Administrator to
-            Solutions Architect to Systems Manager — across multi-site,
-            hybrid enterprise environments.
+          <p class="lead rise d3">
+            This site is where I write down what I learn, keep the small tools I build, and show the
+            projects I run on the side.
           </p>
+          <div class="actions rise d4">
+            <a class="btn-primary" href="/contact/" data-about-cta="contact">Get in touch</a>
+            <a class="btn-ghost" href="https://www.linkedin.com/in/coreywininger/" rel="me noopener" target="_blank">LinkedIn</a>
+            <a class="btn-ghost" href="https://github.com/coreywininger" rel="me noopener" target="_blank">GitHub</a>
+          </div>
         </div>
       </div>
-    </header>
-
-    <div class="prose prose-invert">
-      <h2>What I do</h2>
-      <p>
-        I run IT operations. That means incident and change discipline,
-        hybrid cloud architecture, CI/CD and IaC, vendor and MSP
-        management, and the unglamorous work of making sure
-        infrastructure supports the business — not the other way around.
-      </p>
-
-      <p>My most recent roles:</p>
-      <ul>
-        <li>
-          <strong>IT Operations Manager</strong> — Heritage / Arcwood
-          Environmental (June 2024 – January 2025). Governed a $20.5M IT
-          budget, 2,500-user environment, 25+ MSP and vendor partners.
-          Role concluded following a corporate divestiture.
-        </li>
-        <li>
-          <strong>Systems Manager</strong> — The Heritage Group (April
-          2019 – June 2024). Directed 5 senior engineers, led the CI/CD +
-          IaC platform build, reduced deployment cadence from quarterly
-          to bi-weekly, and provided architectural oversight for Azure
-          and AWS workloads.
-        </li>
-        <li>
-          <strong>Earlier roles</strong> — Solutions Architect, Linux
-          Administrator, Systems Administrator across HR, plant
-          operations, VDI, and large-scale patch compliance programs.
-        </li>
-      </ul>
-
-      <h2>What I'm doing now</h2>
-      <p>
-        Currently between roles. Targeting Senior IT Manager, IT
-        Director, and VP of IT positions — on-site Indianapolis, hybrid,
-        or remote. Also exploring an IT services + AI consulting
-        practice, and publishing this blog in the meantime.
-      </p>
-
-      <p>
-        The live version of <a href="/now">what I'm focused on this
-        month</a> is on the /now page.
-      </p>
-
-      <h2>How I work</h2>
-      <p>
-        I translate executive strategy into disciplined engineering
-        execution, and engineering reality back into something an
-        executive can act on. I believe in ITIL where it helps, skip it
-        where it doesn't, and think the best IT leaders treat vendor
-        management as a skill — not an inbox.
-      </p>
-
-      <h2>Certifications & stack</h2>
-      <p><strong>Certifications:</strong> ITIL Foundation</p>
-      <p>
-        <strong>Infrastructure:</strong> Windows Server · Linux (RHEL,
-        AIX, Solaris) · Active Directory · Citrix VDI · VMware ·
-        Hyper-V · Azure · AWS · GCP
-      </p>
-      <p>
-        <strong>Automation & IaC:</strong> Terraform · Ansible ·
-        PowerShell · Python · Bash · CI/CD pipelines · container
-        platforms
-      </p>
-      <p>
-        <strong>Governance:</strong> ITIL · incident & change management ·
-        DR/BCP · vendor & MSP management · budget management · executive
-        reporting
-      </p>
-
-      <h2>Contact</h2>
-      <p>
-        The fastest way to reach me is the <a href="/contact">contact
-        page</a>. LinkedIn and GitHub links are in the footer.
-      </p>
     </div>
-  </article>
+  </section>
+
+  <div class="wrap">
+    <section aria-labelledby="career-h" data-about-career>
+      <SectionHeading id="career-h" title="Career" color="green" />
+      <ol class="timeline">
+        {roles.map((r) => (
+          <li style={`--c: var(--${r.color})`} data-role data-current={r.current ? '' : undefined}>
+            <span class="when">{r.when}</span>
+            <span class="rail" aria-hidden="true"><span class="line"></span><span class="node"></span></span>
+            <div>
+              <p class="role-title">{r.title}</p>
+              <p class="role-org">{r.org}</p>
+              <p class="role-text">{r.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="how" aria-labelledby="how-h" data-about-how>
+      <div class="how-text">
+        <SectionHeading id="how-h" title="How I work" color="cyan" />
+        <p>I turn strategy into disciplined engineering work, and engineering reality back into something a leader can act on.</p>
+        <p>I use ITIL where it helps and skip it where it doesn't. I think vendor management is a skill, not an inbox, and that a good status update tells people where you stand, not just what happened.</p>
+      </div>
+      <div class="stats">
+        {stats.map((s) => (
+          <div class="stat" style={`--c: var(--${s.color})`} data-stat>
+            <p class="stat-v">{s.value}</p>
+            <p class="stat-l">{s.label}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section aria-labelledby="stack-h" data-about-stack>
+      <SectionHeading id="stack-h" title="Stack and certifications" color="magenta" />
+      <div class="stack">
+        {stack.map((s) => (
+          <div class="stack-group" style={`--c: var(--${s.color})`} data-stack-group>
+            <h3>{s.label}</h3>
+            <ul>
+              {s.items.map((it) => <li>{it}</li>)}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="off" aria-labelledby="off-h" data-about-off>
+      <SectionHeading id="off-h" title="Off the clock" color="yellow" />
+      <p>
+        Outside of work I'm a husband and a dad, with another little one on the way. Our family
+        loves to travel, and half the fun is the food we find along the way. At home you'll usually
+        find me tinkering on something: a 60-gallon planted aquarium that's part hobby, part
+        ongoing science experiment, or my BMW M340i, which gets more software tuning than it
+        probably needs. Home is split between Bedford and Indianapolis.
+      </p>
+    </section>
+  </div>
 </Base>
+
+<style>
+  .hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+  .hero-bg { position: absolute; inset: 0; pointer-events: none; }
+  .hero-bg .grid-bg { position: absolute; inset: 0; }
+  .g1 { width: 480px; height: 480px; left: -160px; top: -220px; background: var(--blue); }
+  .g2 { width: 360px; height: 360px; right: -40px; top: -60px; background: var(--cyan); }
+  .hero-inner { position: relative; max-width: 1120px; margin: 0 auto; padding: 64px 32px 72px; }
+  .crumbs { margin-bottom: 28px; }
+  .hero-row { display: flex; flex-wrap: wrap; gap: 56px; align-items: center; }
+  .photo { position: relative; flex: none; }
+  .photo :global(.headshot) {
+    display: block;
+    width: 260px;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 20px;
+    border: 1px solid var(--line2);
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.7);
+  }
+  .place {
+    position: absolute;
+    left: 16px;
+    bottom: -14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--line2);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .place-dot { --c: var(--green); width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2.2s ease-out infinite; }
+  .intro { flex: 1 1 420px; min-width: 0; }
+  .cmd { margin: 0 0 14px; font-family: var(--font-mono); font-size: 15px; color: var(--text3); }
+  .dollar { color: var(--green); }
+  h1 { margin: 0 0 20px; font-size: clamp(40px, 5vw, 58px); line-height: 1.05; font-weight: 700; letter-spacing: -0.03em; }
+  .lead { margin: 0 0 14px; font-size: 19px; color: var(--text2); max-width: 56ch; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 72px 32px 0; display: flex; flex-direction: column; gap: 80px; }
+
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { display: grid; grid-template-columns: 150px 28px minmax(0, 1fr); gap: 0 18px; padding-bottom: 36px; }
+  .timeline li:last-child { padding-bottom: 0; }
+  .when { font-family: var(--font-mono); font-size: 14px; color: var(--text3); padding-top: 4px; }
+  .rail { position: relative; display: flex; justify-content: center; }
+  .line { position: absolute; top: 12px; bottom: -36px; width: 2px; background: var(--line2); }
+  .timeline li:last-child .line { display: none; }
+  .node {
+    position: relative;
+    margin-top: 6px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    background: var(--bg);
+    border: 2px solid var(--c);
+  }
+  .timeline li[data-current] .node {
+    background: var(--c);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--c) 18%, transparent), 0 0 18px color-mix(in srgb, var(--c) 45%, transparent);
+  }
+  .role-title { margin: 0; font-family: var(--font-head); font-size: 21px; font-weight: 700; color: var(--text); }
+  .role-org { margin: 2px 0 0; font-size: 15px; font-weight: 600; color: var(--c); }
+  .role-text { margin: 8px 0 0; color: var(--text2); max-width: 62ch; }
+
+  .how { display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start; }
+  .how-text { flex: 1 1 380px; min-width: 0; }
+  .how-text p { margin: 0 0 14px; color: var(--text2); font-size: 18px; max-width: 52ch; }
+  .stats { flex: 1 1 420px; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .stat { padding: 22px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--line2); }
+  .stat-v { margin: 0 0 4px; font-family: var(--font-head); font-size: 28px; line-height: 1.15; font-weight: 700; color: var(--c); }
+  .stat-l { margin: 0; font-size: 15px; color: var(--text2); }
+
+  .stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 16px; }
+  .stack-group { padding: 22px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line2); }
+  h3 { margin: 0 0 14px; font-family: var(--font-mono); font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--c); }
+  .stack-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .stack-group li {
+    font-size: 14px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    color: var(--text);
+    background: color-mix(in srgb, var(--c) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+  }
+
+  .off p { margin: 0; color: var(--text2); font-size: 18px; max-width: 70ch; }
+
+  @media (max-width: 720px) {
+    .timeline li { grid-template-columns: 28px minmax(0, 1fr); }
+    .when { grid-column: 2; grid-row: 1; padding: 0 0 4px; }
+    .rail { grid-column: 1; grid-row: 1 / span 2; }
+    .timeline li > div { grid-column: 2; }
+  }
+  @media (max-width: 560px) {
+    .hero-inner { padding: 40px 16px 56px; }
+    .hero-row { gap: 44px; }
+    .photo :global(.headshot) { width: 200px; height: 232px; }
+    .wrap { padding: 48px 16px 0; gap: 56px; }
+    .stats { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .place-dot { animation: none; }
+  }
+</style>

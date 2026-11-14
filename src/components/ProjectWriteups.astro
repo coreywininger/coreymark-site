@@ -1,6 +1,9 @@
 ---
+// Write-ups for a project, newest first: posts whose frontmatter `project`
+// matches, plus the project's featured write-up. No post is listed twice.
 import { getCollection } from 'astro:content';
 import { publishedOnly, sortByPubDateDesc } from '../lib/content';
+import { topicFor } from '../data/topics';
 
 interface Props {
   projectSlug: string;
@@ -17,95 +20,62 @@ const sorted = sortByPubDateDesc(matches);
 
 const normalize = (url: string) => {
   try {
-    const parsed = new URL(url, 'https://coreymark.com');
-    return parsed.pathname.replace(/\/+$/, '');
+    return new URL(url, 'https://coreymark.com').pathname.replace(/\/+$/, '');
   } catch {
     return url.replace(/\/+$/, '');
   }
 };
 
 const featuredPath = featuredWriteupUrl ? normalize(featuredWriteupUrl) : null;
-
+const allPosts = featuredPath ? await getCollection('blog', publishedOnly) : [];
 const featuredPost = featuredPath
-  ? sorted.find((entry) => normalize(`/blog/${entry.id}`) === featuredPath)
-  : null;
+  ? allPosts.find((entry) => normalize(`/blog/${entry.id}`) === featuredPath)
+  : undefined;
 
-const remaining = sorted.filter((entry) => {
-  if (!featuredPath) return true;
-  return normalize(`/blog/${entry.id}`) !== featuredPath;
-});
+// Newest first. The featured write-up is included even if it is not tagged
+// with the project, and never twice.
+const ordered = sortByPubDateDesc([
+  ...sorted,
+  ...(featuredPost && !sorted.some((e) => e.id === featuredPost.id) ? [featuredPost] : []),
+]);
 
-const hasFeaturedUrl = Boolean(featuredWriteupUrl);
-const hasAny = hasFeaturedUrl || remaining.length > 0;
-
-const formatDate = (d: Date) =>
-  d.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+const shortDate = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 ---
 
-{hasAny && (
-  <section
-    data-project-writeups
-    aria-label="Writeups"
-    class="mt-12 border-t border-border-subtle pt-8"
-  >
-    {hasFeaturedUrl && (
-      <div class="mb-8">
-        <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-accent-primary">
-          Featured writeup
-        </h2>
-        <a
-          data-writeup-link
-          href={featuredWriteupUrl}
-          class="group block rounded-lg border border-border-subtle bg-bg-elevated p-5 transition-colors hover:border-accent-primary"
-        >
-          <div class="text-lg font-semibold text-text-primary group-hover:text-accent-primary">
-            {featuredPost ? featuredPost.data.title : 'Featured writeup'}
-          </div>
-          {featuredPost && (
-            <p class="mt-2 text-sm text-text-secondary">
-              {featuredPost.data.description}
-            </p>
-          )}
+{ordered.length > 0 && (
+  <div class="writeups" data-project-writeups>
+    {ordered.map((entry) => {
+      const t = topicFor(entry.data.pillar);
+      return (
+        <a class="card" href={`/blog/${entry.id}/`} style={`--c: var(--${t.color})`} data-writeup-link>
+          <span class="meta"><span class="topic">{t.label}</span> · <time datetime={entry.data.pubDate.toISOString().slice(0, 10)}>{shortDate(entry.data.pubDate)}</time></span>
+          <span class="title">{entry.data.title}</span>
         </a>
-      </div>
-    )}
-
-    {remaining.length > 0 && (
-      <>
-        <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
-          {hasFeaturedUrl ? 'More writeups' : 'Writeups'}
-        </h2>
-        <ul class="space-y-3">
-          {remaining.map((entry) => (
-            <li>
-              <a
-                data-writeup-link
-                href={`/blog/${entry.id}/`}
-                class="group block rounded-lg border border-border-subtle bg-bg-elevated p-4 transition-colors hover:border-accent-primary"
-              >
-                <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <span class="text-base font-medium text-text-primary group-hover:text-accent-primary">
-                    {entry.data.title}
-                  </span>
-                  <time
-                    datetime={entry.data.pubDate.toISOString()}
-                    class="text-xs text-text-tertiary"
-                  >
-                    {formatDate(entry.data.pubDate)}
-                  </time>
-                </div>
-                <p class="mt-1 text-sm text-text-secondary">
-                  {entry.data.description}
-                </p>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </>
-    )}
-  </section>
+      );
+    })}
+  </div>
 )}
+
+<style>
+  .writeups { display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: var(--bg);
+    border: 1px solid var(--line2);
+    text-decoration: none;
+    transition: border-color 180ms ease, transform 180ms ease, box-shadow 200ms ease;
+  }
+  .card:hover {
+    border-color: var(--c);
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--c) 60%, transparent);
+  }
+  .meta { font-size: 13px; color: var(--text3); }
+  .topic { color: var(--c); font-weight: 600; }
+  .title { font-weight: 700; color: var(--text); }
+</style>

@@ -5,6 +5,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import SearchOverlay from '../components/SearchOverlay.astro';
 import BackToTop from '../components/BackToTop.astro';
+import SearchMeta from '../components/SearchMeta.astro';
 import { THEME_BG, FONTS, DEFAULT_THEME, DEFAULT_FONT } from '../data/appearance';
 
 interface Props {
@@ -16,6 +17,9 @@ interface Props {
   noindex?: boolean;
   /** Last section runs to the footer with no gap (posts, landing pages). */
   flushFooter?: boolean;
+  /** How this page appears in site search. Defaults to a "Pages" result
+      whose subtitle is the meta description. */
+  search?: { kind: 'post' | 'tool' | 'project' | 'page'; sub?: string; color?: string };
 }
 
 const SITE_NAME = 'Corey Wininger';
@@ -30,12 +34,32 @@ const {
   ogType = 'website',
   noindex = false,
   flushFooter = false,
+  search,
 } = Astro.props;
 
 const origin = Astro.site?.href ?? Astro.url.origin;
 const canonicalURL = canonical ?? new URL(Astro.url.pathname, origin).href;
 const ogImageURL = new URL(image, origin).href;
 const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
+
+// Search result defaults for ordinary pages: subtitle = meta description,
+// dot color = the section's color in the nav.
+const SECTION_COLORS: Record<string, string> = {
+  blog: 'cyan',
+  lab: 'green',
+  projects: 'yellow',
+  now: 'magenta',
+  about: 'blue',
+  contact: 'accent',
+};
+const section = Astro.url.pathname.split('/').filter(Boolean)[0] ?? '';
+const searchMeta = {
+  kind: search?.kind ?? 'page',
+  // Result title is the page name ("About"), not its greeting-style <h1>.
+  title: title ?? 'Home',
+  sub: search?.sub ?? description,
+  color: search?.color ?? SECTION_COLORS[section] ?? 'accent',
+};
 
 // Runs synchronously in <head>, before first paint: applies the reader's
 // saved theme + font set (no flash; a saved value that is no longer in
@@ -107,7 +131,9 @@ const prePaint = `(function(){var d=document.documentElement;d.setAttribute('dat
       Skip to content
     </a>
     <Header />
-    <main id="main" class="flex-1" data-pagefind-body>
+    {/* noindex pages (404) stay out of site search too. */}
+    <main id="main" class="flex-1" data-pagefind-body={noindex ? undefined : ''}>
+      {!noindex && <SearchMeta {...searchMeta} />}
       <slot />
     </main>
     <Footer flush={flushFooter} />
