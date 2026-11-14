@@ -1,24 +1,50 @@
-/** Pillar accent colors for OG image generation (RGB tuples for canvaskit). */
-export const PILLAR_OG_ACCENT: Record<string, [number, number, number]> = {
-  ops:      [217, 119,  87], // #D97757 rust
-  business: [ 99, 102, 241], // #6366f1 indigo
-  ai:       [ 45, 212, 191], // #2dd4bf teal
-  cloud:    [ 59, 130, 246], // #3b82f6 blue
-  personal: [139,  92, 246], // #8b5cf6 purple
+// Per-post Open Graph cards (src/pages/og/[...slug].ts).
+//
+// Each card is a pre-rendered Slate background for the post's pillar
+// (src/assets/og/bg-<pillar>.png, made by scripts/build-brand-assets.mjs:
+// grid, glow, and a bottom row with the brand mark and topic chip) with the
+// title and a `~/writing/<pillar-slug>` line drawn at the top at build time.
+// Topic labels, slugs and colors come from src/data/topics.ts.
+import { TOPICS, type Topic } from '../data/topics';
+
+type RGB = [number, number, number];
+
+/** Slate palette as RGB (OG cards are always Slate). */
+const SLATE: Record<string, RGB> = {
+  bg: [16, 24, 34],
+  text: [220, 228, 235],
+  text2: [176, 189, 202],
+  red: [227, 141, 149],
+  green: [127, 204, 165],
+  yellow: [221, 188, 126],
+  blue: [141, 174, 227],
+  magenta: [185, 157, 214],
+  cyan: [118, 204, 191],
 };
 
-export const PILLAR_OG_LABEL: Record<string, string> = {
-  ops:      'IT Operations',
-  business: 'Tech ↔ Business',
-  ai:       'AI for IT',
-  cloud:    'Hybrid Cloud',
-  personal: 'Personal',
-};
+export const OG_BG: RGB = SLATE.bg;
+export const OG_TITLE_COLOR: RGB = SLATE.text;
 
-export const OG_DEFAULT_ACCENT: [number, number, number] = [45, 212, 191];
+export interface OgTopic {
+  /** e.g. "~/writing/it-and-the-business" */
+  path: string;
+  color: RGB;
+  background: string;
+}
 
-/** Inter font URLs fetched at build time from fontsource CDN. */
+const FALLBACK: Topic = TOPICS[0];
+
+export function ogTopic(pillar: string): OgTopic {
+  const topic = TOPICS.find((t) => t.id === pillar && t.id !== 'lab') ?? FALLBACK;
+  return {
+    path: `~/writing/${topic.slug}`,
+    color: SLATE[topic.color] ?? SLATE.cyan,
+    background: `./src/assets/og/bg-${topic.id}.png`,
+  };
+}
+
+/** Red Hat fonts as TTF, fetched at build time (CanvasKit needs TTF/OTF). */
 export const OG_FONTS = [
-  'https://api.fontsource.org/v1/fonts/inter/latin-400-normal.ttf',
-  'https://api.fontsource.org/v1/fonts/inter/latin-600-normal.ttf',
+  'https://api.fontsource.org/v1/fonts/red-hat-display/latin-700-normal.ttf',
+  'https://api.fontsource.org/v1/fonts/red-hat-mono/latin-500-normal.ttf',
 ];
