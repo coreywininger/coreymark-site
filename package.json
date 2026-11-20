@@ -16,14 +16,14 @@
     "audit:lab": "node scripts/audit-lab.mjs lab-audit"
   },
   "dependencies": {
-    "@astrojs/mdx": "^5.0.6",
+    "@astrojs/mdx": "^8.1.6",
     "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "^3.7.2",
-    "@lucide/astro": "^1.16.0",
+    "@lucide/astro": "^1.76.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.2",
-    "astro": "^6.3.3",
-    "astro-og-canvas": "^0.11.1",
+    "astro": "^7.4.13",
+    "astro-og-canvas": "^0.13.3",
     "canvaskit-wasm": "^0.41.1",
     "js-yaml": "^4.3.2",
     "tailwindcss": "^4.2.2"
