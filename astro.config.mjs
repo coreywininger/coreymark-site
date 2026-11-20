@@ -29,6 +29,10 @@ const font = (name, cssVariable, weights, fallbacks) => ({
 export default defineConfig({
   site: 'https://coreymark.com',
 
+  // Astro 7 defaults to 'jsx', which drops whitespace between inline elements
+  // and merged words on several pages. Keep the Astro 6 behaviour.
+  compressHTML: true,
+
   build: {
     // Inline all stylesheets into the HTML. Total CSS is ~7.3KB — below any
     // reasonable threshold where a separate request would be worthwhile, and
